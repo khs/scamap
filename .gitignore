@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Backups / scratch
+*.bak
+*.tmp
+sca_events - Copy.csv
+_probe_baronies.py
+
+# Local credentials and scraper state
+.antir_cookies.json
+.antir_cf_clearance.txt
+
+# Raw event dump — pipeline regenerates this from calendars.csv; only the
+# cleaned + geocoded outputs (sca_events_clean.csv) ship to the site.
+sca_events.csv
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

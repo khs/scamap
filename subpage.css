@@ -1,0 +1,135 @@
+/* Shared styling for the static sub-pages (about / how-to-help /
+   first-event). Mirrors the design tokens and header/nav layout from
+   index.html so the look is consistent across the site. */
+
+:root {
+  --crimson:     #8b1a1a;
+  --crimson-dk:  #5c0f0f;
+  --gold:        #c9972b;
+  --gold-lt:     #e8c86e;
+  --parchment:   #f5ead6;
+  --parchment-dk:#e4cfa0;
+  --ink:         #1e1409;
+  --ink-lt:      #3d2b0f;
+  --shadow:      rgba(30, 20, 9, 0.32);
+  --nav-h:       52px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'EB Garamond', Georgia, serif;
+  background: var(--parchment);
+  color: var(--ink);
+  min-height: 100vh;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E"),
+    linear-gradient(160deg, #f9f0de 0%, #eddcb4 50%, #f5ead6 100%);
+}
+
+header {
+  text-align: center;
+  padding: 2rem 1rem 0.8rem;
+}
+header::after {
+  content: '';
+  display: block;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--gold), var(--crimson), var(--gold), transparent);
+  margin: 0.6rem auto 0;
+  max-width: 700px;
+}
+
+.site-title {
+  font-family: 'MedievalSharp', 'EB Garamond', serif;
+  font-size: clamp(2rem, 5.5vw, 3.8rem);
+  color: var(--crimson-dk);
+  letter-spacing: 0.03em;
+  line-height: 1.15;
+  text-shadow: 2px 2px 0 var(--gold-lt), 3px 3px 8px var(--shadow);
+}
+.site-title a {
+  color: inherit;
+  text-decoration: none;
+}
+.site-title a:hover { color: var(--crimson); }
+
+nav {
+  background: linear-gradient(180deg, var(--crimson-dk) 0%, var(--crimson) 100%);
+  border-top: 2px solid var(--gold);
+  border-bottom: 2px solid var(--gold);
+  box-shadow: 0 3px 12px var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+nav ul {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  max-width: 900px;
+  margin: 0 auto;
+  height: var(--nav-h);
+}
+nav li { display: flex; }
+nav a {
+  font-family: 'Cinzel', serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  color: var(--gold-lt);
+  text-decoration: none;
+  padding: 0 1.6rem;
+  display: flex;
+  align-items: center;
+  border-right: 1px solid rgba(201,151,43,0.25);
+  transition: background 0.2s, color 0.2s;
+  text-align: center;
+}
+nav li:first-child a { border-left: 1px solid rgba(201,151,43,0.25); }
+nav a:hover, nav a[aria-current="page"] {
+  background: rgba(201,151,43,0.18);
+  color: #fff;
+}
+
+main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+article h1 {
+  font-family: 'MedievalSharp', 'EB Garamond', serif;
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  color: var(--crimson-dk);
+  border-bottom: 1px solid var(--parchment-dk);
+  padding-bottom: 0.4rem;
+  margin-bottom: 1.2rem;
+}
+
+article h2 {
+  font-family: 'Cinzel', serif;
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
+  color: var(--crimson-dk);
+  margin-top: 1.8rem;
+  margin-bottom: 0.6rem;
+}
+
+article p {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  margin-bottom: 1rem;
+  color: var(--ink-lt);
+}
+
+article ul, article ol {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  margin: 0 0 1rem 1.4rem;
+  color: var(--ink-lt);
+}
+
+@media (max-width: 700px) {
+  nav a { padding: 0 0.8rem; font-size: 0.68rem; }
+  main { padding: 1.5rem 1rem 3rem; }
+}

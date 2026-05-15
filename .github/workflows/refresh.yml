@@ -1,0 +1,68 @@
+name: Refresh events + group pins
+
+# Runs the full data pipeline (fetch → clean → geocode → build group pins)
+# and commits any updated artefacts back to the repo. GitHub Pages then
+# serves the fresh CSVs/TopoJSON to the public site.
+#
+# Trigger:
+#   - On a schedule: every two days at 09:00 UTC (≈ 4-5 AM US Eastern)
+#   - On manual dispatch from the Actions tab
+#
+# Runtime budget: roughly 15–25 minutes per run. Nominatim rate-limits us
+# to ~1 req/sec, so the geocoder is the slow step. Re-running cheaply hits
+# the cached coords in group_pins.csv — only new groups or changed
+# locations cost a fresh API round-trip.
+
+on:
+  schedule:
+    - cron: "0 9 */2 * *"      # every two days at 09:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write              # needed for the auto-commit step below
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+        with:
+          # We need real history so `git push` works on the auto-commit step
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run the pipeline
+        env:
+          PYTHONIOENCODING: utf-8
+          PYTHONUNBUFFERED: "1"
+        run: python refresh.py
+
+      - name: Commit data updates if anything changed
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Only commit the files the public site actually serves
+          git add sca_events_clean.csv group_pins.csv group_locations.csv
+
+          if git diff --cached --quiet; then
+            echo "No data changes to commit."
+            exit 0
+          fi
+
+          # Brief commit message naming the changed files
+          git commit -m "Auto-refresh: $(git diff --cached --name-only | xargs)" \
+            -m "Triggered by ${{ github.event_name }} on $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push
