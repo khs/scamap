@@ -1087,8 +1087,23 @@ function applyFilters() {
     return true;
   });
 
-  // Sort by date
-  filtered.sort((a, b) => sortKey(a.start).localeCompare(sortKey(b.start)));
+  // Sort by relevance: future events first (soonest at top), past events
+  // last (most-recent-past first). On the *same* date, non-virtual events
+  // beat virtual — which means at any overlapping coordinate cluster the
+  // soonest in-person event claims the centred spot in the spiral. We use
+  // date as the primary key so the sidebar reads as a clean chronological
+  // list, with virtual only re-shuffling within a tied date.
+  const nowStr = new Date().toISOString();
+  filtered.sort((a, b) => {
+    const ak = sortKey(a.start), bk = sortKey(b.start);
+    const aFuture = ak >= nowStr, bFuture = bk >= nowStr;
+    if (aFuture !== bFuture) return aFuture ? -1 : 1;
+    const dateOrder = aFuture ? ak.localeCompare(bk) : bk.localeCompare(ak);
+    if (dateOrder !== 0) return dateOrder;
+    const av = a.is_virtual === 'True' ? 1 : 0;
+    const bv = b.is_virtual === 'True' ? 1 : 0;
+    return av - bv;
+  });
 
   // Update map. When multiple markers share the exact same (lat, lng), nudge
   // each duplicate along a tiny spiral so all are visible instead of stacked.
@@ -1134,16 +1149,30 @@ function applyFilters() {
       const color = eventColor(ev);
       const item = document.createElement('div');
       item.className = 'event-item';
-      const hasCoords = !isNaN(parseFloat(ev.lat)) && !isNaN(parseFloat(ev.lng));
-      const virtualTag = ev.is_virtual === 'True' ? '<span class="virtual-tag">Virtual</span>' : '';
+      const isVirtual = ev.is_virtual === 'True';
+      const virtualTag = isVirtual ? '<span class="virtual-tag">Virtual</span>' : '';
+      // Pick the best click-target URL for this event (used by virtual events
+      // that have no map marker, and for the hover hint on every item).
+      const eventLink = ev.event_url
+                     || ev.facebook_url
+                     || (KINGDOM_CALENDAR_URLS[ev.source] || '');
+      item.title = "Click for more information";
       item.innerHTML = `
         <div class="event-item-title">${ev.title}${virtualTag}</div>
         <div class="event-item-date">${shortDate(ev.start)}</div>
         <div class="event-item-source">${ev.source}</div>
         <span class="event-item-dot" style="background:${color}"></span>
       `;
-      // Click: fly to pin and open popup, or just highlight if no coords
+      // Click behaviour:
+      //   - Virtual event with a URL: open the event page in a new tab.
+      //     Virtual events have no map marker, so flying to the map is useless.
+      //   - In-person event: fly to its marker and open the popup (current).
+      //   - Virtual event without a URL: fall back to highlighting (do nothing).
       item.addEventListener('click', () => {
+        if (isVirtual && eventLink) {
+          window.open(eventLink, '_blank', 'noopener');
+          return;
+        }
         const marker = markerMap[ev._idx];
         if (marker) {
           const latlng = marker.getLatLng();
@@ -1182,10 +1211,25 @@ function applyFilters() {
 
   // Only render placeholders if baronial filter is on (these are
   // baronial-level pins by nature) and the user hasn't filtered them out
-  // via the search box.
+  // via the search box. Sort by group-type priority so that when several
+  // groups share a city (e.g. Septentria + four Toronto-area cantons),
+  // the parent barony / principality wins the centred spot at the cluster.
+  const TYPE_PRIORITY = {
+    Principality: 0, Barony: 1, Province: 2, College: 3,
+    Stronghold: 3, Riding: 3, Shire: 4, Canton: 5,
+  };
+  function pinTypePriority(group) {
+    const m = group.match(/^(Barony|Shire|Canton|Stronghold|College|Province|Principality|Riding)\s/i);
+    if (!m) return 9;
+    const t = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
+    return TYPE_PRIORITY[t] ?? 9;
+  }
   if (document.getElementById('chk-baronial').checked) {
     const query = document.getElementById('search-input').value.toLowerCase().trim();
-    groupPins.forEach(pin => {
+    const sortedPins = [...groupPins].sort(
+      (a, b) => pinTypePriority(a.group) - pinTypePriority(b.group)
+    );
+    sortedPins.forEach(pin => {
       const lat = parseFloat(pin.lat), lng = parseFloat(pin.lng);
       if (isNaN(lat) || isNaN(lng)) return;
       if (!pin.website) return;
