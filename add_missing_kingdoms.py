@@ -22,6 +22,7 @@ from build_group_locations import (
     scrape_drachenwald,
     scrape_antir,
     scrape_lochac,
+    scrape_ealdormere,
 )
 
 CSV_FILE = Path(__file__).parent / "group_locations.csv"
@@ -37,6 +38,7 @@ KINGDOMS_TO_REFRESH = {
     "Kingdom of Drachenwald":  scrape_drachenwald,
     "Kingdom of An Tir":       scrape_antir,
     "Kingdom of Lochac":       scrape_lochac,
+    "Kingdom of Ealdormere":   scrape_ealdormere,
 }
 
 

@@ -2,16 +2,17 @@
    first-event). Mirrors the design tokens and header/nav layout from
    index.html so the look is consistent across the site. */
 
+/* Blue + white palette (variables keep their old names for diff-friendliness). */
 :root {
-  --crimson:     #8b1a1a;
-  --crimson-dk:  #5c0f0f;
-  --gold:        #c9972b;
-  --gold-lt:     #e8c86e;
-  --parchment:   #f5ead6;
-  --parchment-dk:#e4cfa0;
-  --ink:         #1e1409;
-  --ink-lt:      #3d2b0f;
-  --shadow:      rgba(30, 20, 9, 0.32);
+  --crimson:     #1e3a8a;   /* royal blue — primary */
+  --crimson-dk:  #0c1e5c;   /* deep navy   — primary darker */
+  --gold:        #3b82f6;   /* sky blue   — accent */
+  --gold-lt:     #bfdbfe;   /* very light blue — accent on dark bg */
+  --parchment:   #f8fafc;   /* off-white  — page background */
+  --parchment-dk:#e2e8f0;   /* light blue-grey */
+  --ink:         #0f172a;
+  --ink-lt:      #334155;
+  --shadow:      rgba(15, 23, 42, 0.28);
   --nav-h:       52px;
 }
 
@@ -24,7 +25,7 @@ body {
   min-height: 100vh;
   background-image:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E"),
-    linear-gradient(160deg, #f9f0de 0%, #eddcb4 50%, #f5ead6 100%);
+    linear-gradient(160deg, #ffffff 0%, #dbeafe 50%, #f8fafc 100%);
 }
 
 header {
@@ -81,13 +82,13 @@ nav a {
   padding: 0 1.6rem;
   display: flex;
   align-items: center;
-  border-right: 1px solid rgba(201,151,43,0.25);
+  border-right: 1px solid rgba(191,219,254,0.30);
   transition: background 0.2s, color 0.2s;
   text-align: center;
 }
-nav li:first-child a { border-left: 1px solid rgba(201,151,43,0.25); }
+nav li:first-child a { border-left: 1px solid rgba(191,219,254,0.30); }
 nav a:hover, nav a[aria-current="page"] {
-  background: rgba(201,151,43,0.18);
+  background: rgba(191,219,254,0.20);
   color: #fff;
 }
 

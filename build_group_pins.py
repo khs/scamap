@@ -279,7 +279,7 @@ KINGDOM_STATES = {
     "Kingdom of An Tir":        ("WA", "OR", "ID", "MT", "BC"),
     "Kingdom of Ansteorra":     ("OK", "TX"),
     "Kingdom of Artemisia":     ("MT", "UT", "ID", "WY"),
-    "Kingdom of Atenveldt":     ("AZ", "NM"),
+    "Kingdom of Atenveldt":     ("AZ",),
     "Kingdom of Atlantia":      ("VA", "MD", "NC", "SC", "DC"),
     "Kingdom of Avacal":        ("AB", "SK", "BC"),
     "Kingdom of Caid":          ("CA", "NV", "HI"),

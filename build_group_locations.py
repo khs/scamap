@@ -28,11 +28,21 @@ Usage:
 from __future__ import annotations
 
 import csv
+import io
 import re
+import sys
 from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup
+
+# Default Windows console encoding (cp1252) crashes on Old Norse names and
+# zero-width spaces lurking in scraped HTML. Force UTF-8 stdout so progress
+# prints don't kill a long-running scrape mid-kingdom.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+else:
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 
 SCRIPT_DIR = Path(__file__).parent
@@ -732,12 +742,43 @@ def scrape_drachenwald() -> list[tuple[str, str, str]]:
     return items
 
 
+# Known seats for Ealdormere groups. The kingdom's /branches/ page rarely
+# specifies a city in the body text, so without these every group geocodes
+# to the geographic centre of Ontario and stacks on top of itself.
+EALDORMERE_CITY = {
+    # Baronies
+    "Barony of Ben Dunfirth":       "Hamilton, Ontario, Canada",
+    "Barony of Ramshaven":          "Guelph, Ontario, Canada",
+    "Barony of Rising Waters":      "Niagara Falls, Ontario, Canada",
+    "Barony of Septentria":         "Toronto, Ontario, Canada",
+    "Barony of Skraeling Althing":  "Ottawa, Ontario, Canada",
+    # Cantons under Septentria (Toronto area)
+    "Canton of Ardchreag":          "Scarborough, Ontario, Canada",
+    "Canton of Eoforwic":           "Toronto, Ontario, Canada",
+    "Canton of Greyfells":          "Etobicoke, Ontario, Canada",
+    "Canton of Northgeatham":       "Aurora, Ontario, Canada",
+    "Canton of Skeldergate":        "Etobicoke, Ontario, Canada",
+    "Canton of Vest Yorvik":        "Newmarket, Ontario, Canada",
+    "Canton of Petrea Thule":       "Sault Ste. Marie, Ontario, Canada",
+    # Cantons under Skraeling Althing (Ottawa-Carleton area)
+    "Canton of Bryniau Tywynnog":   "Renfrew County, Ontario, Canada",
+    "Canton of Caldrithig":         "Carleton Place, Ontario, Canada",
+    "Canton of Monadh":             "Almonte, Ontario, Canada",
+    "Canton of Beremere":           "Belleville, Ontario, Canada",
+    # Shires
+    "Shire of Bastille du Lac":     "Sarnia, Ontario, Canada",
+    "Shire of Champcorbeau":        "Sault Ste. Marie, Ontario, Canada",
+    "Shire of Trinovantia Nova":    "London, Ontario, Canada",
+}
+
+
 def scrape_ealdormere() -> list[tuple[str, str, str]]:
     """
     Ealdormere's /branches/ page lists each group in a <p> as
     "<Group Name> <ealdormere.ca/slug/> <officer info>". The group name is in
     a <strong> tag, the website is the slug link, and officer info follows.
-    Ealdormere is roughly Ontario; we default to Ontario when no finer text.
+    The page rarely names a city, so we fall back to a hand-maintained seat
+    map (EALDORMERE_CITY) before defaulting to the Ontario centroid.
     """
     url = "https://ealdormere.ca/branches/"
     r = requests.get(url, timeout=TIMEOUT, headers=HDRS)
@@ -750,6 +791,9 @@ def scrape_ealdormere() -> list[tuple[str, str, str]]:
     )
     for strong in soup.find_all("strong"):
         name = strong.get_text(" ", strip=True)
+        # Normalize zero-width spaces and curly apostrophes in scraped names
+        name = name.replace("​", "").replace("’", "'").replace("‘", "'")
+        name = re.sub(r"\s+", " ", name).strip()
         if not group_re.match(name):
             continue
         # Walk up to enclosing <p> to find website (the next anchor)
@@ -760,20 +804,31 @@ def scrape_ealdormere() -> list[tuple[str, str, str]]:
             if href.startswith(("http://", "https://")) and "mailto:" not in href:
                 website = href
                 break
-        # Region: try to extract from parent text after the name, drop officer info
-        ptext = parent.get_text(" ", strip=True) if parent else ""
-        region = ""
-        if ptext.startswith(name):
-            rest = ptext[len(name):].strip()
-            # Drop the website-text portion
-            rest = re.sub(r"https?://\S+|ealdormere\.ca/\S+", "", rest)
-            # Drop officer titles + everything after
-            rest = re.split(
-                r"\s+(?:Lord|Lady|THL|THLord|THLady|Baron|Baroness|Master|Mistress|Officers?|Seneschal|Chatelaine)\b",
-                rest, maxsplit=1,
-            )[0].strip().rstrip(",.;")
-            if 3 <= len(rest) <= 200:
-                region = rest
+        # Always prefer a hand-curated city when one exists — body extraction
+        # often grabs the seneschal/website/email line instead of a real
+        # location, and that doesn't geocode.
+        hardcoded = EALDORMERE_CITY.get(name)
+        if hardcoded:
+            region = hardcoded
+        else:
+            # Fallback: try to extract a region from the parent paragraph
+            ptext = parent.get_text(" ", strip=True) if parent else ""
+            region = ""
+            if ptext.startswith(name):
+                rest = ptext[len(name):].strip()
+                rest = re.sub(r"https?://\S+|ealdormere\.ca/\S+", "", rest)
+                rest = re.split(
+                    r"\s+(?:Lord|Lady|THL|THLord|THLady|Baron|Baroness|Master|Mistress|Officers?|Seneschal|Chatelaine)\b",
+                    rest, maxsplit=1,
+                )[0].strip().rstrip(",.;")
+                # Drop body text that's a URL/email/officer name rather than a place
+                if (3 <= len(rest) <= 200 and "@" not in rest
+                        and "http" not in rest and "skraelingalthing" not in rest.lower()):
+                    region = rest
+        # Drop any remaining zero-width characters from the final region string
+        if region:
+            region = region.replace("​", "").replace(" ", " ")
+            region = re.sub(r"\s+", " ", region).strip()
         if name not in out:
             out[name] = (region or "Ontario, Canada", website)
 

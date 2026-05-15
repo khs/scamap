@@ -14,16 +14,18 @@
 
   <style>
     /* ── Design tokens ─────────────────────────────────────────── */
+    /* Blue + white palette. Variable names kept (--crimson, --gold,
+       --parchment) for diff-friendliness; values are now blue/white. */
     :root {
-      --crimson:     #8b1a1a;
-      --crimson-dk:  #5c0f0f;
-      --gold:        #c9972b;
-      --gold-lt:     #e8c86e;
-      --parchment:   #f5ead6;
-      --parchment-dk:#e4cfa0;
-      --ink:         #1e1409;
-      --ink-lt:      #3d2b0f;
-      --shadow:      rgba(30, 20, 9, 0.32);
+      --crimson:     #1e3a8a;   /* royal blue — primary */
+      --crimson-dk:  #0c1e5c;   /* deep navy   — primary darker */
+      --gold:        #3b82f6;   /* sky blue   — accent */
+      --gold-lt:     #bfdbfe;   /* very light blue — accent on dark bg */
+      --parchment:   #f8fafc;   /* off-white  — page background */
+      --parchment-dk:#e2e8f0;   /* light blue-grey — borders, hover bg */
+      --ink:         #0f172a;   /* near-black slate — body text */
+      --ink-lt:      #334155;   /* mid slate — secondary text */
+      --shadow:      rgba(15, 23, 42, 0.28);
       --nav-h:       52px;
       --sidebar-w:   300px;
     }
@@ -37,7 +39,7 @@
       min-height: 100vh;
       background-image:
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E"),
-        linear-gradient(160deg, #f9f0de 0%, #eddcb4 50%, #f5ead6 100%);
+        linear-gradient(160deg, #ffffff 0%, #dbeafe 50%, #f8fafc 100%);
     }
 
     /* ── Header ────────────────────────────────────────────────── */
@@ -91,12 +93,12 @@
       padding: 0 1.6rem;
       display: flex;
       align-items: center;
-      border-right: 1px solid rgba(201,151,43,0.25);
+      border-right: 1px solid rgba(191,219,254,0.30);
       transition: background 0.2s, color 0.2s;
       text-align: center;
     }
-    nav li:first-child a { border-left: 1px solid rgba(201,151,43,0.25); }
-    nav a:hover { background: rgba(201,151,43,0.18); color: #fff; }
+    nav li:first-child a { border-left: 1px solid rgba(191,219,254,0.30); }
+    nav a:hover { background: rgba(191,219,254,0.20); color: #fff; }
 
     /* ── Main layout ───────────────────────────────────────────── */
     main { max-width: 1280px; margin: 0 auto; padding: 1.5rem 1.2rem 3rem; }
@@ -116,7 +118,7 @@
       padding: 0.5rem 1rem;
       border: 2px solid var(--gold);
       border-radius: 3px;
-      background: #fffbf2;
+      background: #ffffff;
       color: var(--ink);
       outline: none;
       transition: border-color 0.2s, box-shadow 0.2s;
@@ -124,9 +126,9 @@
     }
     .search-input:focus {
       border-color: var(--crimson);
-      box-shadow: 0 0 0 3px rgba(139,26,26,0.1), inset 0 1px 3px rgba(0,0,0,0.07);
+      box-shadow: 0 0 0 3px rgba(30,58,138,0.12), inset 0 1px 3px rgba(0,0,0,0.07);
     }
-    .search-input::placeholder { color: #b09060; font-style: italic; }
+    .search-input::placeholder { color: #94a3b8; font-style: italic; }
 
     /* ── Checkboxes ────────────────────────────────────────────── */
     .filter-checks {
@@ -181,7 +183,7 @@
     .sidebar {
       width: var(--sidebar-w);
       flex-shrink: 0;
-      background: #fdf6e8;
+      background: #ffffff;
       border-left: 2px solid var(--gold);
       display: flex;
       flex-direction: column;
@@ -217,11 +219,40 @@
       font-size: 0.67rem;
       letter-spacing: 0.08em;
       color: var(--ink-lt);
-      background: #fff8ec;
+      background: #eff6ff;
       flex-shrink: 0;
       cursor: pointer;
     }
     .virtual-toggle input { accent-color: var(--crimson); cursor: pointer; }
+
+    /* Sidebar mode tabs: "Map Events" (default) vs "Online Only" */
+    .sidebar-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--parchment-dk);
+      background: #eff6ff;
+      flex-shrink: 0;
+    }
+    .sidebar-tab {
+      flex: 1;
+      background: transparent;
+      border: none;
+      border-right: 1px solid var(--parchment-dk);
+      padding: 0.55rem 0.4rem;
+      font-family: 'Cinzel', serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.10em;
+      color: var(--ink-lt);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .sidebar-tab:last-child { border-right: none; }
+    .sidebar-tab:hover { background: rgba(59,130,246,0.10); }
+    .sidebar-tab.active {
+      background: var(--crimson);
+      color: var(--gold-lt);
+    }
+    /* The virtual-show toggle only makes sense in "map" mode */
+    .sidebar.mode-online .virtual-toggle { display: none; }
 
     .sidebar-list {
       overflow-y: auto;
@@ -239,7 +270,7 @@
       transition: background 0.15s;
       position: relative;
     }
-    .event-item:hover { background: #f0e8d0; }
+    .event-item:hover { background: #dbeafe; }
 
     .event-item-title {
       font-family: 'EB Garamond', Georgia, serif;
@@ -261,7 +292,7 @@
 
     .event-item-source {
       font-size: 0.72rem;
-      color: #7a6040;
+      color: #64748b;
       font-style: italic;
     }
 
@@ -442,7 +473,7 @@
   <div class="filter-checks">
     <label class="check-label">
       <input type="checkbox" id="chk-kingdom" checked />
-      <span class="dot" id="dot-kingdom" style="background:#8b1a1a"></span>
+      <span class="dot" id="dot-kingdom" style="background:#1e3a8a"></span>
       Kingdom (Events)
     </label>
     <label class="check-label">
@@ -460,14 +491,20 @@
   <div class="map-area">
     <div id="map" aria-label="Map of SCA events"></div>
 
-    <aside class="sidebar" aria-label="Event list">
+    <aside class="sidebar" id="sidebar" aria-label="Event list">
       <div class="sidebar-header">
         <span>Events</span>
         <span class="sidebar-count" id="sidebar-count">—</span>
       </div>
+      <div class="sidebar-tabs" role="tablist">
+        <button class="sidebar-tab active" data-mode="map" role="tab"
+                aria-selected="true">Map Events</button>
+        <button class="sidebar-tab" data-mode="online" role="tab"
+                aria-selected="false">Online Only</button>
+      </div>
       <label class="virtual-toggle">
         <input type="checkbox" id="chk-virtual" />
-        Show virtual events
+        Include virtual events
       </label>
       <div class="sidebar-list" id="sidebar-list">
         <div style="padding:1rem;color:#888;font-style:italic;font-size:0.85rem;">Loading…</div>
@@ -598,7 +635,7 @@ const STATE_FIPS_TO_KINGDOM = {
   "32":"Kingdom of Caid",        // NV
   "33":"Kingdom of the East",    // NH
   "34":"Kingdom of the East",    // NJ
-  "35":"Kingdom of Atenveldt",   // NM
+  "35":"Kingdom of the Outlands",// NM (all of it — Atenveldt is AZ only)
   "36":"Kingdom of the East",    // NY (western NY is AEthelmearc, overridden below)
   "37":"Kingdom of Atlantia",    // NC
   "38":"Kingdom of Northshield", // ND
@@ -995,10 +1032,10 @@ const placeholderLayer = L.layerGroup().addTo(map);
 function makePlaceholderIcon() {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="22" height="33" opacity="0.85">
     <path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 24 12 24S24 21 24 12C24 5.37 18.63 0 12 0z"
-          fill="#fffbf2" stroke="#7a6040" stroke-width="1.5" stroke-dasharray="2,1.5"/>
+          fill="#ffffff" stroke="#1e3a8a" stroke-width="1.5" stroke-dasharray="2,1.5"/>
     <text x="12" y="17" text-anchor="middle"
           font-family="Georgia, serif" font-size="13" font-weight="bold"
-          fill="#7a6040">?</text>
+          fill="#1e3a8a">?</text>
   </svg>`;
   return L.divIcon({
     html: svg, className: 'placeholder-icon',
@@ -1023,15 +1060,22 @@ function buildPlaceholderPopup(pin) {
 }
 
 // ── Render ────────────────────────────────────────────────────────
+let sidebarMode = "map";  // "map" or "online"
+
 function applyFilters() {
   const query       = document.getElementById('search-input').value.toLowerCase().trim();
   const showKingdom = document.getElementById('chk-kingdom').checked;
   const showBaronial= document.getElementById('chk-baronial').checked;
   const showVirtual = document.getElementById('chk-virtual').checked;
+  const onlineOnly  = (sidebarMode === "online");
 
   // Filter
   const filtered = allEvents.filter((ev, i) => {
     ev._idx = i;
+    if (onlineOnly) {
+      // Online-only view: just the virtual events, no other filters
+      return ev.is_virtual === 'True';
+    }
     if (ev.is_virtual === 'True' && !showVirtual) return false;
     if (ev.calendar_type === 'kingdom'  && !showKingdom)  return false;
     if (ev.calendar_type === 'baronial' && !showBaronial) return false;
@@ -1246,6 +1290,23 @@ document.getElementById('search-input').addEventListener('input', applyFilters);
 document.getElementById('chk-kingdom').addEventListener('change', applyFilters);
 document.getElementById('chk-baronial').addEventListener('change', applyFilters);
 document.getElementById('chk-virtual').addEventListener('change', applyFilters);
+
+// Sidebar mode tabs: clicking "Online Only" filters to virtual events only,
+// date-sorted; clicking "Map Events" returns to the geographic event view.
+document.querySelectorAll('.sidebar-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const mode = btn.dataset.mode;
+    if (mode === sidebarMode) return;
+    sidebarMode = mode;
+    document.querySelectorAll('.sidebar-tab').forEach(b => {
+      const active = (b.dataset.mode === mode);
+      b.classList.toggle('active', active);
+      b.setAttribute('aria-selected', active);
+    });
+    document.getElementById('sidebar').classList.toggle('mode-online', mode === 'online');
+    applyFilters();
+  });
+});
 
 document.getElementById('chk-overlay').addEventListener('change', async (e) => {
   if (e.target.checked) {
