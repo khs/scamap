@@ -22,3 +22,6 @@ sca_events.csv
 Thumbs.db
 .vscode/
 .idea/
+
+# Claude Code local state (per-machine permission allowlist, not portable)
+.claude/
