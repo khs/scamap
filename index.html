@@ -295,6 +295,15 @@
       color: #64748b;
       font-style: italic;
     }
+    .event-item-source-link {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px dotted currentColor;
+    }
+    .event-item-source-link:hover {
+      color: var(--crimson);
+      border-bottom-color: var(--crimson);
+    }
 
     .event-item-dot {
       position: absolute;
@@ -356,9 +365,16 @@
       padding: 0.12rem 0.5rem;
       border-radius: 2px;
       margin-bottom: 0.45rem;
-      background: #fce8e8;
+      background: #dbeafe;
       color: var(--crimson-dk);
       border: 1px solid var(--crimson);
+      text-decoration: none;
+    }
+    a.event-popup .source-pill,
+    .event-popup a.source-pill { cursor: pointer; }
+    .event-popup a.source-pill:hover {
+      background: var(--crimson);
+      color: #fff;
     }
     .event-popup .desc {
       font-size: 0.86rem;
@@ -632,7 +648,7 @@ const STATE_FIPS_TO_KINGDOM = {
   "29":"Kingdom of Calontir",    // MO
   "30":"Kingdom of Artemisia",   // MT
   "31":"Kingdom of Calontir",    // NE
-  "32":"Kingdom of Caid",        // NV
+  "32":"Kingdom of the West",    // NV (most of it; Clark/southern overridden to Caid)
   "33":"Kingdom of the East",    // NH
   "34":"Kingdom of the East",    // NJ
   "35":"Kingdom of the Outlands",// NM (all of it — Atenveldt is AZ only)
@@ -739,6 +755,29 @@ const COUNTY_OVERRIDES = {
   "42127":"Kingdom of the East", // Wayne
   "42131":"Kingdom of the East", // Wyoming
   "42133":"Kingdom of the East", // York
+
+  // Texas — El Paso and its neighbouring Hudspeth County belong to the
+  // Kingdom of the Outlands, not Ansteorra (the rest of TX).
+  "48141":"Kingdom of the Outlands", // El Paso
+  "48229":"Kingdom of the Outlands", // Hudspeth
+
+  // Wyoming — most of the state is Outlands, but the western mountain
+  // counties (Yellowstone / Tetons / Wind River basin) are Artemisia.
+  "56003":"Kingdom of Artemisia", // Big Horn
+  "56013":"Kingdom of Artemisia", // Fremont
+  "56017":"Kingdom of Artemisia", // Hot Springs
+  "56023":"Kingdom of Artemisia", // Lincoln
+  "56029":"Kingdom of Artemisia", // Park (Yellowstone)
+  "56035":"Kingdom of Artemisia", // Sublette
+  "56037":"Kingdom of Artemisia", // Sweetwater
+  "56039":"Kingdom of Artemisia", // Teton (Jackson Hole)
+  "56041":"Kingdom of Artemisia", // Uinta
+
+  // Nevada — Caid's own site describes its reach as "Southern California,
+  // the greater Las Vegas area, and Hawaii". That's Clark + Pahrump (Nye).
+  // The rest of NV defaults to the Kingdom of the West.
+  "32003":"Kingdom of Caid",     // Clark (Las Vegas — Barony of Starkhafn)
+  "32023":"Kingdom of Caid",     // Nye (Pahrump — part of greater Vegas)
 
   // ── Sub-principalities (rendered with their own colors over the parent
   // kingdom's territory) ──
@@ -998,7 +1037,9 @@ function buildPopup(ev) {
   const loc = ev.clean_location
     ? `<div class="loc">📍 ${escapeHtml(ev.clean_location)}</div>` : '';
 
-  // Build clickable links: prefer event-specific URL, fall back to kingdom calendar
+  // Build clickable links: prefer event-specific URL, then social, then the
+  // source's barony/kingdom site. Every event should expose at least one of
+  // these — if the event itself has no URL, the source link is the floor.
   const linkButtons = [];
   if (ev.event_url) {
     linkButtons.push(`<a href="${escapeHtml(ev.event_url)}" target="_blank" rel="noopener">Event page →</a>`);
@@ -1006,16 +1047,29 @@ function buildPopup(ev) {
   if (ev.facebook_url) {
     linkButtons.push(`<a href="${escapeHtml(ev.facebook_url)}" target="_blank" rel="noopener">Facebook</a>`);
   }
-  if (!ev.event_url && KINGDOM_CALENDAR_URLS[ev.source]) {
-    linkButtons.push(`<a href="${escapeHtml(KINGDOM_CALENDAR_URLS[ev.source])}" target="_blank" rel="noopener">${escapeHtml(ev.source)} calendar →</a>`);
+  if (!ev.event_url) {
+    const canon = canonicalSource(ev.source);
+    const baronySite = sourceWebsite[ev.source] || sourceWebsite[canon];
+    const kingdomUrl = KINGDOM_CALENDAR_URLS[ev.source] || KINGDOM_CALENDAR_URLS[canon];
+    if (baronySite) {
+      linkButtons.push(`<a href="${escapeHtml(baronySite)}" target="_blank" rel="noopener">${escapeHtml(ev.source)} website →</a>`);
+    } else if (kingdomUrl) {
+      linkButtons.push(`<a href="${escapeHtml(kingdomUrl)}" target="_blank" rel="noopener">${escapeHtml(ev.source)} calendar →</a>`);
+    }
   }
   const links = linkButtons.length
     ? `<div class="links">${linkButtons.join('')}</div>` : '';
 
+  // Make the source pill itself a link to the source's website when we have one
+  const sourceUrl = websiteForSource(ev.source);
+  const sourcePill = sourceUrl
+    ? `<a class="source-pill" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener">${escapeHtml(ev.source)}</a>`
+    : `<span class="source-pill">${escapeHtml(ev.source)}</span>`;
+
   return `<div class="event-popup">
     <h3>${escapeHtml(ev.title)}</h3>
     <div class="meta">${dateStr}</div>
-    <span class="source-pill">${escapeHtml(ev.source)}</span>
+    ${sourcePill}
     ${desc}${loc}${links}
   </div>`;
 }
@@ -1023,9 +1077,35 @@ function buildPopup(ev) {
 // ── State ─────────────────────────────────────────────────────────
 let allEvents   = [];
 let groupPins   = [];   // placeholder pins from group_pins.csv (set after load)
+let sourceWebsite = {}; // { "Barony of Carolingia": "https://carolingia.eastkingdom.org" }
 let markerMap   = {};   // index → Leaflet marker
 const markerLayer = L.layerGroup().addTo(map);
 const placeholderLayer = L.layerGroup().addTo(map);
+
+// Some calendar feeds annotate the source name with a parenthesised tag,
+// e.g. "Barony of Stierbach (Workshops)". Strip the tag so lookups against
+// groupPins / KINGDOM_CALENDAR_URLS still match the canonical group name.
+function canonicalSource(s) {
+  return (s || "").replace(/\s*\(.*?\)\s*$/, "").trim();
+}
+
+// Look up the best website we know for a source: barony first, then kingdom
+// calendar. Returns "" when we have no record of the source at all.
+function websiteForSource(source) {
+  const canon = canonicalSource(source);
+  return sourceWebsite[source] || sourceWebsite[canon]
+      || KINGDOM_CALENDAR_URLS[source] || KINGDOM_CALENDAR_URLS[canon]
+      || "";
+}
+
+// Best clickable URL we can offer for an event. Fallback chain:
+//   event_url → facebook_url → barony website → kingdom calendar URL → ""
+// Used by the popup, the sidebar item's hover/click, and the source-name link.
+function bestLinkFor(ev) {
+  return ev.event_url
+      || ev.facebook_url
+      || websiteForSource(ev.source);
+}
 
 // ── Placeholder marker icon ───────────────────────────────────────
 // Hollow outlined pin with a "?" so it's visually distinct from real events.
@@ -1153,14 +1233,19 @@ function applyFilters() {
       const virtualTag = isVirtual ? '<span class="virtual-tag">Virtual</span>' : '';
       // Pick the best click-target URL for this event (used by virtual events
       // that have no map marker, and for the hover hint on every item).
-      const eventLink = ev.event_url
-                     || ev.facebook_url
-                     || (KINGDOM_CALENDAR_URLS[ev.source] || '');
+      const eventLink  = bestLinkFor(ev);
+      const sourceUrl  = websiteForSource(ev.source);
       item.title = "Click for more information";
+      // Source name is itself a link to the barony/kingdom website when we
+      // have one (with stopPropagation so it doesn't also fire the parent
+      // item's "fly to marker" click handler).
+      const sourceHtml = sourceUrl
+        ? `<a class="event-item-source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${escapeHtml(ev.source)}</a>`
+        : escapeHtml(ev.source);
       item.innerHTML = `
-        <div class="event-item-title">${ev.title}${virtualTag}</div>
+        <div class="event-item-title">${escapeHtml(ev.title)}${virtualTag}</div>
         <div class="event-item-date">${shortDate(ev.start)}</div>
-        <div class="event-item-source">${ev.source}</div>
+        <div class="event-item-source">${sourceHtml}</div>
         <span class="event-item-dot" style="background:${color}"></span>
       `;
       // Click behaviour:
@@ -1317,6 +1402,14 @@ fetch('sca_events_clean.csv')
   })
   .then(pinsText => {
     if (pinsText) groupPins = parseCSV(pinsText);
+    // Build source→website lookup so an event whose source is "Barony of X"
+    // can fall back to that barony's official site when it has no event_url.
+    sourceWebsite = {};
+    groupPins.forEach(p => {
+      if (p.group && p.website && !sourceWebsite[p.group]) {
+        sourceWebsite[p.group] = p.website;
+      }
+    });
     applyFilters();
   })
   .catch(err => {
