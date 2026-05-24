@@ -326,26 +326,61 @@ SCA_COUNTRY_CODES = ("us,ca,au,nz,gb,ie,fr,de,be,nl,lu,ch,at,it,es,pt,"
                      "se,no,fi,dk,is,pl,cz,sk,hu,si,hr,ee,lv,lt,bg,ro,gr,mt,cy")
 
 
+# In-run memoisation. Nominatim's bulk-geocoding policy bans repeating the
+# same query — and our pipeline naturally re-asks for things like
+# "Louisiana, USA" (25× across Gleann Abhann events) or "Northern California"
+# (18× across West events). Cache keyed by the exact query string so the
+# whole retry ladder (original / stripped / city-state / state-hint / ZIP)
+# shares hits across rows.
+_nominatim_cache: dict[str, tuple] = {}
+_photon_cache: dict[str, tuple] = {}
+
+# Rate-limit gate: track the last real HTTP call's timestamp so we sleep
+# only when an actual call is about to fire. Cache hits skip the sleep —
+# they don't contribute to Nominatim's rate either. Shared across Nominatim
+# AND Photon so the per-process HTTP rate is bounded too.
+_last_http_call_time = 0.0
+
+
+def _throttle_for_http() -> None:
+    """Sleep until at least REQUEST_DELAY seconds have passed since the last
+    geocoder HTTP call. Call this immediately before a real HTTP request."""
+    global _last_http_call_time
+    elapsed = time.time() - _last_http_call_time
+    if 0 < elapsed < REQUEST_DELAY:
+        time.sleep(REQUEST_DELAY - elapsed)
+    _last_http_call_time = time.time()
+
+
 def nominatim_geocode(address: str, session: requests.Session) -> tuple:
     """Query Nominatim. Returns (lat, lng) as floats, or (None, None) on failure."""
+    if address in _nominatim_cache:
+        return _nominatim_cache[address]
     params = {
         "q": address, "format": "json", "limit": 1,
         "countrycodes": SCA_COUNTRY_CODES,
     }
+    result = (None, None)
+    _throttle_for_http()
     try:
         response = session.get(NOMINATIM_URL, params=params, timeout=10)
         response.raise_for_status()
         results = response.json()
         if results:
-            return (float(results[0]["lat"]), float(results[0]["lon"]))
+            result = (float(results[0]["lat"]), float(results[0]["lon"]))
     except Exception as e:
         print(f"    WARNING: Nominatim error for '{address[:60]}': {e}")
-    return (None, None)
+    _nominatim_cache[address] = result
+    return result
 
 
 def photon_geocode(address: str, session: requests.Session) -> tuple:
     """Query Photon. Returns (lat, lng) as floats, or (None, None) on failure."""
+    if address in _photon_cache:
+        return _photon_cache[address]
     params = {"q": address, "limit": 1}
+    result = (None, None)
+    _throttle_for_http()
     try:
         response = session.get(PHOTON_URL, params=params, timeout=10)
         response.raise_for_status()
@@ -353,10 +388,11 @@ def photon_geocode(address: str, session: requests.Session) -> tuple:
         features = data.get("features", [])
         if features:
             coords = features[0]["geometry"]["coordinates"]  # [lng, lat]
-            return (float(coords[1]), float(coords[0]))
+            result = (float(coords[1]), float(coords[0]))
     except Exception as e:
         print(f"    WARNING: Photon error for '{address[:60]}': {e}")
-    return (None, None)
+    _photon_cache[address] = result
+    return result
 
 
 # Backwards-compatible alias (older versions used `geocode`)
@@ -553,7 +589,6 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
     # 2. Strip embedded venue prefix from the street part
     stripped = strip_venue_prefix(address)
     if stripped != address:
-        time.sleep(REQUEST_DELAY)
         print(f"           → retrying without venue: {stripped[:70]}")
         lat, lng = nominatim_geocode(stripped, session)
         if _validate(lat, lng, expected_state, source_states, source):
@@ -564,7 +599,6 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
     if len(parts) >= 3:
         simplified = ", ".join(parts[-3:])
         if simplified not in (address, stripped):
-            time.sleep(REQUEST_DELAY)
             print(f"           → retrying tail: {simplified[:70]}")
             lat, lng = nominatim_geocode(simplified, session)
             if _validate(lat, lng, expected_state, source_states, source):
@@ -573,14 +607,12 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
     # 4. Last 2 comma parts (city, state)
     if len(parts) >= 2:
         city_state = ", ".join(parts[-2:])
-        time.sleep(REQUEST_DELAY)
         print(f"           → retrying city/state: {city_state[:70]}")
         lat, lng = nominatim_geocode(city_state, session)
         if _validate(lat, lng, expected_state, source_states, source):
             return (lat, lng, "ok_retry")
 
     # 5. Photon fallback — uses original address (handles venue names better)
-    time.sleep(REQUEST_DELAY)
     print(f"           → trying Photon: {address[:70]}")
     lat, lng = photon_geocode(address, session)
     if _validate(lat, lng, expected_state, source_states, source):
@@ -591,7 +623,6 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
     #     where Photon returns Belize because the address is too vague.
     if source_states:
         for state in sorted(source_states):
-            time.sleep(REQUEST_DELAY)
             query = f"{address}, {state}, USA"
             print(f"           → retrying with state hint: {query[:70]}")
             lat, lng = nominatim_geocode(query, session)
@@ -605,7 +636,6 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
     zip_match = US_ZIP_RE.search(address)
     if zip_match:
         zip_code = zip_match.group(0)
-        time.sleep(REQUEST_DELAY)
         print(f"           → retrying ZIP only: {zip_code}")
         lat, lng = nominatim_geocode(f"{zip_code}, USA", session)
         if _validate(lat, lng, expected_state, source_states, source):
@@ -701,8 +731,6 @@ def main(retry_failed: bool = False):
             df.to_csv(OUTPUT_FILE, index=False, quoting=csv.QUOTE_ALL)
             print(f"  [Progress saved at {i}/{total}]")
 
-        # Respect Nominatim rate limit between distinct addresses
-        time.sleep(REQUEST_DELAY)
 
     # Final save
     df.to_csv(OUTPUT_FILE, index=False, quoting=csv.QUOTE_ALL)

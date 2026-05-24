@@ -69,6 +69,29 @@ def load_prior_coords() -> dict[tuple[str, str, str], tuple[str, str]]:
     return cache
 
 
+# In-run query cache. Nominatim's bulk-geocoding policy forbids repeating
+# the same query, and our 531 groups include lots of identical fallback
+# strings — e.g. 35 Middle Kingdom groups all give the same multi-state
+# region text, 25 Northshield groups all say "Wisconsin". Cache the raw
+# (query, require_in_name) → result so any repeat skips the HTTP hit.
+_nominatim_cache: dict[tuple, tuple] = {}
+
+# Rate-limit gate: track the last real HTTP call's timestamp. Cache hits
+# skip the sleep — they don't contribute to Nominatim's rate either.
+_last_http_call_time = 0.0
+
+
+def _throttle_for_http() -> None:
+    """Sleep until at least REQUEST_DELAY seconds have passed since the last
+    Nominatim HTTP call. Cache hits don't go through here, so duplicate
+    queries don't waste 15s of throttling."""
+    global _last_http_call_time
+    elapsed = time.time() - _last_http_call_time
+    if 0 < elapsed < REQUEST_DELAY:
+        time.sleep(REQUEST_DELAY - elapsed)
+    _last_http_call_time = time.time()
+
+
 def _nominatim_one(query: str, session: requests.Session, *,
                     require_in_name: str = "") -> tuple:
     """
@@ -78,6 +101,11 @@ def _nominatim_one(query: str, session: requests.Session, *,
     contains the given substring (case-insensitive). Useful for filtering out
     Nominatim's "near miss" matches that degrade to the wrong county or state.
     """
+    cache_key = (query, require_in_name)
+    if cache_key in _nominatim_cache:
+        return _nominatim_cache[cache_key]
+    result = (None, None)
+    _throttle_for_http()
     try:
         r = session.get(
             NOMINATIM_URL,
@@ -88,17 +116,18 @@ def _nominatim_one(query: str, session: requests.Session, *,
         )
         r.raise_for_status()
         results = r.json()
-        if not results:
-            return (None, None)
-        top = results[0]
-        if require_in_name:
-            display = (top.get("display_name") or "").lower()
-            if require_in_name.lower() not in display:
-                return (None, None)
-        return (float(top["lat"]), float(top["lon"]))
+        if results:
+            top = results[0]
+            if require_in_name:
+                display = (top.get("display_name") or "").lower()
+                if require_in_name.lower() in display:
+                    result = (float(top["lat"]), float(top["lon"]))
+            else:
+                result = (float(top["lat"]), float(top["lon"]))
     except Exception as exc:
         print(f"    WARNING: geocode error for '{query[:60]}': {exc}")
-    return (None, None)
+    _nominatim_cache[cache_key] = result
+    return result
 
 
 def geocode_region(text: str, session: requests.Session, kingdom: str = "") -> tuple:
@@ -148,7 +177,6 @@ def geocode_region(text: str, session: requests.Session, kingdom: str = "") -> t
     lat, lng = _nominatim_one(text, session)
     if lat is not None and in_kingdom(lat, lng):
         return (lat, lng)
-    time.sleep(REQUEST_DELAY)
 
     # 2. Try each comma-separated chunk against each acceptable state. Group
     #    hits by which state they landed in; the state with the most hits is
@@ -183,7 +211,6 @@ def geocode_region(text: str, session: requests.Session, kingdom: str = "") -> t
                 query, session,
                 require_in_name=f"{chunk} County",
             )
-            time.sleep(REQUEST_DELAY)
             if lat is None:
                 continue
             if _in_box(lat, lng, _STATE_BBOX[state]):
@@ -349,7 +376,6 @@ def main():
                 print(f"    -> ({lat:.4f}, {lng:.4f})")
             else:
                 print(f"    -> FAILED")
-            time.sleep(REQUEST_DELAY)
         out_rows.append(out)
 
         # Save progress every 10 entries so an interrupted run still leaves
