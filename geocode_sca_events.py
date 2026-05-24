@@ -45,6 +45,7 @@ import argparse
 import csv
 import functools
 import io
+import os
 import re
 import sys
 import time
@@ -52,6 +53,16 @@ from pathlib import Path
 
 import pandas as pd
 import requests
+
+# Load a local .env (if present) so NOMINATIM_CONTACT_EMAIL and similar
+# can be set out-of-band, without ever being committed. Optional dep:
+# falls through silently if python-dotenv isn't installed (CI sets the
+# env var directly, so it doesn't need the file at all).
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).parent / ".env")
+except ImportError:
+    pass
 
 # Force unbuffered stdout so background runs show progress as it happens
 print = functools.partial(print, flush=True)
@@ -72,9 +83,12 @@ SCRIPT_DIR  = Path(__file__).parent
 INPUT_FILE  = SCRIPT_DIR / "sca_events_clean.csv"
 OUTPUT_FILE = INPUT_FILE   # overwrite in place (lat/lng added to same file)
 
-# Nominatim requires a descriptive User-Agent identifying your application.
-# Change this to something that identifies your project and includes a contact.
-USER_AGENT = "SCA Maps Project (nobody@example.com)"
+# Nominatim's usage policy requires a descriptive User-Agent identifying the
+# application AND a working contact address. We read the contact from the
+# NOMINATIM_CONTACT_EMAIL env var (set by .env locally, by a GitHub Actions
+# secret in CI) so the actual address never lands in committed source.
+_CONTACT = os.getenv("NOMINATIM_CONTACT_EMAIL", "nobody@example.com")
+USER_AGENT = f"SCA Maps Project ({_CONTACT})"
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 PHOTON_URL    = "https://photon.komoot.io/api"

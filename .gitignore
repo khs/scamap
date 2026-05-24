@@ -9,6 +9,12 @@ __pycache__/
 sca_events - Copy.csv
 _probe_baronies.py
 
+# Local secrets — environment variables for the geocoder etc.
+# (Use .env.example as the committed template; .env stays per-machine.)
+.env
+.env.*
+!.env.example
+
 # Local credentials and scraper state
 .antir_cookies.json
 .antir_cf_clearance.txt

@@ -46,6 +46,10 @@ jobs:
         env:
           PYTHONIOENCODING: utf-8
           PYTHONUNBUFFERED: "1"
+          # Nominatim requires a real contact in every request's User-Agent.
+          # Add this as a repository secret at
+          #   Settings → Secrets and variables → Actions → New repository secret
+          NOMINATIM_CONTACT_EMAIL: ${{ secrets.NOMINATIM_CONTACT_EMAIL }}
         run: python refresh.py
 
       - name: Commit data updates if anything changed
