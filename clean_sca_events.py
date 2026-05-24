@@ -1004,6 +1004,60 @@ def _invalidate_misgeocoded_rows(df: pd.DataFrame) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Per-kingdom URL backfill from their public REST APIs
+# ---------------------------------------------------------------------------
+
+def _normalize_title_for_match(title: str) -> str:
+    """Lowercase + strip HTML entities + reduce punctuation to single dashes.
+    Used to match titles from our ICS feed against titles on the kingdom's
+    own website, where curly quotes, &#038; ampersands, etc. don't match."""
+    import html, re
+    s = html.unescape(str(title or "")).lower()
+    # Collapse anything non-alphanumeric (including curly quotes, hyphens,
+    # asterisks, ellipses) down to single spaces, then squeeze spaces.
+    s = re.sub(r"[^a-z0-9]+", " ", s).strip()
+    s = re.sub(r"\s+", " ", s)
+    return s
+
+
+def augment_aethelmearc_event_urls(df) -> None:
+    """In place: fill df['event_url'] for AEthelmearc rows by matching the
+    event title against aethelmearc.org's Tribe Events REST API. The
+    AEthelmearc kingdom calendar imports from a Google Calendar, which
+    strips the original WordPress event URL — this step puts it back."""
+    import json, requests
+    mask = (df["source"] == "Kingdom of AEthelmearc") & (df.get("event_url", "") == "")
+    if not mask.any():
+        return
+    try:
+        r = requests.get(
+            "https://aethelmearc.org/wp-json/tribe/events/v1/events",
+            params={"per_page": 100, "status": "publish"},
+            timeout=30,
+            headers={"User-Agent": "SCA Maps Project (URL backfill)"},
+        )
+        r.raise_for_status()
+        api_events = r.json().get("events", [])
+    except Exception as exc:
+        print(f"  WARNING: AEthelmearc REST API fetch failed: {exc}")
+        return
+    # Build normalized-title → URL lookup
+    lookup = {}
+    for ev in api_events:
+        norm = _normalize_title_for_match(ev.get("title", ""))
+        if norm and ev.get("url") and norm not in lookup:
+            lookup[norm] = ev["url"]
+    if not lookup:
+        return
+    # Match each AEthelmearc row that lacks a URL
+    for idx in df[mask].index:
+        title = df.at[idx, "title"]
+        norm = _normalize_title_for_match(title)
+        if norm in lookup:
+            df.at[idx, "event_url"] = lookup[norm]
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -1135,6 +1189,19 @@ def main():
                 print("  No prior geocoding columns found.\n")
         except Exception as e:
             print(f"  Could not merge prior results: {e}\n")
+
+    # Step 7: For kingdoms whose calendars import from a Google Calendar
+    # (and therefore lose the original WordPress event URL), backfill the
+    # event_url field from the kingdom site's REST API. AEthelmearc is the
+    # first such kingdom we handle.
+    print("Step 7: Backfilling per-kingdom event URLs from REST APIs ...")
+    try:
+        before = (df["event_url"] != "").sum()
+        augment_aethelmearc_event_urls(df)
+        after = (df["event_url"] != "").sum()
+        print(f"  AEthelmearc: filled {after - before} new event_urls.\n")
+    except Exception as e:
+        print(f"  WARNING: backfill step failed: {e}\n")
 
     # Reorder columns
     col_order = [
