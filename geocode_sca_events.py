@@ -433,16 +433,20 @@ def _validate(lat, lng, expected_state, source_acceptable_states, source=""):
         addresses; Nominatim already filters via countrycodes.
       - Result is on the wrong continent for the source kingdom. A Meridies
         "Atlanta Metropolitan area" landing in Romania is a Photon mis-match,
-        not a real cross-kingdom event — Meridies events stay in North America.
+        not a real cross-kingdom event.
       - Address named a US state and the result isn't in it. The address
         is authoritative.
+      - For BARONY sources, hard reject if the result lies outside the
+        barony's home state + adjacent states. Baronial events are local
+        practices, meetings, demos — they don't legitimately happen far
+        from home. (Stierbach's fencing practice geocoding to Washington
+        STATE off "auxillary gym mary washington" was this bug.)
 
     Soft check (prints a warning, still returns True):
-      - The address didn't name a state but the source has a known territory
-        within the right continent, and the result lies outside the kingdom's
-        specific state set. Kingdoms legitimately publish out-of-kingdom
-        events (Pennsic, Gulf Wars, Tir Mara events in Atlantic Canada, etc.)
-        — we accept with a log line.
+      - For KINGDOM sources without a state in the address: warn but
+        accept results outside the kingdom's state set. Kingdoms
+        legitimately list cross-kingdom events (Pennsic, Gulf Wars,
+        Tir Mara events in Atlantic Canada, Known World events).
     """
     if lat is None or lng is None:
         return False
@@ -461,10 +465,17 @@ def _validate(lat, lng, expected_state, source_acceptable_states, source=""):
         actual = coord_state(lat, lng)
         if actual is None or actual not in source_acceptable_states:
             allowed = ",".join(sorted(source_acceptable_states))
-            # Soft warning only — accepted as a likely cross-kingdom event
-            print(f"           ⚠ out-of-region: ({lat:.3f}, {lng:.3f}) in "
-                  f"{actual or 'no US state'}, expected one of {allowed} "
-                  f"— accepting (likely cross-kingdom event)")
+            # Baronial events are local — hard reject distant matches.
+            # Kingdom events can be cross-kingdom (wars, KW gatherings) — soft warn.
+            if source.lower().startswith("kingdom of"):
+                print(f"           ⚠ out-of-region: ({lat:.3f}, {lng:.3f}) in "
+                      f"{actual or 'no US state'}, expected one of {allowed} "
+                      f"— accepting (likely cross-kingdom event)")
+            else:
+                print(f"           ✗ rejected: ({lat:.3f}, {lng:.3f}) in "
+                      f"{actual or 'no US state'}, not in {source}'s region "
+                      f"({allowed}) — baronial events stay local")
+                return False
     return True
 
 

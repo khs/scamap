@@ -996,26 +996,64 @@ def scrape_antir() -> list[tuple[str, str, str]]:
 
     soup = BeautifulSoup(html_path.read_text(encoding="utf-8"), "lxml")
 
-    # Known barony seats — gives us city-level geocode targets for the big
-    # groups. Smaller cantons/shires fall back to the principality default.
+    # Known seats for every An Tir group we can place. Without these the
+    # cantons and shires all stack at the principality centroid — 12 in
+    # Vancouver, 11 in Seattle, 9 in Eugene. Cross-referenced against
+    # antir.org's branch directory and the kingdom map "An Tir During the
+    # Reign of Kjartan II & Sha'ya II". Update when groups relocate or new
+    # ones charter.
     BARONY_CITY = {
-        "Barony of Adiantum":        "Eugene, OR",
-        "Barony of Aquaterra":       "Kitsap County, WA",
-        "Barony of Blatha an Oir":   "Whitefish, MT",
-        "Barony of Dragon's Mist":   "Hillsboro, OR",
-        "Barony of Dragons Laire":   "Bremerton, WA",
-        "Barony of Glymm Mere":      "Olympia, WA",
-        "Barony of Glyn Dwfn":       "Medford, OR",
+        # ── Tir Righ (BC, Yukon, NW WA) ─────────────────────────────────
+        "Principality of Tir Righ":  "Burnaby, BC, Canada",  # offset from Lions Gate
         "Barony of Lions Gate":      "Vancouver, BC, Canada",
-        "Barony of Madrone":         "Seattle, WA",
         "Barony of Seagirt":         "Victoria, BC, Canada",
         "Barony of Stromgard":       "Surrey, BC, Canada",
-        "Barony of Terra Pomaria":   "Salem, OR",
+        "Shire of Appledore":        "Prince Rupert, BC, Canada",
+        "Shire of Coill Mhór":       "Williams Lake, BC, Canada",
+        "Shire of Cold Keep":        "Whitehorse, YT, Canada",
+        "Shire of Danescombe":       "Kelowna, BC, Canada",
+        "Shire of Hartwood":         "Courtenay, BC, Canada",
+        "Shire of Krakafjord":       "Vernon, BC, Canada",
+        "Shire of Lionsdale":        "Squamish, BC, Canada",
+        "Shire of Ramsgaard":        "Kamloops, BC, Canada",
+        "Shire of Thornwold":        "Powell River, BC, Canada",
+        "Shire of Tir Bannog":       "Prince George, BC, Canada",
+        # ── Main An Tir (Puget Sound / Idaho / MT) ──────────────────────
+        "Barony of Madrone":         "Seattle, WA",
+        "Barony of Aquaterra":       "Bremerton, WA",   # Kitsap
+        "Barony of Dragons Laire":   "Silverdale, WA",  # Kitsap-north
+        "Barony of Glymm Mere":      "Olympia, WA",
+        "Barony of Wyewood":         "Federal Way, WA",
+        "Barony of Wealdsmere":      "Lynnwood, WA",
         "Barony of Three Mountains": "Portland, OR",
         "Barony of Vulcanfeldt":     "Spokane, WA",
         "Barony of Wastekeep":       "Kennewick, WA",
-        "Barony of Wealdsmere":      "Lynnwood, WA",
-        "Barony of Wyewood":         "Federal Way, WA",
+        "Barony of Blatha an Oir":   "Whitefish, MT",
+        # Cantons of Madrone, College & shire groups in WA — spread across
+        # the Puget Sound region rather than stacking in downtown Seattle.
+        "Canton of Akornebir":       "Mount Vernon, WA",
+        "Canton of Caladphort":      "Oak Harbor, WA",
+        "Canton of Crows Gate":      "Tacoma, WA",
+        "Canton of Kaldor Ness":     "Edmonds, WA",
+        "Canton of Misty Ridge":     "Issaquah, WA",
+        "Canton of Porte de l'Eau":  "Tukwila, WA",
+        "College of Cranehaven":     "Bellingham, WA",  # Western Washington Univ
+        "College of Lyonsmarche":    "Seattle, WA",     # Seattle U/SPU area
+        "Shire of Hauksgarðr":       "Bothell, WA",
+        "Shire of River's Bend":     "Renton, WA",
+        # ── Summits (Southern Oregon) ───────────────────────────────────
+        "Principality of the Summits": "Springfield, OR",  # offset from Adiantum
+        "Barony of Adiantum":        "Eugene, OR",
+        "Barony of Terra Pomaria":   "Salem, OR",
+        "Barony of Glyn Dwfn":       "Medford, OR",
+        "Barony of Dragon's Mist":   "Hillsboro, OR",
+        "Shire of Briaroak":         "Roseburg, OR",
+        "Shire of Coeur du Val":     "Corvallis, OR",
+        "Shire of Corvaria":         "Bend, OR",
+        "Shire of Mountain Edge":    "Florence, OR",
+        "Shire of Myrtle Holt":      "Coos Bay, OR",
+        "Shire of Southmarch":       "Ashland, OR",
+        "Shire of Tymberhavene":     "Klamath Falls, OR",
     }
     PRINCIPALITY_DEFAULT = {
         "Summits":   "Eugene, OR",

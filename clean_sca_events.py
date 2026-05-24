@@ -1020,41 +1020,78 @@ def _normalize_title_for_match(title: str) -> str:
     return s
 
 
+# Kingdoms whose own WordPress sites expose Tribe Events Calendar's REST
+# endpoint. For each one, we fetch every published event and match it
+# against our cleaned data by normalized title — recovering the per-event
+# WordPress URL that the upstream Google-Calendar import strips out.
+# Probed and confirmed working as of May 2026.
+KINGDOMS_WITH_TRIBE_API = {
+    "Kingdom of AEthelmearc":   "https://aethelmearc.org",
+    "Kingdom of Atenveldt":     "https://atenveldt.org",
+    "Kingdom of Gleann Abhann": "https://gleannabhann.net",
+    "Kingdom of the Outlands":  "https://www.outlands.org",
+    "Kingdom of Trimaris":      "https://trimaris.org",
+}
+
+
+def _fetch_tribe_events(base_url: str) -> dict:
+    """Return {normalized_title: url} for every published Tribe Events
+    record on `base_url`. Walks pages until exhausted. Returns {} on error."""
+    import requests
+    lookup: dict[str, str] = {}
+    page = 1
+    while True:
+        try:
+            r = requests.get(
+                f"{base_url}/wp-json/tribe/events/v1/events",
+                params={"per_page": 100, "page": page, "status": "publish"},
+                timeout=30,
+                headers={"User-Agent": "SCA Maps Project (URL backfill)"},
+            )
+            if r.status_code != 200:
+                break
+            data = r.json()
+        except Exception as exc:
+            print(f"    WARNING: {base_url} page {page} failed: {exc}")
+            break
+        events = data.get("events", []) or []
+        for ev in events:
+            norm = _normalize_title_for_match(ev.get("title", ""))
+            url = ev.get("url", "")
+            if norm and url and norm not in lookup:
+                lookup[norm] = url
+        if len(events) < 100:
+            break
+        page += 1
+    return lookup
+
+
+def augment_event_urls_from_tribe_apis(df) -> dict:
+    """In place: for every kingdom in KINGDOMS_WITH_TRIBE_API, fill the
+    event_url field on matching rows. Returns {kingdom: filled_count}."""
+    filled: dict[str, int] = {}
+    for kingdom, base in KINGDOMS_WITH_TRIBE_API.items():
+        mask = (df["source"] == kingdom) & (df.get("event_url", "") == "")
+        if not mask.any():
+            filled[kingdom] = 0
+            continue
+        lookup = _fetch_tribe_events(base)
+        if not lookup:
+            filled[kingdom] = 0
+            continue
+        n = 0
+        for idx in df[mask].index:
+            norm = _normalize_title_for_match(df.at[idx, "title"])
+            if norm in lookup:
+                df.at[idx, "event_url"] = lookup[norm]
+                n += 1
+        filled[kingdom] = n
+    return filled
+
+
+# Backwards-compatible wrapper (older code paths call this name)
 def augment_aethelmearc_event_urls(df) -> None:
-    """In place: fill df['event_url'] for AEthelmearc rows by matching the
-    event title against aethelmearc.org's Tribe Events REST API. The
-    AEthelmearc kingdom calendar imports from a Google Calendar, which
-    strips the original WordPress event URL — this step puts it back."""
-    import json, requests
-    mask = (df["source"] == "Kingdom of AEthelmearc") & (df.get("event_url", "") == "")
-    if not mask.any():
-        return
-    try:
-        r = requests.get(
-            "https://aethelmearc.org/wp-json/tribe/events/v1/events",
-            params={"per_page": 100, "status": "publish"},
-            timeout=30,
-            headers={"User-Agent": "SCA Maps Project (URL backfill)"},
-        )
-        r.raise_for_status()
-        api_events = r.json().get("events", [])
-    except Exception as exc:
-        print(f"  WARNING: AEthelmearc REST API fetch failed: {exc}")
-        return
-    # Build normalized-title → URL lookup
-    lookup = {}
-    for ev in api_events:
-        norm = _normalize_title_for_match(ev.get("title", ""))
-        if norm and ev.get("url") and norm not in lookup:
-            lookup[norm] = ev["url"]
-    if not lookup:
-        return
-    # Match each AEthelmearc row that lacks a URL
-    for idx in df[mask].index:
-        title = df.at[idx, "title"]
-        norm = _normalize_title_for_match(title)
-        if norm in lookup:
-            df.at[idx, "event_url"] = lookup[norm]
+    augment_event_urls_from_tribe_apis(df)
 
 
 # ---------------------------------------------------------------------------
@@ -1192,14 +1229,14 @@ def main():
 
     # Step 7: For kingdoms whose calendars import from a Google Calendar
     # (and therefore lose the original WordPress event URL), backfill the
-    # event_url field from the kingdom site's REST API. AEthelmearc is the
-    # first such kingdom we handle.
-    print("Step 7: Backfilling per-kingdom event URLs from REST APIs ...")
+    # event_url field from the kingdom site's Tribe Events REST API.
+    print("Step 7: Backfilling per-kingdom event URLs from Tribe REST APIs ...")
     try:
-        before = (df["event_url"] != "").sum()
-        augment_aethelmearc_event_urls(df)
-        after = (df["event_url"] != "").sum()
-        print(f"  AEthelmearc: filled {after - before} new event_urls.\n")
+        per_kingdom = augment_event_urls_from_tribe_apis(df)
+        for k, n in per_kingdom.items():
+            short = k.replace("Kingdom of ", "")
+            print(f"  {short:18s} filled {n} event_urls")
+        print()
     except Exception as e:
         print(f"  WARNING: backfill step failed: {e}\n")
 
