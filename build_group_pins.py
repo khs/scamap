@@ -46,8 +46,9 @@ OUTPUT_FILE = SCRIPT_DIR / "group_pins.csv"
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 USER_AGENT = "SCA Maps Project (group pin builder)"
-REQUEST_DELAY = 2.0    # Nominatim policy: max 1 req/sec; we sometimes get 429
-                       # if we sit at the limit for very long runs, so be generous
+# Sit well below Nominatim's published 1 req/sec ceiling and well below
+# their rate-limit lockout threshold: 4 calls/minute = 15 sec/call.
+REQUEST_DELAY = 15.0
 
 
 def load_prior_coords() -> dict[tuple[str, str, str], tuple[str, str]]:

@@ -93,8 +93,11 @@ USER_AGENT = f"SCA Maps Project ({_CONTACT})"
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 PHOTON_URL    = "https://photon.komoot.io/api"
 
-# Seconds to wait between API calls — do not set below 1.0
-REQUEST_DELAY = 1.4
+# Seconds between API calls. Nominatim's published policy is "max 1 req/sec",
+# but we're a hobby project running unattended on cron, so we sit at the much
+# more conservative 4 calls/minute cap (15 sec/call). Photon — the fallback
+# geocoder — uses the same gap.
+REQUEST_DELAY = 15.0
 
 # How many rows to save after before writing progress to disk
 # (1 = save after every geocode, higher = faster but more data loss if interrupted)

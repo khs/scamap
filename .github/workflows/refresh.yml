@@ -24,7 +24,9 @@ permissions:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # At REQUEST_DELAY=15s, a cold or many-retry run can take 2+ hours.
+    # Cache-warm refreshes are still under 10 min.
+    timeout-minutes: 180
 
     steps:
       - name: Check out the repo
