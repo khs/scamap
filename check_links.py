@@ -153,6 +153,28 @@ def main():
             writer.writeheader()
             writer.writerows(rows)
         print(f"\n--fix: cleared website URL on {cleared} rows of {pins_path.name}")
+
+        # Also clear them in group_locations.csv, the SOURCE of the website
+        # column. build_group_pins.py rebuilds group_pins.csv's websites from
+        # group_locations.csv, so a prune that only touches group_pins.csv is
+        # silently undone on the next rebuild. Clear the source too so the
+        # prune survives.
+        loc_path = SCRIPT_DIR / "group_locations.csv"
+        if loc_path.exists():
+            with open(loc_path, newline="", encoding="utf-8") as f:
+                loc_rows = list(csv.DictReader(f))
+                loc_fields = list(loc_rows[0].keys()) if loc_rows else []
+            loc_cleared = 0
+            for row in loc_rows:
+                if row.get("website") in bad_urls:
+                    row["website"] = ""
+                    loc_cleared += 1
+            if loc_cleared:
+                with open(loc_path, "w", newline="", encoding="utf-8") as f:
+                    writer = csv.DictWriter(f, fieldnames=loc_fields, quoting=csv.QUOTE_ALL)
+                    writer.writeheader()
+                    writer.writerows(loc_rows)
+                print(f"--fix: cleared website URL on {loc_cleared} rows of {loc_path.name}")
         print("(re-run check_links.py without --fix later to re-validate; some")
         print(" failures are transient like rate-limits or DNS hiccups)")
 
