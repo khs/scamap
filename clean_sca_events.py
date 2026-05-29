@@ -296,6 +296,23 @@ def extract_urls_from_text(text: str) -> dict:
     return {"event_url": event_url, "facebook_url": facebook_url}
 
 
+# Lochac's calendar prefixes every event description with an autocrat contact
+# block — "Steward:<name> Email:<addr> Website:<url>" — where only the steward
+# name varies and Email/Website are usually blank or a redacted tail (".au").
+# It's noise on the map, so strip the leading block and keep the real text.
+_STEWARD_BOILERPLATE_RE = re.compile(
+    r"^\s*Steward:.*?\bEmail:\S*\s*(?:Website:\S*\s*)?",
+    re.IGNORECASE,
+)
+
+
+def strip_steward_boilerplate(text: str) -> str:
+    """Remove a leading 'Steward:… Email:… [Website:…]' block (Lochac feed)."""
+    if not isinstance(text, str) or not text:
+        return text
+    return _STEWARD_BOILERPLATE_RE.sub("", text, count=1).strip()
+
+
 def clean_description(desc: str) -> tuple:
     """
     Clean a description field. Returns (cleaned_text, urls_dict) where
@@ -1095,6 +1112,15 @@ def main():
     df["description"]  = cleaned_descs.apply(lambda x: x[0])
     df["event_url"]    = cleaned_descs.apply(lambda x: x[1].get("event_url") or "")
     df["facebook_url"] = cleaned_descs.apply(lambda x: x[1].get("facebook_url") or "")
+    # Lochac's feed prefixes every description with a "Steward:… Email:… Website:…"
+    # autocrat block — strip it, keeping the real event description.
+    lochac = df["source"] == "Kingdom of Lochac"
+    if lochac.any():
+        df.loc[lochac, "description"] = (
+            df.loc[lochac, "description"].apply(strip_steward_boilerplate)
+        )
+        print(f"  stripped Steward/Email/Website boilerplate from "
+              f"{int(lochac.sum())} Lochac descriptions")
     blanked = (df["description"] == "").sum()
     with_event_url = (df["event_url"] != "").sum()
     print(f"  {blanked} descriptions blanked (placeholder/widget/empty). "
