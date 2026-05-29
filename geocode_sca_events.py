@@ -344,6 +344,69 @@ def extract_inline_gps(address: str) -> tuple:
     return (lat, lng)
 
 
+# SCA-speak "the city/area mundanely known as <place>" prefix.
+_MUNDANE_RE = re.compile(
+    r"\bthe\s+(?:city|cities|town|area|region|lands?|shire|barony|canton|province)\s+"
+    r"(?:mundanely\s+|currently\s+)?known\s+as\s+(?:the\s+greater\s+)?",
+    re.IGNORECASE,
+)
+
+
+def _vague_simplify_candidates(address: str) -> list:
+    """Reduce a vague SCA location description to candidate core placenames,
+    most-specific first. Handles "the city mundanely known as Lubbock, Texas",
+    "Greater Birmingham area and Shelby County", "Atlanta Metropolitan area",
+    "Centered around Ridgecrest, CA; ...", and city/county lists ("Madera,
+    Fresno, Kings, and Tulare Counties" -> "Madera"). Returns [] if nothing
+    simplifies."""
+    cands = []
+    s = address.strip()
+
+    m = _MUNDANE_RE.search(s)
+    if m:
+        s = s[m.end():].strip()
+        cands.append(s)
+
+    m = re.match(r"(?:centered\s+(?:around|on|in|near)|based\s+(?:in|near|around)|"
+                 r"located\s+(?:in|near))\s+(.+)", s, re.IGNORECASE)
+    if m:
+        rest = re.split(r";|,?\s+including\b|,?\s+and\s+surrounding",
+                        m.group(1), maxsplit=1)[0].strip().rstrip(",.;")
+        if rest:
+            cands.append(rest)
+
+    # "Greater X area [and ...]" / "X Metropolitan area" -> X
+    g = re.split(r"\s+and\s+", s, maxsplit=1)[0]
+    g = re.sub(r"\b(?:greater|metro(?:politan)?)\b\s*", "", g, flags=re.IGNORECASE)
+    g = re.sub(r"\s*\barea\b.*$", "", g, flags=re.IGNORECASE).strip().rstrip(",.;")
+    if g and g.lower() != s.lower():
+        cands.append(g)
+
+    # First item of a comma/slash list, minus leading "the area of" and a
+    # trailing "County/Counties".
+    first = s.split(",")[0].strip()
+    first = re.sub(r"^(?:the\s+area\s+of\s+|the\s+greater\s+)", "", first,
+                   flags=re.IGNORECASE).strip()
+    first = first.split("/")[0].strip()
+    first_noco = re.sub(r"\s+Count(?:y|ies)$", "", first, flags=re.IGNORECASE).strip()
+    for c in (first, first_noco):
+        if c:
+            cands.append(c)
+
+    # Dedupe (case-insensitive); keep only candidates that look like a
+    # placename: start with a capital letter (drops "the", "two additional
+    # groups") and not a digit (street fragments are handled by other ladder
+    # steps, not here).
+    seen, out = set(), []
+    for c in cands:
+        cl = c.lower()
+        if (cl not in seen and cl != address.strip().lower()
+                and len(c) >= 4 and c[:1].isalpha() and c[0].isupper()):
+            seen.add(cl)
+            out.append(c)
+    return out
+
+
 def try_geocode_with_fallbacks(address: str, session: requests.Session,
                                 source: str = "") -> tuple:
     """
@@ -359,14 +422,28 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
     expected_state = extract_state_from_address(address)
     source_states = acceptable_states_for_source(source) if source else None
 
+    # extract_state_from_address needs a ZIP to trust a US state code (so a
+    # Lochac "…Perth WA 6000" isn't read as Washington). But a US-sourced event
+    # with a clear street number + state code is authoritative even without a
+    # ZIP — trust it so cross-kingdom war addresses ("205 Currie Rd., Slippery
+    # Rock, PA" on a Maryland barony's calendar) resolve instead of being
+    # locality-rejected. Gated on source_states so it never fires for Lochac/AU.
+    if expected_state is None and source_states and STREET_NUM_RE.search(address):
+        m = STATE_FROM_ADDR_RE.search(address)
+        if m and m.group(1).upper() in US_STATE_BBOX:
+            expected_state = m.group(1).upper()
+
     # 0. Coordinates explicitly embedded in the address — use them directly.
     lat, lng = extract_inline_gps(address)
     if _validate(lat, lng, expected_state, source_states, source):
         print(f"           → using inline GPS")
         return (lat, lng, "ok")
 
-    # Strip the inline GPS suffix before sending to Nominatim either way
+    # Strip the inline GPS suffix, a trailing URL, and a trailing parenthetical
+    # note (venue directions, "private property", map links) before geocoding.
     cleaned = GPS_INLINE_RE.sub("", address).strip().rstrip(",.;")
+    cleaned = re.sub(r"\s+https?://\S+.*$", "", cleaned)
+    cleaned = re.sub(r"\s*\([^)]*\)\s*$", "", cleaned).strip().rstrip(",.;")
 
     # 1. Original address via Nominatim
     address = cleaned  # use cleaned for all subsequent attempts
@@ -428,6 +505,38 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
         lat, lng = nominatim_geocode(f"{zip_code}, USA", session)
         if _validate(lat, lng, expected_state, source_states, source):
             return (lat, lng, "ok_retry")
+
+    # 7. Vague-text simplification: SCA idioms ("the city mundanely known as
+    #    Lubbock, Texas"), "Greater X area"/"X Metropolitan area", and city/
+    #    county lists reduced to a core placename. Try "<place>, USA" first so
+    #    Nominatim's prominence picks the real city, then each of the kingdom's
+    #    HOME states. Accept ONLY a result that lands in a home state — not an
+    #    adjacent one, and with no cross-kingdom soft-accept — so "Madera"
+    #    can't resolve to an adjacent Arizona and "NE Tennessee" can't resolve
+    #    to Nebraska. Capped; breaks on first valid hit.
+    home_states = (KINGDOM_HOME_STATES.get(source)
+                   or BARONY_HOME_STATES.get(source) or set())
+    tried = 0
+    for cand in _vague_simplify_candidates(address):
+        if "," in cand:                       # candidate already carries a state
+            queries = [cand]
+        else:
+            queries = [f"{cand}, USA"] + [f"{cand}, {st}, USA"
+                                          for st in sorted(home_states)]
+        for q in queries:
+            if tried >= 8:
+                break
+            tried += 1
+            print(f"           → simplified: {q[:70]}")
+            lat, lng = nominatim_geocode(q, session)
+            if lat is None:
+                continue
+            if home_states:
+                if (coord_state(lat, lng) in home_states
+                        and in_source_regions(lat, lng, source)):
+                    return (lat, lng, "ok_retry")
+            elif _validate(lat, lng, expected_state, source_states, source):
+                return (lat, lng, "ok_retry")
 
     return (None, None, "failed")
 
