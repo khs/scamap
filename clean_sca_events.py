@@ -970,21 +970,38 @@ KINGDOMS_WITH_TRIBE_API = {
     "Kingdom of Gleann Abhann": "https://gleannabhann.net",
     "Kingdom of the Outlands":  "https://www.outlands.org",
     "Kingdom of Trimaris":      "https://trimaris.org",
+    # The West is itself a tribe-rest source, so events carry an ICS URL: —
+    # but ImportMaps drops that property, so we re-fetch the per-event
+    # permalink here just like the Google-Calendar kingdoms above. Without
+    # this, West "Save the Date" entries (which have no URL in their body)
+    # fall back to linking the whole kingdom calendar.
+    "Kingdom of the West":      "https://westkingdom.org",
 }
 
 
 def _fetch_tribe_events(base_url: str) -> dict:
     """Return {normalized_title: url} for every published Tribe Events
-    record on `base_url`. Walks pages until exhausted. Returns {} on error."""
+    record on `base_url`. Walks pages until exhausted. Returns {} on error.
+
+    We pass an explicit wide date window: the Tribe REST API otherwise
+    defaults to a short upcoming window (~the next handful of events), which
+    misses far-future "Save the Date" entries — exactly the West rows that
+    most need a real per-event URL. Window spans recent past (to catch events
+    still in our data) through a few years out."""
     import requests
+    from datetime import date, timedelta
+    today = date.today()
+    win_start = (today - timedelta(days=90)).isoformat()
+    win_end   = (today + timedelta(days=1095)).isoformat()
     lookup: dict[str, str] = {}
     page = 1
     while True:
         try:
             r = requests.get(
                 f"{base_url}/wp-json/tribe/events/v1/events",
-                params={"per_page": 100, "page": page, "status": "publish"},
-                timeout=30,
+                params={"per_page": 50, "page": page, "status": "publish",
+                        "start_date": win_start, "end_date": win_end},
+                timeout=45,
                 headers={"User-Agent": "SCA Maps Project (URL backfill)"},
             )
             if r.status_code != 200:
@@ -999,7 +1016,11 @@ def _fetch_tribe_events(base_url: str) -> dict:
             url = ev.get("url", "")
             if norm and url and norm not in lookup:
                 lookup[norm] = url
-        if len(events) < 100:
+        # The Tribe REST API caps per_page at 50 and reports total_pages; walk
+        # every page. (The old `len < 100` check stopped after page 1, so all
+        # far-future events — e.g. next year's Save-the-Dates — were missed.)
+        total_pages = data.get("total_pages") or 0
+        if not events or (total_pages and page >= total_pages):
             break
         page += 1
     return lookup
