@@ -1165,6 +1165,7 @@ function buildPlaceholderPopup(pin) {
 
 // ── Render ────────────────────────────────────────────────────────
 let sidebarMode = "map";  // "map" or "online"
+let lastFiltered = [];    // last filtered+sorted events, reused for viewport re-renders
 
 function applyFilters() {
   const query       = document.getElementById('search-input').value.toLowerCase().trim();
@@ -1242,63 +1243,8 @@ function applyFilters() {
     markerMap[ev._idx] = marker;
   });
 
-  // Update sidebar
-  const list = document.getElementById('sidebar-list');
-  list.innerHTML = '';
-
-  if (filtered.length === 0) {
-    list.innerHTML = '<div style="padding:1rem;color:#888;font-style:italic;font-size:0.85rem;">No events match your search.</div>';
-  } else {
-    filtered.forEach(ev => {
-      const color = eventColor(ev);
-      const item = document.createElement('div');
-      item.className = 'event-item';
-      const isVirtual = ev.is_virtual === 'True';
-      const virtualTag = isVirtual ? '<span class="virtual-tag">Virtual</span>' : '';
-      // Pick the best click-target URL for this event (used by virtual events
-      // that have no map marker, and for the hover hint on every item).
-      const eventLink  = bestLinkFor(ev);
-      const sourceUrl  = websiteForSource(ev.source);
-      item.title = "Click for more information";
-      // Source name is itself a link to the barony/kingdom website when we
-      // have one (with stopPropagation so it doesn't also fire the parent
-      // item's "fly to marker" click handler).
-      const sourceHtml = sourceUrl
-        ? `<a class="event-item-source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${escapeHtml(ev.source)}</a>`
-        : escapeHtml(ev.source);
-      item.innerHTML = `
-        <div class="event-item-title">${escapeHtml(ev.title)}${virtualTag}</div>
-        <div class="event-item-date">${shortDate(ev.start)}</div>
-        <div class="event-item-source">${sourceHtml}</div>
-        <span class="event-item-dot" style="background:${color}"></span>
-      `;
-      // Click behaviour:
-      //   - Virtual event with a URL: open the event page in a new tab.
-      //     Virtual events have no map marker, so flying to the map is useless.
-      //   - In-person event: fly to its marker and open the popup (current).
-      //   - Virtual event without a URL: fall back to highlighting (do nothing).
-      const activate = () => {
-        if (isVirtual && eventLink) {
-          window.open(eventLink, '_blank', 'noopener');
-          return;
-        }
-        const marker = markerMap[ev._idx];
-        if (!marker) return;
-        // Cluster-aware: zoom/expand until the marker is un-clustered, then
-        // open its popup (works whether or not it's currently inside a cluster).
-        markerLayer.zoomToShowLayer(marker, () => marker.openPopup());
-      };
-      // Keyboard-accessible: each item is a focusable button, activated by
-      // click or Enter/Space (was a mouse-only <div>).
-      item.tabIndex = 0;
-      item.setAttribute('role', 'button');
-      item.addEventListener('click', activate);
-      item.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
-      });
-      list.appendChild(item);
-    });
-  }
+  // (The sidebar list is built by renderSidebarList() at the end of this
+  //  function, so it can be re-run on map move without rebuilding markers.)
 
   // Placeholder pins: render one "visit their website" pin per group that
   // has a known website but no mapped events that mention it. A group is
@@ -1368,13 +1314,81 @@ function applyFilters() {
     });
   }
 
+  // Cache the filtered set and render the list (bounds-filtered in map mode).
+  lastFiltered = filtered;
+  renderSidebarList();
+}
+
+// Build the sidebar list. In "map" mode it shows ONLY events whose marker is
+// within the current map view, so the list tracks what you can actually see
+// (events with no marker — virtual / un-geocoded — are omitted there; virtual
+// events live on the Online tab). In "online" mode it shows all filtered
+// (virtual) events. Re-run on every map move so the list stays in sync, WITHOUT
+// rebuilding the markers/clusters.
+function renderSidebarList() {
+  const list = document.getElementById('sidebar-list');
+  list.innerHTML = '';
+
+  const inMapMode = (sidebarMode === 'map');
+  const bounds = inMapMode ? map.getBounds() : null;
+  const shown = inMapMode
+    ? lastFiltered.filter(ev => {
+        const marker = markerMap[ev._idx];
+        return marker && bounds.contains(marker.getLatLng());
+      })
+    : lastFiltered;
+
+  if (shown.length === 0) {
+    const msg = inMapMode ? 'No events in this part of the map — zoom out or pan.'
+                          : 'No events match your search.';
+    list.innerHTML = `<div style="padding:1rem;color:#888;font-style:italic;font-size:0.85rem;">${msg}</div>`;
+  } else {
+    shown.forEach(ev => {
+      const color = eventColor(ev);
+      const item = document.createElement('div');
+      item.className = 'event-item';
+      const isVirtual = ev.is_virtual === 'True';
+      const virtualTag = isVirtual ? '<span class="virtual-tag">Virtual</span>' : '';
+      const eventLink  = bestLinkFor(ev);
+      const sourceUrl  = websiteForSource(ev.source);
+      item.title = "Click for more information";
+      const sourceHtml = sourceUrl
+        ? `<a class="event-item-source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${escapeHtml(ev.source)}</a>`
+        : escapeHtml(ev.source);
+      item.innerHTML = `
+        <div class="event-item-title">${escapeHtml(ev.title)}${virtualTag}</div>
+        <div class="event-item-date">${shortDate(ev.start)}</div>
+        <div class="event-item-source">${sourceHtml}</div>
+        <span class="event-item-dot" style="background:${color}"></span>
+      `;
+      // Virtual event with a URL → open it. In-person event → expand its
+      // cluster and open the popup. Keyboard-accessible (Enter/Space).
+      const activate = () => {
+        if (isVirtual && eventLink) { window.open(eventLink, '_blank', 'noopener'); return; }
+        const marker = markerMap[ev._idx];
+        if (!marker) return;
+        markerLayer.zoomToShowLayer(marker, () => marker.openPopup());
+      };
+      item.tabIndex = 0;
+      item.setAttribute('role', 'button');
+      item.addEventListener('click', activate);
+      item.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
+      });
+      list.appendChild(item);
+    });
+  }
+
   const mapCount = Object.keys(markerMap).length;
   const placeholderCount = placeholderLayer.getLayers().length;
-  const placeholderSuffix = placeholderCount
-    ? ` · ${placeholderCount} barony pins` : '';
-  document.getElementById('sidebar-count').textContent =
-    `${filtered.length} events · ${mapCount} mapped${placeholderSuffix}`;
+  const placeholderSuffix = placeholderCount ? ` · ${placeholderCount} barony pins` : '';
+  document.getElementById('sidebar-count').textContent = inMapMode
+    ? `${shown.length} in view · ${mapCount} mapped${placeholderSuffix}`
+    : `${shown.length} virtual events`;
 }
+
+// Auto-sync the map-mode sidebar to the visible area as the user pans/zooms.
+map.on('moveend', () => { if (sidebarMode === 'map') renderSidebarList(); });
 
 // ── CSV parser ───────────────────────────────────────────────────
 // Single-pass RFC 4180 parser: tokenises text directly into records of
