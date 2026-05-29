@@ -28,6 +28,7 @@ from pathlib import Path
 import kingdoms
 import geocode_sca_events as gse
 import build_group_locations as bgl
+import ImportMaps as im
 
 SCRIPT_DIR = Path(__file__).parent
 _SENTINEL = "\x00__no_seat__"
@@ -212,6 +213,38 @@ class TestKingdomTables(unittest.TestCase):
         # Winnipeg (Castel Rouge) / Thunder Bay (Mare Amethystinum) fix.
         self.assertIn("MB", kingdoms.KINGDOM_STATES["Kingdom of Northshield"])
         self.assertIn("ON", kingdoms.KINGDOM_STATES["Kingdom of Northshield"])
+
+
+class TestIsVirtual(unittest.TestCase):
+    """is_virtual_event must trust the title/location, not a stray keyword in
+    the free-text description. Locks in the Summer's End / Pennsic regression:
+    an in-person event with a real address whose notes say 'register online'
+    was landing in the virtual list (and off the map)."""
+
+    def v(self, title, location, desc):
+        return im.is_virtual_event(title, location, desc)
+
+    def test_real_address_with_online_in_desc_is_in_person(self):
+        # Summer's End 2026 — real NY address, "online" buried in the notes.
+        self.assertFalse(self.v("Summer's End 2026",
+                                "10299 Savage Road, Holland, NY", "register online soon"))
+
+    def test_pennsic_online_preregistration_is_in_person(self):
+        self.assertFalse(self.v("Pennsic War LIV",
+                                "Coopers Lake Campground, 205 Currie Rd", "online pre-registration is open"))
+
+    def test_virtual_in_title_is_virtual(self):
+        self.assertTrue(self.v("Barony of Tarnmists Business Meeting (Virtual)", "Zoom", ""))
+
+    def test_zoom_location_is_virtual(self):
+        self.assertTrue(self.v("Populace Meeting", "Zoom", ""))
+
+    def test_no_location_with_zoom_desc_is_virtual(self):
+        # No physical location at all -> fall back to the description.
+        self.assertTrue(self.v("Populace Meeting", "", "Join us via the Zoom link"))
+
+    def test_plain_in_person_event(self):
+        self.assertFalse(self.v("Arts & Sciences Night", "Town Hall, Springfield", "bring your projects"))
 
 
 if __name__ == "__main__":

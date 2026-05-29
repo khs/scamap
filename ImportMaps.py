@@ -234,10 +234,24 @@ def clean_text(text: str) -> str:
     return text.strip()
 
 
-def is_virtual_event(location: str, description: str) -> bool:
-    """Return True if the event appears to be virtual/online."""
-    text = (location + " " + description).lower()
-    return any(kw in text for kw in VIRTUAL_KEYWORDS)
+def is_virtual_event(title: str, location: str, description: str) -> bool:
+    """Return True if the event appears to be virtual/online.
+
+    An explicit signal in the TITLE ("… (Virtual)") or the LOCATION ("Zoom", a
+    meeting URL) marks it virtual. A real physical location means in-person —
+    even if the free-text description happens to mention an online option (e.g.
+    a site event whose notes say "register online" or "no virtual attendance").
+    That description false-positive is what put an in-person event like
+    "Summer's End" (a real NY address) into the virtual list. Only when there's
+    no location at all do we fall back to scanning the description.
+    """
+    if any(kw in (title or "").lower() for kw in VIRTUAL_KEYWORDS):
+        return True
+    if any(kw in (location or "").lower() for kw in VIRTUAL_KEYWORDS):
+        return True
+    if not (location or "").strip():
+        return any(kw in (description or "").lower() for kw in VIRTUAL_KEYWORDS)
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -276,7 +290,7 @@ def fetch_all_events(calendars: list[dict]) -> list[dict]:
             start    = get_datetime(component, "DTSTART")
             end_dt   = get_datetime(component, "DTEND")
 
-            virtual = is_virtual_event(location, desc)
+            virtual = is_virtual_event(title, location, desc)
 
             # Baronial: skip virtual events and events with no location
             if is_baronial:
