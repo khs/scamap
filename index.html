@@ -271,6 +271,7 @@
       position: relative;
     }
     .event-item:hover { background: #dbeafe; }
+    .event-item:focus-visible { background: #dbeafe; outline: 2px solid var(--ink); outline-offset: -2px; }
 
     .event-item-title {
       font-family: 'EB Garamond', Georgia, serif;
@@ -605,7 +606,10 @@ function eventColor(ev) {
 }
 
 // ── Map init ─────────────────────────────────────────────────────
-const map = L.map('map', { center: [38, -96], zoom: 4 });
+// preferCanvas renders the county-level kingdom overlay (~3000 polygons) on a
+// single <canvas> instead of thousands of SVG/DOM nodes — much smoother pan/
+// zoom when the overlay is on, visually identical.
+const map = L.map('map', { center: [38, -96], zoom: 4, preferCanvas: true });
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   maxZoom: 19,
@@ -1257,17 +1261,31 @@ function applyFilters() {
       //     Virtual events have no map marker, so flying to the map is useless.
       //   - In-person event: fly to its marker and open the popup (current).
       //   - Virtual event without a URL: fall back to highlighting (do nothing).
-      item.addEventListener('click', () => {
+      const activate = () => {
         if (isVirtual && eventLink) {
           window.open(eventLink, '_blank', 'noopener');
           return;
         }
         const marker = markerMap[ev._idx];
-        if (marker) {
-          const latlng = marker.getLatLng();
-          map.flyTo(latlng, Math.max(map.getZoom(), 9), { duration: 0.8 });
+        if (!marker) return;
+        const latlng = marker.getLatLng();
+        const targetZoom = Math.max(map.getZoom(), 9);
+        // Respect prefers-reduced-motion: jump instead of animating the pan.
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          map.setView(latlng, targetZoom);
+          marker.openPopup();
+        } else {
+          map.flyTo(latlng, targetZoom, { duration: 0.8 });
           setTimeout(() => marker.openPopup(), 850);
         }
+      };
+      // Keyboard-accessible: each item is a focusable button, activated by
+      // click or Enter/Space (was a mouse-only <div>).
+      item.tabIndex = 0;
+      item.setAttribute('role', 'button');
+      item.addEventListener('click', activate);
+      item.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
       });
       list.appendChild(item);
     });
