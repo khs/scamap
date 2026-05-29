@@ -274,6 +274,13 @@
     }
     .event-item:hover { background: #dbeafe; }
     .event-item:focus-visible { background: #dbeafe; outline: 2px solid var(--ink); outline-offset: -2px; }
+    /* Inline detail for Online-list items: hidden until the item is clicked. */
+    .event-item-detail { display: none; margin-top: 0.55rem; padding-top: 0.5rem; border-top: 1px dashed var(--parchment-dk); }
+    .event-item.expanded .event-item-detail { display: block; }
+    .event-item-detail .ei-when { font-weight: 600; color: var(--ink); font-size: 0.82rem; margin-bottom: 0.35rem; }
+    .event-item-detail .ei-desc { font-size: 0.8rem; color: #555; line-height: 1.35; margin-bottom: 0.5rem; }
+    .event-item-detail .ei-link { display: inline-block; font-size: 0.82rem; font-weight: 600; color: #1d4ed8; text-decoration: none; padding: 0.3rem 0.6rem; border: 1px solid #bcd0f5; border-radius: 4px; background: #eef4ff; }
+    .event-item-detail .ei-link:hover { background: #dbe7ff; }
 
     .event-item-title {
       font-family: 'EB Garamond', Georgia, serif;
@@ -993,6 +1000,30 @@ function shortDate(s) {
   if (isNaN(d)) return s;
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
 }
+// Full date + time (wall-clock, as stored). Used in the Online list so a
+// meeting shows WHEN it is. All-day events (stored at 00:00:00) show date only.
+function formatDateTime(s) {
+  if (!s) return '';
+  const d = new Date(String(s).replace(' ', 'T'));
+  if (isNaN(d)) return s;
+  const dateStr = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  if (/(?:^|[ T])00:00:00/.test(String(s))) return dateStr;
+  return `${dateStr}, ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+}
+// "Sat 6 Jun 2026, 7:00 PM" → adds end time (same day) or end date (multi-day).
+function whenString(ev) {
+  const start = formatDateTime(ev.start);
+  if (!ev.end || ev.end === ev.start) return start;
+  const sameDay = String(ev.start).slice(0, 10) === String(ev.end).slice(0, 10);
+  if (sameDay) {
+    const d = new Date(String(ev.end).replace(' ', 'T'));
+    if (!isNaN(d) && !/(?:^|[ T])00:00:00/.test(String(ev.end))) {
+      return `${start}–${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+    }
+    return start;
+  }
+  return `${start} – ${formatDateTime(ev.end)}`;
+}
 function sortKey(s) {
   if (!s) return '9999';
   const d = new Date(s);
@@ -1351,26 +1382,50 @@ function renderSidebarList() {
       const virtualTag = isVirtual ? '<span class="virtual-tag">Virtual</span>' : '';
       const eventLink  = bestLinkFor(ev);
       const sourceUrl  = websiteForSource(ev.source);
-      item.title = "Click for more information";
       const sourceHtml = sourceUrl
         ? `<a class="event-item-source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${escapeHtml(ev.source)}</a>`
         : escapeHtml(ev.source);
+
+      // Online-list items have no map marker to fly to, so a click should
+      // reveal the meeting's date/TIME + link INLINE — not jump straight to
+      // Zoom. Attach a collapsible detail block we toggle on click; the link
+      // is a button inside it (stopPropagation so it doesn't re-toggle).
+      const expandable = !inMapMode;
+      let detailHtml = '';
+      if (expandable) {
+        const descHtml = ev.description
+          ? `<div class="ei-desc">${escapeHtml(ev.description.substring(0, 240))}${ev.description.length > 240 ? '…' : ''}</div>`
+          : '';
+        const linkBtn = eventLink
+          ? `<a class="ei-link" href="${escapeHtml(eventLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Open link / join →</a>`
+          : '';
+        detailHtml = `<div class="event-item-detail">
+            <div class="ei-when">🕒 ${escapeHtml(whenString(ev))}</div>
+            ${descHtml}${linkBtn}
+          </div>`;
+      }
+      item.title = expandable ? 'Click to show date, time & link' : 'Click to show on the map';
       item.innerHTML = `
         <div class="event-item-title">${escapeHtml(ev.title)}${virtualTag}</div>
         <div class="event-item-date">${shortDate(ev.start)}</div>
         <div class="event-item-source">${sourceHtml}</div>
         <span class="event-item-dot" style="background:${color}"></span>
+        ${detailHtml}
       `;
-      // Virtual event with a URL → open it. In-person event → expand its
-      // cluster and open the popup. Keyboard-accessible (Enter/Space).
+      // Online mode → toggle the inline detail. Map mode → fly to the marker
+      // and open its popup. Keyboard-accessible (Enter/Space).
       const activate = () => {
-        if (isVirtual && eventLink) { window.open(eventLink, '_blank', 'noopener'); return; }
+        if (expandable) {
+          item.classList.toggle('expanded');
+          item.setAttribute('aria-expanded', item.classList.contains('expanded') ? 'true' : 'false');
+          return;
+        }
         const marker = markerMap[ev._idx];
-        if (!marker) return;
-        markerLayer.zoomToShowLayer(marker, () => marker.openPopup());
+        if (marker) markerLayer.zoomToShowLayer(marker, () => marker.openPopup());
       };
       item.tabIndex = 0;
       item.setAttribute('role', 'button');
+      if (expandable) item.setAttribute('aria-expanded', 'false');
       item.addEventListener('click', activate);
       item.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
