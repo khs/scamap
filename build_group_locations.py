@@ -116,9 +116,36 @@ def _extract_group_region(body_text: str, group_name: str) -> str:
     return ""
 
 
+# Caid (Southern California, Southern Nevada, Hawaii) seat map. The sca-caid.org
+# nav gives accurate *area* descriptions, but several geocode to the wrong
+# same-named place — Altavia ("San Fernando Valley") -> San Diego, Western Seas
+# ("The Hawaiian Islands") -> Ventura CA, Dun Or ("Antelope Valley") -> Antelope
+# near Sacramento, Lyondemere -> open ocean. Pin each to a clean city seat.
+CAID_CITY = {
+    "Barony of Altavia":      "Van Nuys, California",      # San Fernando Valley
+    "Barony of Calafia":      "San Diego, California",
+    "Barony of Dreiburgen":   "Redlands, California",       # Inland Empire ("San Bernardino" hits the desert county centroid)
+    "Barony of Dun Or":       "Lancaster, California",     # Antelope Valley
+    "Barony of Gyldenholt":   "Santa Ana, California",     # Orange County
+    "Barony of Lyondemere":   "Long Beach, California",    # South Bay / Long Beach
+    "Barony of Naevehjem":    "Ridgecrest, California",
+    "Barony of Nordwache":    "Fresno, California",        # Madera/Fresno/Kings/Tulare
+    "Barony of Starkhafn":    "Las Vegas, Nevada",         # Clark County
+    "Barony of Western Seas": "Honolulu, Hawaii",
+    "Barony of Wintermist":   "Bakersfield, California",   # Kern County
+    "Barony of the Angels":   "Los Angeles, California",
+    "Shire of Al-Sahid":      "Victorville, California",   # Barstow/Victorville
+    "Shire of Carreg Wen":    "Lompoc, California",
+    "Shire of Darach":        "Ventura, California",       # Ventura County
+    "Shire of the Isles":     "Santa Barbara, California",
+}
+
+
 def scrape_caid() -> list[tuple[str, str, str]]:
     """
-    Caid's groups directory at places.sca-caid.org/caid/.
+    Caid's groups directory at places.sca-caid.org/caid/. Scraped area text is
+    accurate but several entries geocode to the wrong same-named place, so we
+    override with a hand-verified city seat from CAID_CITY before returning.
 
     Strategy:
       1. Pull the canonical list of group names (and website URLs) from
@@ -230,6 +257,10 @@ def scrape_caid() -> list[tuple[str, str, str]]:
                 break
         except requests.RequestException as exc:
             print(f"  {name}: fetch failed: {exc}")
+
+    # Prefer a clean, correctly-geocoding city seat over the scraped area text.
+    out = [(name, _seat_lookup(CAID_CITY, name, region), web)
+           for name, region, web in out]
     return out
 
 
