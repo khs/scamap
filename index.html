@@ -1090,10 +1090,19 @@ let allEvents   = [];
 let groupPins   = [];   // placeholder pins from group_pins.csv (set after load)
 let sourceWebsite = {}; // { "Barony of Carolingia": "https://carolingia.eastkingdom.org" }
 let markerMap   = {};   // index → Leaflet marker
-// Cluster the markers so a wide zoom shows a count bubble per area instead of
-// ~1500 overlapping pins (expands as you zoom in). Events and placeholder
-// "visit their website" pins cluster in their own groups.
-const CLUSTER_OPTS = { chunkedLoading: true, showCoverageOnHover: false, maxClusterRadius: 50 };
+// Cluster markers ONLY when they're at essentially the same location — the
+// same scale the spiral-scatter operates on — so co-located events (incl. a
+// venue's recurring series) collapse into one count bubble, but distinct
+// venues/towns stay as separate pins. maxClusterRadius is in *pixels*, which
+// at wide zoom covers whole metros; instead we convert a fixed ~150m ground
+// distance to pixels at the current zoom (Web Mercator, ~lat 39N), floored at
+// 1px. Bump the 150 if you want slightly looser grouping.
+function clusterRadiusPx(zoom) {
+  const metersPerPx = 156543.03 * Math.cos(39 * Math.PI / 180) / Math.pow(2, zoom);
+  return Math.max(1, Math.round(150 / metersPerPx));
+}
+const CLUSTER_OPTS = { chunkedLoading: true, showCoverageOnHover: false,
+                       maxClusterRadius: clusterRadiusPx };
 const markerLayer = L.markerClusterGroup(CLUSTER_OPTS).addTo(map);
 const placeholderLayer = L.markerClusterGroup(CLUSTER_OPTS).addTo(map);
 
