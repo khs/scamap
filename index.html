@@ -1478,7 +1478,15 @@ document.getElementById('chk-virtual').addEventListener('change', applyFilters);
 document.querySelectorAll('.sidebar-tab').forEach(btn => {
   btn.addEventListener('click', () => {
     const mode = btn.dataset.mode;
-    if (mode === sidebarMode) return;
+    if (mode === sidebarMode) {
+      // Re-clicking the already-active "Map Events" tab resets the map to the
+      // default home view — a quick "show me everything again" after zooming
+      // into a region, since the sidebar list is scoped to the visible area.
+      // (fit-to-all-markers would jump to a whole-world view, since events
+      // span Lochac/Drachenwald; the home view is the familiar starting point.)
+      if (mode === 'map') map.setView([38, -96], 4);
+      return;
+    }
     sidebarMode = mode;
     document.querySelectorAll('.sidebar-tab').forEach(b => {
       const active = (b.dataset.mode === mode);
