@@ -6,6 +6,8 @@
   <title>Find an SCA Event</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 
   <!-- Fonts: MedievalSharp for headers, EB Garamond for body -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -556,6 +558,7 @@
 </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
 // ── Kingdom colour dictionary ────────────────────────────────────
 // Includes all 20 known-world kingdoms, even those not yet in the calendar list
@@ -1087,8 +1090,12 @@ let allEvents   = [];
 let groupPins   = [];   // placeholder pins from group_pins.csv (set after load)
 let sourceWebsite = {}; // { "Barony of Carolingia": "https://carolingia.eastkingdom.org" }
 let markerMap   = {};   // index → Leaflet marker
-const markerLayer = L.layerGroup().addTo(map);
-const placeholderLayer = L.layerGroup().addTo(map);
+// Cluster the markers so a wide zoom shows a count bubble per area instead of
+// ~1500 overlapping pins (expands as you zoom in). Events and placeholder
+// "visit their website" pins cluster in their own groups.
+const CLUSTER_OPTS = { chunkedLoading: true, showCoverageOnHover: false, maxClusterRadius: 50 };
+const markerLayer = L.markerClusterGroup(CLUSTER_OPTS).addTo(map);
+const placeholderLayer = L.markerClusterGroup(CLUSTER_OPTS).addTo(map);
 
 // Some calendar feeds annotate the source name with a parenthesised tag,
 // e.g. "Barony of Stierbach (Workshops)". Strip the tag so lookups against
@@ -1268,16 +1275,9 @@ function applyFilters() {
         }
         const marker = markerMap[ev._idx];
         if (!marker) return;
-        const latlng = marker.getLatLng();
-        const targetZoom = Math.max(map.getZoom(), 9);
-        // Respect prefers-reduced-motion: jump instead of animating the pan.
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-          map.setView(latlng, targetZoom);
-          marker.openPopup();
-        } else {
-          map.flyTo(latlng, targetZoom, { duration: 0.8 });
-          setTimeout(() => marker.openPopup(), 850);
-        }
+        // Cluster-aware: zoom/expand until the marker is un-clustered, then
+        // open its popup (works whether or not it's currently inside a cluster).
+        markerLayer.zoomToShowLayer(marker, () => marker.openPopup());
       };
       // Keyboard-accessible: each item is a focusable button, activated by
       // click or Enter/Space (was a mouse-only <div>).
