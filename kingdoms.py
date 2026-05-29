@@ -147,6 +147,7 @@ KINGDOM_STATES = {
 KINGDOM_HOME_STATES = {
     "Kingdom of AEthelmearc":   {"PA", "WV", "NY"},
     "Kingdom of An Tir":        {"WA", "OR", "ID", "MT"},
+    "Kingdom of Avacal":        {"AB", "SK", "BC"},
     "Kingdom of Ansteorra":     {"OK", "TX"},
     "Kingdom of Artemisia":     {"MT", "UT", "ID", "WY"},
     "Kingdom of Atenveldt":     {"AZ"},

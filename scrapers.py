@@ -59,13 +59,19 @@ Baronies investigated but NOT added — what we found and why we skipped:
 
 from __future__ import annotations
 
+import json
 import re
+import time
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Optional
+from urllib.parse import parse_qs, urlparse
 
 import requests
 from bs4 import BeautifulSoup
+
+SCRIPT_DIR = Path(__file__).parent
 
 
 HTTP_HEADERS = {
@@ -571,8 +577,241 @@ def scrape_meridies_nuevent(base_url: str, name: str) -> Optional[str]:
 
 
 # ---------------------------------------------------------------------------
+# EventPrime (WordPress) — sitemap + per-event Google-Calendar-link scraper
+# ---------------------------------------------------------------------------
+# Some kingdoms (Avacal) run the EventPrime plugin. Its WordPress REST API is
+# disabled and the calendar is AJAX/nonce-driven, but every event page renders
+# an "Add to Google Calendar" link whose query string carries the whole event:
+#     text=<title>&dates=<startZ>/<endZ>&location=<venue>&details=<html desc>
+# We enumerate event URLs from the wp-sitemap (which includes <lastmod>) and
+# parse that link on each page. Results are cached in eventprime_cache.json
+# keyed by URL+lastmod, so after the first run only new or edited events are
+# re-fetched — polite to the (volunteer-run) source site.
+
+EVENTPRIME_CACHE = SCRIPT_DIR / "eventprime_cache.json"
+EVENTPRIME_FETCH_DELAY = 1.0       # seconds between *new* page fetches
+_GCAL_DATES_RE = re.compile(r"(\d{8}T\d{6}Z)/(\d{8}T\d{6}Z)")
+
+
+def _eventprime_sitemap(base: str) -> dict:
+    """Map every em_event URL to its <lastmod> from the site's wp-sitemap."""
+    urls: dict[str, str] = {}
+    try:
+        idx = requests.get(f"{base}/wp-sitemap.xml", timeout=HTTP_TIMEOUT, headers=HTTP_HEADERS)
+        idx.raise_for_status()
+    except requests.RequestException as exc:
+        print(f"  WARNING: EventPrime sitemap index failed for {base}: {exc}")
+        return urls
+    for sub in re.findall(r"<loc>([^<]*em_event[^<]*\.xml)</loc>", idx.text):
+        try:
+            r = requests.get(sub, timeout=HTTP_TIMEOUT, headers=HTTP_HEADERS)
+            r.raise_for_status()
+        except requests.RequestException as exc:
+            print(f"  WARNING: EventPrime sub-sitemap failed {sub}: {exc}")
+            continue
+        for m in re.finditer(r"<url>\s*<loc>([^<]+)</loc>\s*(?:<lastmod>([^<]*)</lastmod>)?", r.text):
+            urls[m.group(1)] = m.group(2) or ""
+    return urls
+
+
+def _parse_eventprime_event(html: str) -> Optional[dict]:
+    """Extract one event's fields from its page's Google-Calendar link.
+    Returns dict(summary, start, end, location, description) with start/end as
+    'YYYYMMDDTHHMMSSZ' strings, or None if the link/date is missing."""
+    soup = BeautifulSoup(html, "lxml")
+    link = soup.find("a", href=re.compile(r"google\.com/calendar/event"))
+    if not link:
+        return None
+    q = parse_qs(urlparse(link["href"]).query)
+    title = (q.get("text") or [""])[0].strip()
+    m = _GCAL_DATES_RE.match((q.get("dates") or [""])[0])
+    if not title or not m:
+        return None
+    details = (q.get("details") or [""])[0]
+    description = ""
+    if details:
+        description = re.sub(r"\s+", " ", BeautifulSoup(details, "lxml").get_text(" ", strip=True)).strip()
+    return {
+        "summary":     title,
+        "start":       m.group(1),
+        "end":         m.group(2),
+        "location":    (q.get("location") or [""])[0].strip(),
+        "description": description,
+    }
+
+
+def scrape_eventprime(base_url: str, name: str) -> Optional[str]:
+    """Scrape an EventPrime kingdom site (e.g. Avacal) into ICS text."""
+    base = base_url.rstrip("/")
+    host = urlparse(base).netloc
+    sitemap = _eventprime_sitemap(base)
+    if not sitemap:
+        print(f"  WARNING: EventPrime found no event URLs for {name}")
+        return None
+
+    try:
+        cache = json.loads(EVENTPRIME_CACHE.read_text(encoding="utf-8")) if EVENTPRIME_CACHE.exists() else {}
+    except Exception:
+        cache = {}
+    site_cache = cache.setdefault(host, {})
+
+    cutoff = datetime.now(timezone.utc) - timedelta(days=1)   # keep just-finished events
+    events, fetched = [], 0
+
+    for url, lastmod in sitemap.items():
+        hit = site_cache.get(url)
+        if hit and hit.get("lastmod") == lastmod:
+            data = hit.get("event")
+        else:
+            try:
+                r = requests.get(url, timeout=HTTP_TIMEOUT, headers=HTTP_HEADERS)
+                r.raise_for_status()
+                data = _parse_eventprime_event(r.text)
+            except requests.RequestException as exc:
+                print(f"  WARNING: EventPrime page fetch failed {url}: {exc}")
+                continue
+            fetched += 1
+            site_cache[url] = {"lastmod": lastmod, "event": data}
+            time.sleep(EVENTPRIME_FETCH_DELAY)
+
+        if not data:
+            continue
+        try:
+            start = datetime.strptime(data["start"], "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
+            end   = datetime.strptime(data["end"],   "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
+        except (KeyError, ValueError):
+            continue
+        if end < cutoff:                       # past event — don't emit
+            continue
+        # EventPrime encodes times in UTC; for SCA listings the date is what
+        # matters, and a UTC time would render shifted in the viewer's zone, so
+        # snap to date-only (the precise time is on the linked event page).
+        start = start.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = end.replace(hour=0, minute=0, second=0, microsecond=0)
+        slug = url.rstrip("/").rsplit("/", 1)[-1]
+        events.append({
+            "uid":         f"eventprime-{slug}@{host}",
+            "start":       start,
+            "end":         end,
+            "summary":     data["summary"],
+            "location":    data["location"],
+            "description": data["description"],
+            "url":         url,
+        })
+
+    # Drop cache entries for events removed upstream, then persist.
+    for stale in set(site_cache) - set(sitemap):
+        del site_cache[stale]
+    try:
+        EVENTPRIME_CACHE.write_text(
+            json.dumps(cache, indent=0, ensure_ascii=False, sort_keys=True), encoding="utf-8")
+    except OSError as exc:
+        print(f"  WARNING: could not write {EVENTPRIME_CACHE.name}: {exc}")
+
+    print(f"  EventPrime {name}: {len(events)} upcoming "
+          f"({fetched} fetched this run, {len(sitemap)} in sitemap)")
+    return _emit_calendar(name, events) if events else None
+
+
+# ---------------------------------------------------------------------------
+# Drachenwald — kingdom calendar JSON
+# ---------------------------------------------------------------------------
+# Drachenwald (Europe) runs a Jekyll static site whose calendar widget loads
+# events from a clean JSON feed at dis.drachenwald.sca.org/data/calendar.json.
+# We fetch that and synthesise ICS. Administrative pseudo-events (bid deadlines
+# carry type="other" and 1899 placeholder dates) and cancelled events are
+# dropped. Dates are emitted date-only: the feed's start-time is local to each
+# event's country and would render shifted in a viewer's zone — the date is what
+# the map needs (the precise time is on the linked event site).
+
+def _drachenwald_events_from_records(records: list) -> list[dict]:
+    """Pure JSON-records -> event-dicts transform (no network; unit-tested)."""
+    events = []
+    for rec in records:
+        if not isinstance(rec, dict):
+            continue
+        if rec.get("type") != "event":                       # skip bid/admin items
+            continue
+        if str(rec.get("status", "")).strip().lower() == "cancelled":
+            continue
+        sd = (rec.get("start-date") or "").strip()
+        ed = (rec.get("end-date") or "").strip() or sd
+        try:
+            start = datetime.strptime(sd, "%Y-%m-%d")
+            end   = datetime.strptime(ed, "%Y-%m-%d")
+        except ValueError:
+            continue                                          # unparseable / 1899 placeholder
+
+        # Location: venue address, then town, then country, de-duplicated.
+        bits, seen = [], set()
+        for part in (rec.get("site-address"), rec.get("town"), rec.get("country")):
+            part = (part or "").strip().strip(",").strip()
+            if part and part.lower() not in seen:
+                seen.add(part.lower())
+                bits.append(part)
+        location = ", ".join(bits)
+        vc = (rec.get("vc-url") or "").strip()
+        if not location and vc:                               # online-only event
+            location = vc
+
+        website = (rec.get("website") or "").strip() or (rec.get("facebook") or "").strip()
+        if website and not website.startswith("http"):
+            website = "https://" + website
+
+        desc_parts = []
+        if rec.get("host-branch"):
+            desc_parts.append(f"Hosted by: {rec['host-branch'].strip()}")
+        if rec.get("summary"):
+            desc_parts.append(rec["summary"].strip())
+        if vc:
+            desc_parts.append(f"Online: {vc}")
+
+        slug = (rec.get("slug") or "").strip()
+        events.append({
+            "uid":         f"drachenwald-{slug or uuid.uuid4()}@drachenwald.sca.org",
+            "start":       start,
+            "end":         end,
+            "summary":     (rec.get("event-name") or "(untitled)").strip(),
+            "location":    location,
+            "description": " | ".join(desc_parts),
+            "url":         website,
+        })
+    return events
+
+
+def scrape_drachenwald_json(url: str, name: str) -> Optional[str]:
+    """Fetch Drachenwald's calendar JSON feed and convert it to ICS."""
+    try:
+        r = requests.get(url, timeout=HTTP_TIMEOUT, headers=HTTP_HEADERS)
+        r.raise_for_status()
+        records = r.json()
+    except (requests.RequestException, ValueError) as exc:
+        print(f"  WARNING: Drachenwald JSON fetch failed for {name}: {exc}")
+        return None
+    events = _drachenwald_events_from_records(records)
+    print(f"  Drachenwald {name}: {len(events)} events from {len(records)} records")
+    return _emit_calendar(name, events) if events else None
+
+
+# ---------------------------------------------------------------------------
 # Dispatch — public entry point used by ImportMaps.fetch_ics
 # ---------------------------------------------------------------------------
+
+# Every recognised scraper prefix, in one place. ImportMaps.fetch_ics uses
+# is_scraper_source() to decide a source must go through maybe_scrape (and never
+# fall through to the URL / Google-Calendar fetcher, which would 404 on
+# "calendar.google.com/.../eventprime:..."). Adding a new adapter? Add its
+# prefix here and a branch in maybe_scrape — nothing in ImportMaps to touch.
+SCRAPER_PREFIXES = (
+    "simcal:", "tribe-rest:", "calontir-json:", "nuevent:", "mec-rest:",
+    "eventprime:", "drachenwald-json:",
+)
+
+
+def is_scraper_source(calendar_id: str) -> bool:
+    """True if this calendars.csv id must be handled by a scraper adapter."""
+    return calendar_id.startswith(SCRAPER_PREFIXES)
+
 
 def maybe_scrape(calendar_id: str, source_name: str) -> Optional[str]:
     """
@@ -586,6 +825,8 @@ def maybe_scrape(calendar_id: str, source_name: str) -> Optional[str]:
         calontir-json:<json-endpoint-url>
         nuevent:<base-site-url>
         mec-rest:<base-site-url>
+        eventprime:<base-site-url>
+        drachenwald-json:<json-feed-url>
     """
     if calendar_id.startswith("simcal:"):
         return scrape_simple_calendar(calendar_id[len("simcal:"):], source_name)
@@ -597,4 +838,8 @@ def maybe_scrape(calendar_id: str, source_name: str) -> Optional[str]:
         return scrape_meridies_nuevent(calendar_id[len("nuevent:"):], source_name)
     if calendar_id.startswith("mec-rest:"):
         return scrape_mec_rest(calendar_id[len("mec-rest:"):], source_name)
+    if calendar_id.startswith("eventprime:"):
+        return scrape_eventprime(calendar_id[len("eventprime:"):], source_name)
+    if calendar_id.startswith("drachenwald-json:"):
+        return scrape_drachenwald_json(calendar_id[len("drachenwald-json:"):], source_name)
     return None

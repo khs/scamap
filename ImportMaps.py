@@ -35,7 +35,7 @@ import recurring_ical_events
 # Local module: turns non-ICS sources (HTML pages, REST APIs) into ICS text
 # so the rest of this script can ingest them uniformly. Sources opt in via
 # URL prefixes in calendars.csv (e.g. "simcal:https://example.com/calendar/").
-from scrapers import maybe_scrape
+from scrapers import maybe_scrape, is_scraper_source
 
 
 # ---------------------------------------------------------------------------
@@ -127,7 +127,7 @@ def fetch_ics(calendar: dict) -> Calendar | None:
     # scraper finds no events, treat that as a legitimate empty result rather
     # than falling through to the URL fetcher (which would try to fetch
     # "calendar.google.com/.../simcal:..." and 404).
-    if calendar["id"].startswith(("simcal:", "tribe-rest:", "calontir-json:", "nuevent:", "mec-rest:")):
+    if is_scraper_source(calendar["id"]):
         scraped = maybe_scrape(calendar["id"], calendar["source"])
         if scraped is None:
             return None

@@ -72,7 +72,7 @@ jobs:
           # Commit the files the public site serves, plus the geocode cache
           # so the next scheduled run reuses prior lookups (and never repeats
           # the same Nominatim query, per their bulk-geocoding policy).
-          git add sca_events_clean.csv group_pins.csv group_locations.csv geocode_cache.json description_cache.json health_state.json
+          git add sca_events_clean.csv group_pins.csv group_locations.csv geocode_cache.json description_cache.json eventprime_cache.json health_state.json
 
           if git diff --cached --quiet; then
             echo "No data changes to commit."
