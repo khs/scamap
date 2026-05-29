@@ -474,12 +474,22 @@ def main(retry_failed: bool = False):
     # Mark skippable rows immediately
     df.loc[to_geocode & (df["address_confidence"] == "empty"), "geocode_status"] = "skipped"
 
+    # Never geocode a "location" that is just a URL — Zoom/Meet links and event
+    # websites with no street address. Nominatim can't resolve them, and leaving
+    # them "failed" means every --retry-failed run re-sends them, wasting calls
+    # against Nominatim's bulk-geocoding budget. Match only locations that START
+    # with http(s):// so a real address with a trailing URL still geocodes
+    # (and hybrid events like "… (Manteca, CA & Zoom)" keep their pin).
+    url_loc = to_geocode & df["clean_location"].fillna("").str.match(r"^\s*https?://")
+    df.loc[url_loc, "geocode_status"] = "skipped"
+
     # Set up session with required User-Agent
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT})
 
     # Rows that need actual geocoding
-    needs_geocoding = to_geocode & (df["address_confidence"] != "empty")
+    needs_geocoding = (to_geocode & (df["address_confidence"] != "empty")
+                       & ~url_loc)
     indices = df[needs_geocoding].index.tolist()
     total = len(indices)
 
