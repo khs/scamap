@@ -140,6 +140,52 @@
       align-items: center;
       margin-bottom: 0.8rem;
     }
+
+    /* Date-range filter (sits below the checkboxes). Defaults to today through
+       six months out so the map opens focused on the near-term events most
+       people are planning around. */
+    .filter-dates {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 0.8rem;
+    }
+    .date-label {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: 'Cinzel', serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      color: var(--ink);
+    }
+    .date-label input[type="date"] {
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: 0.9rem;
+      padding: 0.3rem 0.5rem;
+      border: 1.5px solid var(--gold);
+      border-radius: 6px;
+      background: rgba(255,253,247,0.85);
+      color: var(--ink);
+    }
+    .date-label input[type="date"]:focus {
+      border-color: var(--crimson);
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(30,58,138,0.12);
+    }
+    .date-reset {
+      font-family: 'Cinzel', serif;
+      font-size: 0.62rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      padding: 0.28rem 0.65rem;
+      cursor: pointer;
+    }
+    .date-reset:hover { color: var(--crimson); border-color: var(--crimson); }
     .check-label {
       display: flex;
       align-items: center;
@@ -532,6 +578,13 @@
       <input type="checkbox" id="chk-overlay" />
       Color states by kingdom
     </label>
+  </div>
+
+  <div class="filter-dates" role="group" aria-label="Date range">
+    <label class="date-label">From <input type="date" id="date-from" aria-label="From date" /></label>
+    <label class="date-label">To <input type="date" id="date-to" aria-label="To date" /></label>
+    <button type="button" class="date-reset" id="date-reset"
+            title="Reset to today through six months out">Reset</button>
   </div>
 
   <!-- Map + sidebar -->
@@ -1314,11 +1367,23 @@ function applyFilters() {
   const showKingdom = document.getElementById('chk-kingdom').checked;
   const showBaronial= document.getElementById('chk-baronial').checked;
   const showVirtual = document.getElementById('chk-virtual').checked;
+  const fromDate    = document.getElementById('date-from').value;   // 'YYYY-MM-DD' or ''
+  const toDate      = document.getElementById('date-to').value;
   const onlineOnly  = (sidebarMode === "online");
 
   // Filter
   const filtered = allEvents.filter((ev, i) => {
     ev._idx = i;
+    // Date-range filter — applied universally (map AND online). An event is in
+    // range when its window [start, end] overlaps [fromDate, toDate]: drop it
+    // only when it ENDS before the window or STARTS after it.
+    if (fromDate || toDate) {
+      const evStart = (ev.start || '').slice(0, 10);
+      const evEnd   = (ev.end   || ev.start || '').slice(0, 10);
+      if (!evStart) return false;                                    // no usable date
+      if (fromDate && evEnd && evEnd < fromDate) return false;       // already over
+      if (toDate   && evStart > toDate)          return false;       // starts past window
+    }
     if (onlineOnly) {
       // Online-only view: just the virtual events, no other filters
       return ev.is_virtual === 'True';
@@ -1640,6 +1705,27 @@ fetch('sca_events_clean.csv')
 
 // ── Wire controls ─────────────────────────────────────────────────
 document.getElementById('search-input').addEventListener('input', applyFilters);
+// Date-range filter — default to "today through six months out" so the map
+// opens focused on the near-term events most people are planning around.
+// Local YYYY-MM-DD (not toISOString — that converts to UTC and would slip a day
+// in evenings west of UTC).
+const _padDate = n => String(n).padStart(2, '0');
+const _localIso = d => `${d.getFullYear()}-${_padDate(d.getMonth() + 1)}-${_padDate(d.getDate())}`;
+function setDefaultDateRange() {
+  const today = new Date();
+  const future = new Date(today);
+  future.setMonth(future.getMonth() + 6);
+  document.getElementById('date-from').value = _localIso(today);
+  document.getElementById('date-to').value   = _localIso(future);
+}
+setDefaultDateRange();   // runs before applyFilters() ever fires
+document.getElementById('date-from').addEventListener('change', applyFilters);
+document.getElementById('date-to').addEventListener('change', applyFilters);
+document.getElementById('date-reset').addEventListener('click', () => {
+  setDefaultDateRange();
+  applyFilters();
+});
+
 document.getElementById('chk-kingdom').addEventListener('change', applyFilters);
 document.getElementById('chk-baronial').addEventListener('change', applyFilters);
 document.getElementById('chk-virtual').addEventListener('change', applyFilters);
