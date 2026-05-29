@@ -853,12 +853,13 @@ function loadKingdomOverlay() {
   kingdomOverlayPromise = (async () => {
     // Pull both layers + the topojson-client converter in parallel.
     // - us-counties.topojson: fine US county detail (with override table)
-    // - world-kingdoms.geojson: Canadian provinces (Avacal/Ealdormere/Tir Mara/
+    // - world-kingdoms.topojson: Canadian provinces (Avacal/Ealdormere/Tir Mara/
     //   Tir Righ-BC), Lochac (AU+NZ), Drachenwald (Europe). Each feature is
     //   pre-tagged with a `kingdom` property by build_world_kingdoms.py.
+    //   TopoJSON (~132KB) instead of raw GeoJSON (~366KB).
     const [topoResp, worldResp] = await Promise.all([
       fetch('us-counties.topojson'),
-      fetch('world-kingdoms.geojson'),
+      fetch('world-kingdoms.topojson'),
       new Promise((resolve, reject) => {
         if (window.topojson) { resolve(); return; }
         const s = document.createElement('script');
@@ -871,8 +872,11 @@ function loadKingdomOverlay() {
     if (!topoResp.ok) throw new Error(`HTTP ${topoResp.status}`);
     const topo = await topoResp.json();
     const counties = window.topojson.feature(topo, topo.objects.counties);
-    const world = worldResp.ok ? await worldResp.json()
-                               : { type: 'FeatureCollection', features: [] };
+    let world = { type: 'FeatureCollection', features: [] };
+    if (worldResp.ok) {
+      const worldTopo = await worldResp.json();
+      world = window.topojson.feature(worldTopo, worldTopo.objects.data);
+    }
 
     // Binding 3000+ tooltips up front pegs the renderer; instead, manage a
     // single shared tooltip that follows the mouse and shows the kingdom for

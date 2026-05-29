@@ -52,6 +52,28 @@ HDRS = {"User-Agent": "Mozilla/5.0 (compatible; SCA Maps research bot)"}
 TIMEOUT = 20
 
 
+# ── Seat-map override helpers ───────────────────────────────────────────
+# Several kingdom directories give us reliable group *names* and websites but
+# only a generic kingdom/region as the location, which lands every group on a
+# single centroid. For those kingdoms we keep a hand-verified group→city seat
+# map and prefer it over the scraped region. Lookups are apostrophe- and
+# case-insensitive so curly/straight quotes and "Barony Of"/"Barony of"
+# capitalization drift in scraped names still match.
+def _norm_key(s: str) -> str:
+    return re.sub(r"\s+", " ",
+                  s.replace("’", "'").replace("‘", "'")).strip().lower()
+
+
+def _seat_lookup(city_map: dict, name: str, default: str) -> str:
+    if name in city_map:
+        return city_map[name]
+    n = _norm_key(name)
+    for k, v in city_map.items():
+        if _norm_key(k) == n:
+            return v
+    return default
+
+
 # ---------------------------------------------------------------------------
 # Per-kingdom scrapers
 # ---------------------------------------------------------------------------
@@ -625,6 +647,39 @@ def scrape_avacal() -> list[tuple[str, str, str]]:
     return items
 
 
+# Hand-curated "City, Country" seats for Drachenwald groups whose scraped
+# region text is a bare province name or multi-city list that Nominatim
+# can't resolve. City chosen as the named seat or the province capital.
+DRACHENWALD_CITY = {
+    "Barony of Eplaheimr":          "Athlone, Ireland",
+    "Canton of Drei Eichen":        "Köln, Germany",
+    "Canton of Hukka":              "Helsinki, Finland",
+    "Canton of Humalasalo":         "Tampere, Finland",
+    "Canton of Meadowmarsh":        "Frankfurt, Germany",
+    "Canton of Miehonlinna":        "Kouvola, Finland",
+    "Canton of Roterde":            "Dortmund, Germany",
+    "Canton of Turmstadt":          "Nürnberg, Germany",
+    "Canton of Vielburgen":         "Kaiserslautern, Germany",
+    "College of St John of Rila":   "Kyustendil, Bulgaria",
+    "Shire of Baggeholm":           "Karlskrona, Sweden",     # Blekinge
+    "Shire of Dun in Mara":         "Dublin, Ireland",
+    "Shire of Fjellom":             "Östersund, Sweden",      # Jämtland
+    "Shire of Frostheim":           "Luleå, Sweden",          # Norrbotten
+    "Shire of Glen Rathlin":        "Belfast, United Kingdom",
+    "Shire of Gyllengran":          "Sundsvall, Sweden",      # Medelpad
+    "Shire of Löghammar":           "Västerås, Sweden",       # Västmanland
+    "Shire of Mynydd Gwyn":         "Cardiff, United Kingdom",
+    "Shire of Reengarda":           "Skellefteå, Sweden",
+    "Shire of Ulvberget":           "Skövde, Sweden",         # Skaraborg
+    "Shire of Örehus":              "Helsingborg, Sweden",
+    # Baronies that already geocode but pin to country centroid — sharpen them
+    "Barony of Aarnimetsä":         "Helsinki, Finland",
+    "Barony of Gotvik":             "Gothenburg, Sweden",
+    "Barony of Knights Crossing":   "Kaiserslautern, Germany",
+    "Barony of Styringheim":        "Visby, Sweden",          # Gotland
+}
+
+
 def scrape_drachenwald() -> list[tuple[str, str, str]]:
     """
     Drachenwald spans Europe + parts of Africa & the Middle East. Their
@@ -712,6 +767,13 @@ def scrape_drachenwald() -> list[tuple[str, str, str]]:
                           "", name, flags=re.IGNORECASE).strip().lower()
             region = barony_country.get(bare, "")
 
+        # Prefer a hand-curated "City, Country" seat — Drachenwald's region
+        # text is full of bare Swedish/Finnish province names ("Blekinge",
+        # "Jämtland", "Helsinki area") that Nominatim can't place without a
+        # country, so the geocoder was leaving 21 groups pinless.
+        if name in DRACHENWALD_CITY:
+            region = DRACHENWALD_CITY[name]
+
         # Online (website) — first http(s) anchor in the block
         website = ""
         # We need to look at the live siblings for anchors, since block_text has them stripped
@@ -765,10 +827,14 @@ EALDORMERE_CITY = {
     "Canton of Caldrithig":         "Carleton Place, Ontario, Canada",
     "Canton of Monadh":             "Almonte, Ontario, Canada",
     "Canton of Beremere":           "Belleville, Ontario, Canada",
+    # Strongholds under Skraeling Althing (Ottawa Valley)
+    "Stronghold of Greyfells":      "Pembroke, Ontario, Canada",
+    "Stronghold of Tor Brant":      "Arnprior, Ontario, Canada",
     # Shires
     "Shire of Bastille du Lac":     "Sarnia, Ontario, Canada",
     "Shire of Champcorbeau":        "Sault Ste. Marie, Ontario, Canada",
     "Shire of Trinovantia Nova":    "London, Ontario, Canada",
+    "Shire of Ulfheim":             "Sudbury, Ontario, Canada",  # approx — northern Ontario
 }
 
 
@@ -793,6 +859,10 @@ def scrape_ealdormere() -> list[tuple[str, str, str]]:
         name = strong.get_text(" ", strip=True)
         # Normalize zero-width spaces and curly apostrophes in scraped names
         name = name.replace("​", "").replace("’", "'").replace("‘", "'")
+        # Some <strong> tags glue a URL onto the name, e.g.
+        # "Stronghold of Tor Brant skraelingalthing.com/wp/torbrant/".
+        # Cut everything from the first domain-looking token onward.
+        name = re.split(r"\s+(?:https?://|\S+\.(?:com|ca|org|net)\b)", name)[0]
         name = re.sub(r"\s+", " ", name).strip()
         if not group_re.match(name):
             continue
@@ -891,25 +961,28 @@ def scrape_lochac() -> list[tuple[str, str, str]]:
                         break
             if not name:
                 continue
-            # Look for a location/region hint in the homepage body
-            body = sg.get_text(" ", strip=True)[:3000]
-            region = ""
-            for pat in [
-                r"(?:located|based|situated)\s+in\s+([^.;\n]{4,120})",
-                r"(?:covers|encompasses|comprises)\s+([^.;\n]{4,120})",
-                r"(?:Region|Location)\s*[:\-]\s*([^.;\n]{4,120})",
-            ]:
-                m = re.search(pat, body, re.IGNORECASE)
-                if m:
-                    region = m.group(1).strip().rstrip(",.;")
-                    break
-            # If the body parse didn't yield anything useful, fall back to a
-            # hand-maintained city lookup so we don't stack 14 baronies at the
-            # geographic centroid of Australia (-24.78, 134.76).
-            if not region or region.lower() == "australia":
-                hardcoded = LOCHAC_CITY.get(name)
-                if hardcoded:
-                    region = hardcoded
+            # Normalise mangled characters in the name (e.g. "Barony of Kraé
+            # Glas" arriving as "Kra<replacement-char>") so the city lookup
+            # and downstream dedup match cleanly.
+            name = (name.replace("�", "e")     # replacement char → best guess
+                        .replace("’", "'").replace("‘", "'"))
+            name = re.sub(r"\s+", " ", name).strip()
+            # Hand-curated seat always wins — the body text on Lochac group
+            # pages is wildly inconsistent ("your insurance, by signing up",
+            # "Schlaepher Park, 41C Ostrich Farm Road, Pukekohe", multi-
+            # sentence blurbs) and rarely geocodes.
+            region = LOCHAC_CITY.get(name, "")
+            if not region:
+                body = sg.get_text(" ", strip=True)[:3000]
+                for pat in [
+                    r"(?:located|based|situated)\s+in\s+([^.;\n]{4,120})",
+                    r"(?:covers|encompasses|comprises)\s+([^.;\n]{4,120})",
+                    r"(?:Region|Location)\s*[:\-]\s*([^.;\n]{4,120})",
+                ]:
+                    m = re.search(pat, body, re.IGNORECASE)
+                    if m:
+                        region = m.group(1).strip().rstrip(",.;")
+                        break
             if not region:
                 region = "Australia"   # last-resort default
             if name not in out:
@@ -932,6 +1005,7 @@ LOCHAC_CITY = {
     "Barony of Ildhafn":       "Auckland, New Zealand",
     "Barony of Innilgard":     "Adelaide, South Australia",
     "Barony of Krae Glas":     "Eltham, Victoria, Australia",
+    "Barony of Kraé Glas":     "Eltham, Victoria, Australia",   # accented spelling
     "Barony of Mordenvale":    "Newcastle, New South Wales, Australia",
     "Barony of Politarchopolis": "Canberra, Australia",
     "Barony of River Haven":   "Brisbane, Queensland, Australia",
@@ -1114,12 +1188,49 @@ def scrape_antir() -> list[tuple[str, str, str]]:
     return items
 
 
+# Ansteorra (Oklahoma + Texas) seat map. The /groups/ pages often describe a
+# whole multi-county region (or just "Texas"), so without this many groups land
+# on the OKC / central-Texas centroid. Cities verified against ansteorra.org
+# group pages. League City stands in for Loch Soilleir's Clear Lake/NASA area
+# so it doesn't collide with Stargate (Houston); Graywood=Lufkin so it doesn't
+# collide with Rosenfeld (Tyler).
+ANSTEORRA_CITY = {
+    "Barony of Bjornsborg":      "San Antonio, Texas",
+    "Barony of Bonwicke":        "Lubbock, Texas",
+    "Barony of Bordermarch":     "Beaumont, Texas",
+    "Barony of Bryn Gwlad":      "Austin, Texas",
+    "Barony of Elfsea":          "Fort Worth, Texas",
+    "Barony of Loch Soilleir":   "League City, Texas",      # Clear Lake / SE Houston
+    "Barony of Namron":          "Norman, Oklahoma",
+    "Barony of Northkeep":       "Tulsa, Oklahoma",
+    "Barony of Wiesenfeuer":     "Oklahoma City, Oklahoma",
+    "Barony of the Eldern Hills": "Lawton, Oklahoma",
+    "Barony of the Stargate":    "Houston, Texas",
+    "Barony of the Steppes":     "Dallas, Texas",
+    "Canton of Chemin Noir":     "Bartlesville, Oklahoma",
+    "Canton of Glaslyn":         "Denton, Texas",
+    "Canton of Myrgenfeld":      "Guthrie, Oklahoma",
+    "Canton of Skorragarðr":     "Shawnee, Oklahoma",       # dormant
+    "Province of Mooneschadowe": "Stillwater, Oklahoma",
+    "Riding of Marata":          "Enid, Oklahoma",
+    "Shire of Adlersruhe":       "Amarillo, Texas",
+    "Shire of Brad Leah":        "Wichita Falls, Texas",
+    "Shire of Ffynnon Gath":     "San Marcos, Texas",
+    "Shire of Graywood":         "Lufkin, Texas",           # Deep East TX
+    "Shire of Rosenfeld":        "Tyler, Texas",
+    "Shire of Seawinds":         "Corpus Christi, Texas",
+    "Shire of the Shadowlands":  "College Station, Texas",
+    "Stronghold of Hellsgate":   "Killeen, Texas",          # Fort Hood area
+}
+
+
 def scrape_ansteorra() -> list[tuple[str, str, str]]:
     """
     Ansteorra (Oklahoma + Texas) — /groups/ page links every group as
     /ansteorra.org/<slug>. Each group has its own static page. We visit
     each page to read its full name from <title> and any location/region
-    descriptive text from the body.
+    descriptive text from the body, then prefer a hand-verified city seat
+    from ANSTEORRA_CITY so multi-county descriptions don't centroid-stack.
     """
     url = "https://ansteorra.org/groups/"
     r = requests.get(url, timeout=TIMEOUT, headers=HDRS)
@@ -1192,7 +1303,7 @@ def scrape_ansteorra() -> list[tuple[str, str, str]]:
             # Ansteorra fallback: Texas (covers most of it)
             region = "Texas"
         if name not in out:
-            out[name] = (region, group_url)
+            out[name] = (_seat_lookup(ANSTEORRA_CITY, name, region), group_url)
 
     items = [(g, loc, web) for g, (loc, web) in sorted(out.items())]
     for g, loc, web in items:
@@ -1200,8 +1311,26 @@ def scrape_ansteorra() -> list[tuple[str, str, str]]:
     return items
 
 
+# Atenveldt (Arizona) seat map. The homepage only links group names — no city —
+# so without this all nine baronies/shires land on the Arizona centroid.
+# Cities verified against atenveldt.org group pages.
+ATENVELDT_CITY = {
+    "Barony of Atenveldt":       "Phoenix, Arizona",        # central Phoenix
+    "Barony of Mons Tonitrus":   "Sierra Vista, Arizona",   # Cochise County
+    "Barony of Ered Sul":        "Flagstaff, Arizona",
+    "Barony of Granite Mountain": "Prescott, Arizona",
+    "Barony of Sun Dragon":      "Glendale, Arizona",       # west Phoenix valley
+    "Barony of Tir Ysgithr":     "Tucson, Arizona",
+    "Barony of Twin Moons":      "Mesa, Arizona",           # east Phoenix valley
+    "Shire of Burning Sands":    "Yuma, Arizona",
+    "Shire of Windale":          "Kingman, Arizona",
+}
+
+
 def scrape_atenveldt() -> list[tuple[str, str, str]]:
-    """Atenveldt lists their baronies right on the kingdom homepage as links."""
+    """Atenveldt lists their baronies right on the kingdom homepage as links.
+    The homepage carries no city, so we prefer a hand-verified seat from
+    ATENVELDT_CITY (else fall back to the Arizona centroid)."""
     url = "https://www.atenveldt.org/"
     r = requests.get(url, timeout=TIMEOUT, headers=HDRS)
     soup = BeautifulSoup(r.text, "lxml")
@@ -1214,10 +1343,8 @@ def scrape_atenveldt() -> list[tuple[str, str, str]]:
         text = a.get_text(" ", strip=True)
         if not group_re.match(text):
             continue
-        # Region not on the homepage — fall back to Arizona (AZ) for most.
-        # User can edit group_locations.csv manually for finer placement.
         if text not in out:
-            out[text] = ("Arizona", a["href"])
+            out[text] = (_seat_lookup(ATENVELDT_CITY, text, "Arizona"), a["href"])
 
     items = [(g, loc, web) for g, (loc, web) in sorted(out.items())]
     for g, loc, web in items:
@@ -1225,11 +1352,47 @@ def scrape_atenveldt() -> list[tuple[str, str, str]]:
     return items
 
 
+# Northshield seat map. Northshield spans MN, WI, the Dakotas, the western UP
+# of Michigan, plus Manitoba and NW Ontario — but its OP group pages carry no
+# reliable location, so the scraper defaulted every group to "Wisconsin",
+# stacking 25 groups on the WI centroid. Cities verified against each group's
+# site and the northshield.org/local-groups directory.
+NORTHSHIELD_CITY = {
+    "Barony of Caer Anterth Mawr": "Milwaukee, Wisconsin",
+    "Barony of Castel Rouge":      "Winnipeg, Manitoba, Canada",
+    "Barony of Jararvellir":       "Madison, Wisconsin",
+    "Barony of Nordskogen":        "Minneapolis, Minnesota",
+    "Barony of Windhaven":         "Appleton, Wisconsin",
+    "Canton of Coille Stoirmeil":  "Tomah, Wisconsin",
+    "Canton of Nordleigh":         "Northfield, Minnesota",
+    "College of Svaty Sebesta":    "Brookings, South Dakota",   # SDSU
+    "Shire of Border Downs":       "Sioux Falls, South Dakota",
+    "Shire of Coldedernhale":      "Pierre, South Dakota",
+    "Shire of Darkstone":          "Ashland, Wisconsin",
+    "Shire of Dreibrucken":        "Grand Forks, North Dakota",
+    "Shire of Falcon's Keep":      "Stevens Point, Wisconsin",
+    "Shire of Inner Sea":          "Duluth, Minnesota",
+    "Shire of Korsvag":            "Fargo, North Dakota",
+    "Shire of Mare Amethystinum":  "Thunder Bay, Ontario, Canada",
+    "Shire of Midewinde":          "Minot, North Dakota",
+    "Shire of Rivenwood Tower":    "Mankato, Minnesota",
+    "Shire of Rockhaven":          "St. Cloud, Minnesota",
+    "Shire of Rokeclif":           "La Crosse, Wisconsin",
+    "Shire of Schattentor":        "Rapid City, South Dakota",
+    "Shire of Silfren Mere":       "Rochester, Minnesota",
+    "Shire of Skerjastrond":       "Marquette, Michigan",       # western UP
+    "Shire of Trewint":            "Aberdeen, South Dakota",
+    "Shire of Vilku Urvas":        "Grand Rapids, Minnesota",
+}
+
+
 def scrape_northshield() -> list[tuple[str, str, str]]:
     """
     Northshield's homepage doesn't host a structured directory but it links
     each group as /op/groups/?groupid=N. We harvest those links from the
-    homepage and dereference each one for the proper name + region.
+    homepage and dereference each one for the proper name + region, then prefer
+    a hand-verified city seat from NORTHSHIELD_CITY (the OP pages rarely name a
+    location, so the scraped default is the WI centroid for nearly everyone).
     """
     home = "https://northshield.org/"
     r = requests.get(home, timeout=TIMEOUT, headers=HDRS)
@@ -1282,94 +1445,121 @@ def scrape_northshield() -> list[tuple[str, str, str]]:
         except requests.RequestException:
             pass
         if name not in out:
-            out[name] = (region, website)
+            out[name] = (_seat_lookup(NORTHSHIELD_CITY, name, region), website)
 
     items = [(g, loc, web) for g, (loc, web) in sorted(out.items())]
     for g, loc, web in items:
         print(f"  {g}: {loc[:60]}  ({web[:60]})")
     return items
+
+
+# Middle Kingdom seat map. The Midrealm publishes no machine-readable group
+# directory, and its event feed only attributes a "Hosted by <group>" with no
+# location, so (like Lochac and Ealdormere) we hand-maintain the group→city
+# table below. Cities verified against MiddleWiki (middlewiki.midrealm.org).
+# This replaced an event-text regex scraper that emitted truncated junk names
+# ("Barony of the", "Shire of Dark") and stacked ~30 groups on the kingdom
+# centroid via the generic "Indiana, Illinois, Ohio…" kingdom-wide blurb.
+MIDDLE_CITY = {
+    # Baronies
+    "Barony of Andelcrag":         "Grand Rapids, Michigan",      # western Lower Michigan
+    "Barony of Ayreton":           "Chicago, Illinois",
+    "Barony of Brendoken":         "Akron, Ohio",
+    "Barony of Carraig Ban":       "DeKalb, Illinois",
+    "Barony of the Cleftlands":    "Cleveland, Ohio",
+    "Barony of Cynnabar":          "Ann Arbor, Michigan",
+    "Barony of Fenix":             "Cincinnati, Ohio",
+    "Barony of the Flame":         "Louisville, Kentucky",
+    "Barony of Flaming Gryphon":   "Dayton, Ohio",
+    "Barony of Illiton":           "Peoria, Illinois",
+    "Barony of Northwoods":        "Lansing, Michigan",
+    "Barony of Red Spears":        "Toledo, Ohio",
+    "Barony of Rivenstar":         "Lafayette, Indiana",
+    "Barony of Roaring Wastes":    "Detroit, Michigan",
+    "Barony of Shattered Crystal": "Belleville, Illinois",        # SW Illinois / Metro East
+    "Barony of Sternfeld":         "Indianapolis, Indiana",
+    # Cantons
+    "Canton of Ealdnordwuda":      "East Lansing, Michigan",
+    "Canton of Hrothgeirsfjordr":  "Toledo, Ohio",
+    "Canton of Pferdestadt":       "Delaware, Ohio",
+    "Canton of Rimsholt":          "Grand Rapids, Michigan",
+    "Canton of Vanished Wood":     "Chicago, Illinois",           # Chicago suburbs
+    # Riding
+    "Riding of Hawkland Moor":     "Rochester Hills, Michigan",   # N. Oakland/Macomb
+    # Province
+    "Province of Tree-Girt-Sea":   "Chicago, Illinois",
+    # Shires
+    "Shire of Dark River":         "Moline, Illinois",            # Quad Cities
+    "Shire of Dernehealde":        "Athens, Ohio",
+    "Shire of Donnershafen":       "Traverse City, Michigan",     # northern Lower Michigan
+    "Shire of Dragonsmark":        "Lexington, Kentucky",
+    "Shire of Falcon's Quarry":    "Elyria, Ohio",                # Lorain County
+    "Shire of Lochmorrow":         "Peoria, Illinois",            # canton of Illiton
+    "Shire of Mugmort":            "Lancaster, Ohio",
+    "Shire of Mynydd Seren":       "Bloomington, Indiana",
+    "Shire of Narrental":          "Logansport, Indiana",
+    "Shire of Ravenslake":         "Crystal Lake, Illinois",      # Lake/McHenry, NW Chicago
+    "Shire of Rivenvale":          "Youngstown, Ohio",
+    "Shire of Rokkehealden":       "Chicago, Illinois",           # Chicago suburbs
+    "Shire of Shadowed Stars":     "Fort Wayne, Indiana",
+    "Shire of Stormvale":          "Flint, Michigan",
+    "Shire of Swordcliff":         "Springfield, Illinois",
+    "Shire of Tirnewydd":          "Columbus, Ohio",
+}
+
+# Groups with a confirmed-live X.midrealm.org subdomain (slug). Others fall
+# back to the kingdom homepage so the pin's "website" link is never dead.
+MIDDLE_SLUG = {
+    "Barony of Andelcrag": "andelcrag", "Barony of Ayreton": "ayreton",
+    "Barony of Brendoken": "brendoken", "Barony of Cynnabar": "cynnabar",
+    "Barony of Fenix": "fenix", "Barony of Illiton": "illiton",
+    "Barony of Northwoods": "northwoods", "Barony of Red Spears": "redspears",
+    "Barony of Rivenstar": "rivenstar", "Barony of Sternfeld": "sternfeld",
+    "Canton of Ealdnordwuda": "ealdnordwuda", "Canton of Pferdestadt": "pferdestadt",
+    "Canton of Rimsholt": "rimsholt", "Shire of Dernehealde": "dernehealde",
+    "Shire of Dragonsmark": "dragonsmark", "Shire of Mugmort": "mugmort",
+    "Shire of Narrental": "narrental", "Shire of Rokkehealden": "rokkehealden",
+    "Shire of Swordcliff": "swordcliff",
+}
 
 
 def scrape_middle() -> list[tuple[str, str, str]]:
     """
-    Middle Kingdom — they don't publish a directory page in HTML, but every
-    event in their MEC list has a "Hosted by" attribution. We walk the
-    Tribe-style WP REST API to enumerate every host group, then visit each
-    group's subdomain (X.midrealm.org) for region.
+    Middle Kingdom — emit the hand-maintained MIDDLE_CITY seat table. The
+    Midrealm publishes no group directory and its event feed gives no
+    locations, so a static table (verified against MiddleWiki) is both more
+    accurate and more stable than scraping event text. See MIDDLE_CITY.
     """
-    # MEC list — same one our event scraper uses
-    api = "https://midrealm.org/wp-json/wp/v2/mec-events"
-    page = 1
-    hosts: set[str] = set()
-    while True:
-        try:
-            r = requests.get(api, params={"per_page": 100, "page": page}, timeout=TIMEOUT, headers=HDRS)
-            if r.status_code != 200:
-                break
-            batch = r.json()
-            if not batch:
-                break
-        except requests.RequestException:
-            break
-        for item in batch:
-            event_url = item.get("link", "")
-            try:
-                ep = requests.get(event_url, timeout=TIMEOUT, headers=HDRS)
-                # Look in the event description for "<host group name>"
-                for m in re.finditer(
-                    r"\b((?:Barony|Shire|Canton|Stronghold|College|Province|Riding)\s+of\s+(?:the\s+)?[\w' \-]+?)"
-                    r"(?=[\s.,;]|$)",
-                    ep.text,
-                ):
-                    name = re.sub(r"\s+", " ", m.group(1)).strip()
-                    # Filter to plausible names — drop those with junk words
-                    if 8 < len(name) < 60:
-                        hosts.add(name)
-            except requests.RequestException:
-                continue
-        if len(batch) < 100:
-            break
-        page += 1
-
-    out: dict[str, tuple[str, str]] = {}
-    for name in sorted(hosts):
-        # Each Middle group has its own subdomain like X.midrealm.org
-        short = re.sub(r"^(Barony|Shire|Canton|Stronghold|College|Province|Riding)\s+of\s+(?:the\s+)?",
-                       "", name, flags=re.IGNORECASE).strip()
-        slug = re.sub(r"[^a-z]", "", short.lower())
-        if not slug:
-            continue
-        website = ""
-        region = "Ohio"   # kingdom default — middle of midrealm geographically
-        # Try the slug subdomain
-        for cand_url in [f"https://{slug}.midrealm.org/", f"https://www.{slug}.midrealm.org/"]:
-            try:
-                rg = requests.get(cand_url, timeout=10, headers=HDRS, allow_redirects=True)
-                if rg.status_code != 200:
-                    continue
-                website = rg.url
-                sg = BeautifulSoup(rg.text, "lxml")
-                body = sg.get_text(" ", strip=True)[:3000]
-                for pat in [
-                    r"(?:located|based|situated)\s+in\s+([^.;\n]{4,150})",
-                    r"(?:covers|encompasses|comprises)\s+([^.;\n]{4,150})",
-                ]:
-                    m = re.search(pat, body, re.IGNORECASE)
-                    if m:
-                        cand = m.group(1).strip().rstrip(",.;")
-                        if 4 <= len(cand) <= 200:
-                            region = cand
-                            break
-                break
-            except requests.RequestException:
-                continue
-        if name not in out:
-            out[name] = (region, website)
-
-    items = [(g, loc, web) for g, (loc, web) in sorted(out.items())]
+    items: list[tuple[str, str, str]] = []
+    for name in sorted(MIDDLE_CITY):
+        city = MIDDLE_CITY[name]
+        slug = MIDDLE_SLUG.get(name)
+        website = f"https://{slug}.midrealm.org/" if slug else "https://www.midrealm.org/"
+        items.append((name, city, website))
     for g, loc, web in items:
         print(f"  {g}: {loc[:60]}  ({web[:60]})")
     return items
+
+
+# Calontir (KS, MO, NE, IA, N. AR) seat map. The group list is derived from
+# event-JSON host names, whose homepages describe a multi-county region (or
+# default to "Missouri"), so groups stacked on the MO centroid. Cities verified
+# against each group's site + Wikipedia. Note several are NOT in Missouri
+# (Vatavia=KS, Coeur d'Ennui=IA, Mag Mor/Lonely Tower=NE).
+CALONTIR_CITY = {
+    "Barony of Vatavia":          "Wichita, Kansas",
+    "Barony of Coeur d'Ennui":    "Des Moines, Iowa",
+    "Barony of Forgotten Sea":    "Kansas City, Missouri",
+    "Barony of Mag Mor":          "Lincoln, Nebraska",
+    "Barony of Three Rivers":     "St. Louis, Missouri",
+    "Barony of the Lonely Tower": "Omaha, Nebraska",
+    "Shire of Cum An Iolair":     "Overland Park, Kansas",
+    "Shire of Heraldshill":       "Mason City, Iowa",
+    "Shire of Lost Moor":         "St. Joseph, Missouri",
+}
+# 'Lilies War' is Calontir's annual war *event* (Smithville Lake, MO), not a
+# branch — the event-JSON scraper mis-enumerated it as a host. Drop it.
+CALONTIR_DROP = {"shire of lilies war"}
 
 
 def scrape_calontir() -> list[tuple[str, str, str]]:
@@ -1377,7 +1567,8 @@ def scrape_calontir() -> list[tuple[str, str, str]]:
     Calontir's `calon_vload.php` event JSON (the same endpoint our event
     scraper uses) ships a `group_name` and `primary_website` with every
     event. Enumerate distinct hosts, then visit each website to read its
-    full barony/shire/canton name from <title>.
+    full barony/shire/canton name from <title>, preferring a hand-verified
+    city seat from CALONTIR_CITY and dropping event-only hosts (CALONTIR_DROP).
     """
     try:
         r = requests.get(
@@ -1421,8 +1612,10 @@ def scrape_calontir() -> list[tuple[str, str, str]]:
                 if mm:
                     region = mm.group(1).strip().rstrip(",.;")
                     break
+            if _norm_key(name) in CALONTIR_DROP:
+                continue
             if name not in out:
-                out[name] = (region, site)
+                out[name] = (_seat_lookup(CALONTIR_CITY, name, region), site)
         except requests.RequestException:
             continue
 
@@ -1576,12 +1769,69 @@ def scrape_artemisia() -> list[tuple[str, str, str]]:
     return items
 
 
+# Kingdom of the West seat map. The Mists/Cynagua/Oertha directory pages only
+# tell us which Principality a group belongs to, so without this every group
+# lands on the principality centroid — 28 NorCal groups stacked on one rural
+# point and 7 Oertha groups on the Alaska centroid. Cities below are a
+# representative seat for each group's county coverage, verified against the
+# three Principality group directories (mists/cynagua/oertha.westkingdom.org).
+WEST_CITY = {
+    # Principality of the Mists — San Francisco Bay Area
+    "Principality of the Mists":   "San Francisco, California",
+    "Province of the Mists":       "Oakland, California",        # N. Alameda Co.
+    "Province of Southern Shores": "San Jose, California",       # central Santa Clara
+    "Barony of Darkwood":          "Santa Cruz, California",     # Santa Cruz/Monterey
+    "Barony of Westermark":        "Fremont, California",        # San Mateo/S. Alameda
+    "Canton of Hawk's Haven":      "Hollister, California",      # San Benito Co.
+    "Canton of Montagne du Roi":   "Monterey, California",
+    "College of Saint Katherine":  "Berkeley, California",       # UC Berkeley
+    "College of St. David":        "Santa Cruz, California",     # UC Santa Cruz
+    "Shire of Caldarium":          "San Rafael, California",     # Marin Co.
+    "Shire of Cloondara":          "San Francisco, California",
+    "Shire of Crosston":           "Sunnyvale, California",      # N. Santa Clara
+    "Shire of Teufelberg":         "Antioch, California",        # E. Contra Costa
+    "Shire of Vinhold":            "Napa, California",
+    "Shire of Wolfscairn":         "Petaluma, California",       # N. Marin/W. Sonoma
+    # Principality of Cynagua — Sacramento Valley, Sierra foothills, N. Nevada
+    "Principality of Cynagua":     "Sacramento, California",
+    "Province of Golden Rivers":   "Sacramento, California",     # Sacramento Co.
+    "Province of Silver Desert":   "Reno, Nevada",              # Washoe Co., NV
+    "Barony of Fettburg":          "Stockton, California",       # San Joaquin Co.
+    "Barony of Rivenoak":          "Chico, California",          # Glenn/Butte Co.
+    "Shire of Belogor":            "Yreka, California",          # Siskiyou/Modoc Co.
+    "Shire of Canale":             "Modesto, California",        # S. Stanislaus/Merced
+    "Shire of Champclair":         "Vacaville, California",      # E. Solano Co.
+    "Shire of Danegeld Tor":       "Roseville, California",      # NE Sacramento/Placer
+    "Shire of Fendrake Marsh":     "Fallon, Nevada",            # Churchill/Lyon, NV
+    "Shire of Mont d'Or":          "Grass Valley, California",   # Nevada Co.
+    "Shire of Mountain's Gate":    "Placerville, California",    # El Dorado Co.
+    "Shire of Thistletorr":        "Colusa, California",         # Colusa/Sutter Co.
+    "Shire of Vakkerfjell":        "Marysville, California",     # Yuba Co.
+    "Shire of Windy Meads":        "Davis, California",          # Yolo Co.
+    # Principality of Oertha — Alaska
+    "Principality of Oertha":      "Anchorage, Alaska",
+    "Barony of Eskalya":           "Anchorage, Alaska",
+    "Barony of Selveirgard":       "Wasilla, Alaska",            # Mat-Su Valley
+    "Barony of Winter's Gate":     "Fairbanks, Alaska",
+    "College of Saint Boniface":   "Fairbanks, Alaska",          # UA Fairbanks
+    "Shire of Earngyld":           "Juneau, Alaska",             # SE Alaska
+    "Shire of Hrafnafjordr":       "Kenai, Alaska",              # Kenai Peninsula
+    "Shire of Pavlok Gorod":       "Kodiak, Alaska",             # Kodiak Island
+}
+
+
 def scrape_west() -> list[tuple[str, str, str]]:
     """
     Kingdom of the West is organised as three Principalities (Cynagua, Mists,
     Oertha) plus "The Marches" (smaller groups in Northern California). The
     Kingdom-level /groups/ page only links the Principalities themselves, so
     we scrape each Principality's directory in turn.
+
+    The directory pages give us reliable group *names* and websites but no
+    city — only which Principality a group is in. We therefore override the
+    generic principality region with a hand-curated seat from WEST_CITY (see
+    above) before returning, falling back to the principality default for any
+    group not yet mapped.
 
     Sources:
       Mists  : https://mists.westkingdom.org/branches-groups/   (anchor list)
@@ -1686,11 +1936,12 @@ def scrape_west() -> list[tuple[str, str, str]]:
     except requests.RequestException:
         pass
 
-    # Normalize curly apostrophes to ASCII
+    # Normalize curly apostrophes to ASCII, then override the generic
+    # principality region with a hand-curated city when we have one.
     normalized: dict[str, tuple[str, str]] = {}
     for name, (loc, web) in out.items():
         clean = name.replace("’", "'").replace("‘", "'")
-        normalized[clean] = (loc, web)
+        normalized[clean] = (WEST_CITY.get(clean, loc), web)
 
     items = [(g, loc, web) for g, (loc, web) in sorted(normalized.items())]
     for g, loc, web in items:

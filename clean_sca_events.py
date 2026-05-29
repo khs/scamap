@@ -41,6 +41,8 @@ from pathlib import Path
 import pandas as pd
 from bs4 import BeautifulSoup
 
+import kingdoms
+
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -860,34 +862,7 @@ def merge_recurring(df: pd.DataFrame) -> pd.DataFrame:
 
 # Rough bounding boxes for US states + DC, used to verify that a carried-over
 # geocode result actually lies inside the state named in its address.
-US_STATE_BBOX = {
-    "AL": (30.1, 35.1, -88.6, -84.8), "AK": (51.0, 71.5, -180.0, -129.0),
-    "AZ": (31.2, 37.1, -114.9, -109.0), "AR": (32.9, 36.6, -94.7, -89.6),
-    "CA": (32.4, 42.1, -124.5, -114.0), "CO": (36.9, 41.1, -109.1, -101.9),
-    "CT": (40.9, 42.1, -73.8, -71.7), "DE": (38.4, 39.9, -75.8, -75.0),
-    "DC": (38.7, 39.0, -77.2, -76.9), "FL": (24.4, 31.1, -87.7, -79.9),
-    "GA": (30.2, 35.1, -85.7, -80.7), "HI": (18.8, 22.3, -160.3, -154.7),
-    "ID": (41.9, 49.1, -117.3, -111.0), "IL": (36.9, 42.6, -91.6, -87.4),
-    "IN": (37.7, 41.9, -88.2, -84.7), "IA": (40.3, 43.6, -96.7, -90.1),
-    "KS": (36.9, 40.1, -102.1, -94.5), "KY": (36.4, 39.2, -89.7, -81.9),
-    "LA": (28.8, 33.1, -94.1, -88.7), "ME": (43.0, 47.6, -71.2, -66.8),
-    "MD": (37.8, 39.8, -79.6, -75.0), "MA": (41.1, 42.9, -73.6, -69.8),
-    "MI": (41.6, 48.4, -90.5, -82.3), "MN": (43.4, 49.5, -97.3, -89.4),
-    "MS": (30.1, 35.1, -91.8, -87.9), "MO": (35.9, 40.7, -95.9, -89.0),
-    "MT": (44.3, 49.1, -116.2, -103.9), "NE": (39.9, 43.1, -104.1, -95.2),
-    "NV": (34.9, 42.1, -120.1, -113.9), "NH": (42.6, 45.4, -72.7, -70.5),
-    "NJ": (38.8, 41.4, -75.7, -73.8), "NM": (31.2, 37.1, -109.2, -102.9),
-    "NY": (40.4, 45.1, -79.9, -71.7), "NC": (33.7, 36.7, -84.4, -75.4),
-    "ND": (45.8, 49.1, -104.1, -96.5), "OH": (38.3, 42.1, -84.9, -80.4),
-    "OK": (33.5, 37.1, -103.1, -94.3), "OR": (41.9, 46.4, -124.7, -116.4),
-    "PA": (39.6, 42.4, -80.6, -74.6), "RI": (41.0, 42.1, -71.9, -71.0),
-    "SC": (32.0, 35.3, -83.4, -78.4), "SD": (42.4, 45.9, -104.1, -96.3),
-    "TN": (34.9, 36.8, -90.4, -81.5), "TX": (25.7, 36.6, -106.7, -93.4),
-    "UT": (36.9, 42.1, -114.1, -108.9), "VT": (42.6, 45.1, -73.5, -71.4),
-    "VA": (36.4, 39.5, -83.7, -75.1), "WA": (45.4, 49.1, -124.9, -116.8),
-    "WV": (37.1, 40.7, -82.7, -77.6), "WI": (42.4, 47.1, -92.9, -86.7),
-    "WY": (40.9, 45.1, -111.1, -103.9),
-}
+US_STATE_BBOX = kingdoms.STATE_BBOX
 
 _STATE_FROM_ADDR_RE = re.compile(r",\s*([A-Z]{2})(?:[\s,]|$)")
 _US_ZIP_RE = re.compile(r"\b\d{5}(?:-\d{4})?\b")
@@ -896,45 +871,9 @@ _US_ZIP_RE = re.compile(r"\b\d{5}(?:-\d{4})?\b")
 # to validate that a baronial event geocoded into a sensible region. Kept
 # in sync with geocode_sca_events.py's tables; consider extracting these to
 # a shared module if more files need them.
-_BARONY_HOME_STATES = {
-    "Barony of Lochmere": {"MD"}, "Barony of Bright Hills": {"MD"},
-    "Barony of Storvik": {"MD"}, "Barony of Dun Carraig": {"MD"},
-    "Barony of Highland Foorde": {"MD"},
-    "Barony of Ponte Alto": {"VA"}, "Barony of Stierbach": {"VA"},
-    "Barony of Stierbach (Workshops)": {"VA"}, "Barony of Caer Mear": {"VA"},
-    "Barony of Marinus": {"VA"}, "Barony of Tir-y-Don": {"VA"},
-    "Barony of Black Diamond": {"VA"},
-    "Barony of Windmasters' Hill": {"NC"}, "Barony of Raven's Cove": {"NC"},
-    "Barony of Hawkwood": {"NC"}, "Barony of Sacred Stone": {"NC"},
-    "Barony of Nottinghill Coill": {"SC"}, "Barony of Hidden Mountain": {"SC"},
-    "Shire of Aukesgate": {"NC"}, "Shire of Stormwall": {"NC"},
-}
+_BARONY_HOME_STATES = kingdoms.BARONY_HOME_STATES
 
-_US_STATE_ADJACENT = {
-    "AL": {"FL","GA","MS","TN"}, "AR": {"LA","MO","MS","OK","TN","TX"},
-    "AZ": {"CA","CO","NM","NV","UT"}, "CA": {"AZ","NV","OR"},
-    "CO": {"AZ","KS","NE","NM","OK","UT","WY"}, "CT": {"MA","NY","RI"},
-    "DC": {"MD","VA"}, "DE": {"MD","NJ","PA"}, "FL": {"AL","GA"},
-    "GA": {"AL","FL","NC","SC","TN"}, "IA": {"IL","MN","MO","NE","SD","WI"},
-    "ID": {"MT","NV","OR","UT","WA","WY"}, "IL": {"IA","IN","KY","MO","WI"},
-    "IN": {"IL","KY","MI","OH"}, "KS": {"CO","MO","NE","OK"},
-    "KY": {"IL","IN","MO","OH","TN","VA","WV"}, "LA": {"AR","MS","TX"},
-    "MA": {"CT","NH","NY","RI","VT"}, "MD": {"DC","DE","PA","VA","WV"},
-    "ME": {"NH"}, "MI": {"IN","OH","WI"}, "MN": {"IA","ND","SD","WI"},
-    "MO": {"AR","IA","IL","KS","KY","NE","OK","TN"}, "MS": {"AL","AR","LA","TN"},
-    "MT": {"ID","ND","SD","WY"}, "NC": {"GA","SC","TN","VA"},
-    "ND": {"MN","MT","SD"}, "NE": {"CO","IA","KS","MO","SD","WY"},
-    "NH": {"MA","ME","VT"}, "NJ": {"DE","NY","PA"},
-    "NM": {"AZ","CO","OK","TX","UT"}, "NV": {"AZ","CA","ID","OR","UT"},
-    "NY": {"CT","MA","NJ","PA","VT"}, "OH": {"IN","KY","MI","PA","WV"},
-    "OK": {"AR","CO","KS","MO","NM","TX"}, "OR": {"CA","ID","NV","WA"},
-    "PA": {"DE","MD","NJ","NY","OH","WV"}, "RI": {"CT","MA"},
-    "SC": {"GA","NC"}, "SD": {"IA","MN","MT","ND","NE","WY"},
-    "TN": {"AL","AR","GA","KY","MO","MS","NC","VA"}, "TX": {"AR","LA","NM","OK"},
-    "UT": {"AZ","CO","ID","NM","NV","WY"}, "VA": {"DC","KY","MD","NC","TN","WV"},
-    "VT": {"MA","NH","NY"}, "WA": {"ID","OR"}, "WI": {"IA","IL","MI","MN"},
-    "WV": {"KY","MD","OH","PA","VA"}, "WY": {"CO","ID","MT","NE","SD","UT"},
-}
+_US_STATE_ADJACENT = kingdoms.US_STATE_ADJACENT
 
 
 def _acceptable_states(source: str):

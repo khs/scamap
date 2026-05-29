@@ -25,7 +25,7 @@ from pathlib import Path
 import requests
 
 SCRIPT_DIR = Path(__file__).parent
-OUTPUT_FILE = SCRIPT_DIR / "world-kingdoms.geojson"
+OUTPUT_FILE = SCRIPT_DIR / "world-kingdoms.topojson"
 
 ADMIN1_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_1_states_provinces.geojson"
 COUNTRIES_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson"
@@ -138,9 +138,23 @@ def main():
         }
         out_features.append(f)
 
+    fc = {"type": "FeatureCollection", "features": out_features}
+
+    # Emit TopoJSON (object name "data") — roughly a third the size of the
+    # equivalent GeoJSON because shared province/country borders are stored
+    # once as arcs. index.html decodes it with topojson-client.
+    try:
+        import topojson
+    except ImportError:
+        print("  topojson not installed (pip install topojson); writing GeoJSON instead")
+        fallback = OUTPUT_FILE.with_suffix(".geojson")
+        fallback.write_text(json.dumps(fc, separators=(",", ":")), encoding="utf-8")
+        print(f"  wrote {fallback.name}: {fallback.stat().st_size:,} bytes")
+        return
+
     print(f"Writing {len(out_features)} features to {OUTPUT_FILE.name}")
-    out = {"type": "FeatureCollection", "features": out_features}
-    OUTPUT_FILE.write_text(json.dumps(out, separators=(",", ":")), encoding="utf-8")
+    topo = topojson.Topology(fc, prequantize=1e5, topology=True)
+    OUTPUT_FILE.write_text(topo.to_json(), encoding="utf-8")
     print(f"  size: {OUTPUT_FILE.stat().st_size:,} bytes")
 
 

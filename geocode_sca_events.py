@@ -45,6 +45,7 @@ import argparse
 import csv
 import functools
 import io
+import json
 import os
 import re
 import sys
@@ -54,15 +55,19 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-# Load a local .env (if present) so NOMINATIM_CONTACT_EMAIL and similar
-# can be set out-of-band, without ever being committed. Optional dep:
-# falls through silently if python-dotenv isn't installed (CI sets the
-# env var directly, so it doesn't need the file at all).
+# Load a local .env (if present) so NOMINATIM_CONTACT_EMAIL and similar can
+# be set out-of-band, without ever being committed. This MUST run before
+# importing geocoder, which reads the env at import time to build its
+# User-Agent. Optional dep: falls through silently if python-dotenv isn't
+# installed (CI sets the env var directly).
 try:
     from dotenv import load_dotenv
     load_dotenv(Path(__file__).parent / ".env")
 except ImportError:
     pass
+
+import kingdoms
+import geocoder
 
 # Force unbuffered stdout so background runs show progress as it happens
 print = functools.partial(print, flush=True)
@@ -83,21 +88,9 @@ SCRIPT_DIR  = Path(__file__).parent
 INPUT_FILE  = SCRIPT_DIR / "sca_events_clean.csv"
 OUTPUT_FILE = INPUT_FILE   # overwrite in place (lat/lng added to same file)
 
-# Nominatim's usage policy requires a descriptive User-Agent identifying the
-# application AND a working contact address. We read the contact from the
-# NOMINATIM_CONTACT_EMAIL env var (set by .env locally, by a GitHub Actions
-# secret in CI) so the actual address never lands in committed source.
-_CONTACT = os.getenv("NOMINATIM_CONTACT_EMAIL", "nobody@example.com")
-USER_AGENT = f"SCA Maps Project ({_CONTACT})"
-
-NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
-PHOTON_URL    = "https://photon.komoot.io/api"
-
-# Seconds between API calls. Nominatim's published policy is "max 1 req/sec",
-# but we're a hobby project running unattended on cron, so we sit at the much
-# more conservative 4 calls/minute cap (15 sec/call). Photon — the fallback
-# geocoder — uses the same gap.
-REQUEST_DELAY = 15.0
+# User-Agent + rate limit + country filter now live in geocoder.py (shared
+# with build_group_pins.py). USER_AGENT is re-exported for the session setup.
+USER_AGENT = geocoder.USER_AGENT
 
 # How many rows to save after before writing progress to disk
 # (1 = save after every geocode, higher = faster but more data loss if interrupted)
@@ -121,34 +114,7 @@ STATE_FROM_ADDR_RE = re.compile(r",\s*([A-Z]{2})(?:[\s,]|$)")
 # result actually lies inside the state named in the address. Boxes are
 # generous (~20–50 mile buffer) so legitimate addresses near borders don't
 # get rejected. Coords are (min_lat, max_lat, min_lng, max_lng).
-US_STATE_BBOX = {
-    "AL": (30.1, 35.1, -88.6, -84.8), "AK": (51.0, 71.5, -180.0, -129.0),
-    "AZ": (31.2, 37.1, -114.9, -109.0), "AR": (32.9, 36.6, -94.7, -89.6),
-    "CA": (32.4, 42.1, -124.5, -114.0), "CO": (36.9, 41.1, -109.1, -101.9),
-    "CT": (40.9, 42.1, -73.8, -71.7), "DE": (38.4, 39.9, -75.8, -75.0),
-    "DC": (38.7, 39.0, -77.2, -76.9), "FL": (24.4, 31.1, -87.7, -79.9),
-    "GA": (30.2, 35.1, -85.7, -80.7), "HI": (18.8, 22.3, -160.3, -154.7),
-    "ID": (41.9, 49.1, -117.3, -111.0), "IL": (36.9, 42.6, -91.6, -87.4),
-    "IN": (37.7, 41.9, -88.2, -84.7), "IA": (40.3, 43.6, -96.7, -90.1),
-    "KS": (36.9, 40.1, -102.1, -94.5), "KY": (36.4, 39.2, -89.7, -81.9),
-    "LA": (28.8, 33.1, -94.1, -88.7), "ME": (43.0, 47.6, -71.2, -66.8),
-    "MD": (37.8, 39.8, -79.6, -75.0), "MA": (41.1, 42.9, -73.6, -69.8),
-    "MI": (41.6, 48.4, -90.5, -82.3), "MN": (43.4, 49.5, -97.3, -89.4),
-    "MS": (30.1, 35.1, -91.8, -87.9), "MO": (35.9, 40.7, -95.9, -89.0),
-    "MT": (44.3, 49.1, -116.2, -103.9), "NE": (39.9, 43.1, -104.1, -95.2),
-    "NV": (34.9, 42.1, -120.1, -113.9), "NH": (42.6, 45.4, -72.7, -70.5),
-    "NJ": (38.8, 41.4, -75.7, -73.8), "NM": (31.2, 37.1, -109.2, -102.9),
-    "NY": (40.4, 45.1, -79.9, -71.7), "NC": (33.7, 36.7, -84.4, -75.4),
-    "ND": (45.8, 49.1, -104.1, -96.5), "OH": (38.3, 42.1, -84.9, -80.4),
-    "OK": (33.5, 37.1, -103.1, -94.3), "OR": (41.9, 46.4, -124.7, -116.4),
-    "PA": (39.6, 42.4, -80.6, -74.6), "RI": (41.0, 42.1, -71.9, -71.0),
-    "SC": (32.0, 35.3, -83.4, -78.4), "SD": (42.4, 45.9, -104.1, -96.3),
-    "TN": (34.9, 36.8, -90.4, -81.5), "TX": (25.7, 36.6, -106.7, -93.4),
-    "UT": (36.9, 42.1, -114.1, -108.9), "VT": (42.6, 45.1, -73.5, -71.4),
-    "VA": (36.4, 39.5, -83.7, -75.1), "WA": (45.4, 49.1, -124.9, -116.8),
-    "WV": (37.1, 40.7, -82.7, -77.6), "WI": (42.4, 47.1, -92.9, -86.7),
-    "WY": (40.9, 45.1, -111.1, -103.9),
-}
+US_STATE_BBOX = kingdoms.STATE_BBOX
 
 
 US_ZIP_RE = re.compile(r"\b\d{5}(?:-\d{4})?\b")
@@ -179,109 +145,15 @@ def extract_state_from_address(address: str) -> str | None:
 # are intentionally omitted: kingdoms can host events anywhere in their
 # territory, which often spans many states. Add new baronies here when you
 # add them to calendars.csv.
-BARONY_HOME_STATES = {
-    # Atlantia — Maryland baronies
-    "Barony of Lochmere":         {"MD"},
-    "Barony of Bright Hills":     {"MD"},
-    "Barony of Storvik":          {"MD"},
-    "Barony of Dun Carraig":      {"MD"},
-    "Barony of Highland Foorde":  {"MD"},
-    # Atlantia — Virginia baronies
-    "Barony of Ponte Alto":       {"VA"},
-    "Barony of Stierbach":        {"VA"},
-    "Barony of Stierbach (Workshops)": {"VA"},
-    "Barony of Caer Mear":        {"VA"},
-    "Barony of Marinus":          {"VA"},
-    "Barony of Tir-y-Don":        {"VA"},
-    "Barony of Black Diamond":    {"VA"},
-    # Atlantia — North Carolina baronies
-    "Barony of Windmasters' Hill": {"NC"},
-    "Barony of Raven's Cove":     {"NC"},
-    "Barony of Hawkwood":         {"NC"},
-    "Barony of Sacred Stone":     {"NC"},
-    # Atlantia — South Carolina baronies
-    "Barony of Nottinghill Coill": {"SC"},
-    "Barony of Hidden Mountain":  {"SC"},
-    # Atlantia — shires under Hawkwood
-    "Shire of Aukesgate":         {"NC"},
-    "Shire of Stormwall":         {"NC"},
-}
+BARONY_HOME_STATES = kingdoms.BARONY_HOME_STATES
 
 # US state adjacency (sharing a border). Used together with BARONY_HOME_STATES
 # so that baronial events held just over the state line in a neighbouring
 # state don't get rejected.
-US_STATE_ADJACENT = {
-    "AL": {"FL", "GA", "MS", "TN"},
-    "AR": {"LA", "MO", "MS", "OK", "TN", "TX"},
-    "AZ": {"CA", "CO", "NM", "NV", "UT"},
-    "CA": {"AZ", "NV", "OR"},
-    "CO": {"AZ", "KS", "NE", "NM", "OK", "UT", "WY"},
-    "CT": {"MA", "NY", "RI"},
-    "DC": {"MD", "VA"},
-    "DE": {"MD", "NJ", "PA"},
-    "FL": {"AL", "GA"},
-    "GA": {"AL", "FL", "NC", "SC", "TN"},
-    "IA": {"IL", "MN", "MO", "NE", "SD", "WI"},
-    "ID": {"MT", "NV", "OR", "UT", "WA", "WY"},
-    "IL": {"IA", "IN", "KY", "MO", "WI"},
-    "IN": {"IL", "KY", "MI", "OH"},
-    "KS": {"CO", "MO", "NE", "OK"},
-    "KY": {"IL", "IN", "MO", "OH", "TN", "VA", "WV"},
-    "LA": {"AR", "MS", "TX"},
-    "MA": {"CT", "NH", "NY", "RI", "VT"},
-    "MD": {"DC", "DE", "PA", "VA", "WV"},
-    "ME": {"NH"},
-    "MI": {"IN", "OH", "WI"},
-    "MN": {"IA", "ND", "SD", "WI"},
-    "MO": {"AR", "IA", "IL", "KS", "KY", "NE", "OK", "TN"},
-    "MS": {"AL", "AR", "LA", "TN"},
-    "MT": {"ID", "ND", "SD", "WY"},
-    "NC": {"GA", "SC", "TN", "VA"},
-    "ND": {"MN", "MT", "SD"},
-    "NE": {"CO", "IA", "KS", "MO", "SD", "WY"},
-    "NH": {"MA", "ME", "VT"},
-    "NJ": {"DE", "NY", "PA"},
-    "NM": {"AZ", "CO", "OK", "TX", "UT"},
-    "NV": {"AZ", "CA", "ID", "OR", "UT"},
-    "NY": {"CT", "MA", "NJ", "PA", "VT"},
-    "OH": {"IN", "KY", "MI", "PA", "WV"},
-    "OK": {"AR", "CO", "KS", "MO", "NM", "TX"},
-    "OR": {"CA", "ID", "NV", "WA"},
-    "PA": {"DE", "MD", "NJ", "NY", "OH", "WV"},
-    "RI": {"CT", "MA"},
-    "SC": {"GA", "NC"},
-    "SD": {"IA", "MN", "MT", "ND", "NE", "WY"},
-    "TN": {"AL", "AR", "GA", "KY", "MO", "MS", "NC", "VA"},
-    "TX": {"AR", "LA", "NM", "OK"},
-    "UT": {"AZ", "CO", "ID", "NM", "NV", "WY"},
-    "VA": {"DC", "KY", "MD", "NC", "TN", "WV"},
-    "VT": {"MA", "NH", "NY"},
-    "WA": {"ID", "OR"},
-    "WI": {"IA", "IL", "MI", "MN"},
-    "WV": {"KY", "MD", "OH", "PA", "VA"},
-    "WY": {"CO", "ID", "MT", "NE", "SD", "UT"},
-}
+US_STATE_ADJACENT = kingdoms.US_STATE_ADJACENT
 
 
-KINGDOM_HOME_STATES = {
-    "Kingdom of AEthelmearc":   {"PA", "WV", "NY"},
-    "Kingdom of An Tir":        {"WA", "OR", "ID", "MT"},
-    "Kingdom of Ansteorra":     {"OK", "TX"},
-    "Kingdom of Artemisia":     {"MT", "UT", "ID", "WY"},
-    "Kingdom of Atenveldt":     {"AZ"},
-    "Kingdom of Atlantia":      {"VA", "MD", "NC", "SC", "DC"},
-    "Kingdom of Caid":          {"CA", "NV", "HI"},
-    "Kingdom of Calontir":      {"KS", "MO", "IA", "NE"},
-    "Kingdom of the East":      {"CT", "DE", "ME", "MA", "NH", "NJ", "NY",
-                                  "PA", "RI", "VT"},
-    "Kingdom of Gleann Abhann": {"LA", "AR", "MS", "TN"},
-    "Kingdom of Meridies":      {"AL", "GA", "TN", "KY", "FL"},
-    "Kingdom of the Middle":    {"IL", "IN", "OH", "MI"},
-    "Kingdom of Northshield":   {"MN", "WI", "ND", "SD"},
-    "Kingdom of the Outlands":  {"CO", "WY", "NM"},
-    "Kingdom of Trimaris":      {"FL"},
-    "Kingdom of the West":      {"CA", "NV", "AK"},
-}
+KINGDOM_HOME_STATES = kingdoms.KINGDOM_HOME_STATES
 
 
 def acceptable_states_for_source(source: str) -> set | None:
@@ -318,81 +190,27 @@ def result_in_state(lat: float, lng: float, state: str) -> bool:
 # Geocoding primitives
 # ---------------------------------------------------------------------------
 
-# Countries where the SCA operates — passed to Nominatim so it doesn't
-# resolve "Greater Savannah area" to Savannah, Belize or "Castle Wars" to
-# something in India. Photon doesn't take a country filter, so we have to
-# rely on the kingdom-state hint retry instead.
-SCA_COUNTRY_CODES = ("us,ca,au,nz,gb,ie,fr,de,be,nl,lu,ch,at,it,es,pt,"
-                     "se,no,fi,dk,is,pl,cz,sk,hu,si,hr,ee,lv,lt,bg,ro,gr,mt,cy")
-
-
-# In-run memoisation. Nominatim's bulk-geocoding policy bans repeating the
-# same query — and our pipeline naturally re-asks for things like
-# "Louisiana, USA" (25× across Gleann Abhann events) or "Northern California"
-# (18× across West events). Cache keyed by the exact query string so the
-# whole retry ladder (original / stripped / city-state / state-hint / ZIP)
-# shares hits across rows.
-_nominatim_cache: dict[str, tuple] = {}
-_photon_cache: dict[str, tuple] = {}
-
-# Rate-limit gate: track the last real HTTP call's timestamp so we sleep
-# only when an actual call is about to fire. Cache hits skip the sleep —
-# they don't contribute to Nominatim's rate either. Shared across Nominatim
-# AND Photon so the per-process HTTP rate is bounded too.
-_last_http_call_time = 0.0
-
-
-def _throttle_for_http() -> None:
-    """Sleep until at least REQUEST_DELAY seconds have passed since the last
-    geocoder HTTP call. Call this immediately before a real HTTP request."""
-    global _last_http_call_time
-    elapsed = time.time() - _last_http_call_time
-    if 0 < elapsed < REQUEST_DELAY:
-        time.sleep(REQUEST_DELAY - elapsed)
-    _last_http_call_time = time.time()
+# ── Geocoding primitives (shared) ──────────────────────────────────────
+# The actual Nominatim/Photon clients, the persistent cache, the rate-limit
+# gate, and the SCA country filter all live in geocoder.py so this script and
+# build_group_pins.py share one cache file and one throttle. These thin
+# wrappers preserve the names the retry-ladder below already calls.
+SCA_COUNTRY_CODES = geocoder.SCA_COUNTRY_CODES
 
 
 def nominatim_geocode(address: str, session: requests.Session) -> tuple:
-    """Query Nominatim. Returns (lat, lng) as floats, or (None, None) on failure."""
-    if address in _nominatim_cache:
-        return _nominatim_cache[address]
-    params = {
-        "q": address, "format": "json", "limit": 1,
-        "countrycodes": SCA_COUNTRY_CODES,
-    }
-    result = (None, None)
-    _throttle_for_http()
-    try:
-        response = session.get(NOMINATIM_URL, params=params, timeout=10)
-        response.raise_for_status()
-        results = response.json()
-        if results:
-            result = (float(results[0]["lat"]), float(results[0]["lon"]))
-    except Exception as e:
-        print(f"    WARNING: Nominatim error for '{address[:60]}': {e}")
-    _nominatim_cache[address] = result
-    return result
+    """Query Nominatim (cached). Returns (lat, lng) or (None, None)."""
+    return geocoder.nominatim(address, session)
 
 
 def photon_geocode(address: str, session: requests.Session) -> tuple:
-    """Query Photon. Returns (lat, lng) as floats, or (None, None) on failure."""
-    if address in _photon_cache:
-        return _photon_cache[address]
-    params = {"q": address, "limit": 1}
-    result = (None, None)
-    _throttle_for_http()
-    try:
-        response = session.get(PHOTON_URL, params=params, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        features = data.get("features", [])
-        if features:
-            coords = features[0]["geometry"]["coordinates"]  # [lng, lat]
-            result = (float(coords[1]), float(coords[0]))
-    except Exception as e:
-        print(f"    WARNING: Photon error for '{address[:60]}': {e}")
-    _photon_cache[address] = result
-    return result
+    """Query Photon (cached). Returns (lat, lng) or (None, None)."""
+    return geocoder.photon(address, session)
+
+
+def save_geo_cache() -> None:
+    """Flush the shared geocode cache to disk (called from main)."""
+    geocoder.save_cache()
 
 
 # Backwards-compatible alias (older versions used `geocode`)
@@ -420,43 +238,13 @@ def strip_venue_prefix(address: str) -> str:
 # Rough bounding boxes for the SCA's known geographic regions, keyed by name.
 # We use these as a coarse continent/sub-continent filter to keep Photon from
 # placing a Meridies "Atlanta Metropolitan area" event in Romania.
-SCA_REGION_BBOXES = {
-    # name → (lat_min, lat_max, lng_min, lng_max)
-    "north_america": (24.0, 72.0, -170.0, -52.0),   # US + Canada (incl. Alaska, Atlantic Canada)
-    "hawaii":        (18.5, 22.5, -160.5, -154.5),  # Hawaii (Caid)
-    "europe":        (34.5, 71.5,  -10.5,  41.0),   # Western/Central/Northern Europe (Drachenwald)
-    "australia":     (-45.0, -9.0, 110.0, 156.0),   # Australia (Lochac)
-    "new_zealand":   (-47.5, -33.5, 165.0, 179.5),  # New Zealand (Lochac)
-}
+SCA_REGION_BBOXES = kingdoms.SCA_REGION_BBOXES
 
 # Which regions a given kingdom's events can legitimately land in. Out-of-
 # kingdom events (Pennsic, Gulf Wars, KWACC, Tir Mara) all stay within
 # North America for US-based kingdoms, so a Meridies "Atlanta Metropolitan
 # area" landing in Romania is clearly a Photon mis-match.
-KINGDOM_REGIONS = {
-    # All US-mainland kingdoms can legitimately reach into Canada (Tir Mara,
-    # Avacal-adjacent baronies, etc.).
-    "Kingdom of AEthelmearc":   {"north_america"},
-    "Kingdom of An Tir":        {"north_america"},
-    "Kingdom of Ansteorra":     {"north_america"},
-    "Kingdom of Artemisia":     {"north_america"},
-    "Kingdom of Atenveldt":     {"north_america"},
-    "Kingdom of Atlantia":      {"north_america"},
-    "Kingdom of Avacal":        {"north_america"},
-    "Kingdom of Caid":          {"north_america", "hawaii"},
-    "Kingdom of Calontir":      {"north_america"},
-    "Kingdom of Drachenwald":   {"europe"},
-    "Kingdom of Ealdormere":    {"north_america"},
-    "Kingdom of Gleann Abhann": {"north_america"},
-    "Kingdom of Lochac":        {"australia", "new_zealand"},
-    "Kingdom of Meridies":      {"north_america"},
-    "Kingdom of the Middle":    {"north_america"},
-    "Kingdom of Northshield":   {"north_america"},
-    "Kingdom of the Outlands":  {"north_america"},
-    "Kingdom of Trimaris":      {"north_america"},
-    "Kingdom of the East":      {"north_america"},
-    "Kingdom of the West":      {"north_america"},
-}
+KINGDOM_REGIONS = kingdoms.KINGDOM_REGIONS
 
 
 def in_sca_region(lat: float, lng: float) -> bool:
@@ -726,14 +514,16 @@ def main(retry_failed: bool = False):
             print(f"           → FAILED (no result from any service)")
             status_counts["failed"] += 1
 
-        # Save progress periodically
+        # Save progress periodically (rows + the geocode cache together)
         if i % SAVE_EVERY_N == 0:
             df.to_csv(OUTPUT_FILE, index=False, quoting=csv.QUOTE_ALL)
+            save_geo_cache()
             print(f"  [Progress saved at {i}/{total}]")
 
 
     # Final save
     df.to_csv(OUTPUT_FILE, index=False, quoting=csv.QUOTE_ALL)
+    save_geo_cache()
 
     print(f"\nDone!")
     print(f"  First-try Nominatim:    {status_counts['ok']}")

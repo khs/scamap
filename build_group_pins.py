@@ -31,6 +31,17 @@ from pathlib import Path
 
 import requests
 
+# Load .env before importing geocoder (which reads NOMINATIM_CONTACT_EMAIL at
+# import time to build its User-Agent). Optional dep — CI sets the env var.
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).parent / ".env")
+except ImportError:
+    pass
+
+import kingdoms
+import geocoder
+
 # Default Windows console encoding (cp1252) crashes on Old Norse and other
 # non-Latin-1 characters in group names. Force UTF-8 stdout so we can print
 # Skorragarðr, Aarnimetsä, etc. without a UnicodeEncodeError mid-run.
@@ -44,11 +55,7 @@ SCRIPT_DIR  = Path(__file__).parent
 INPUT_FILE  = SCRIPT_DIR / "group_locations.csv"
 OUTPUT_FILE = SCRIPT_DIR / "group_pins.csv"
 
-NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
-USER_AGENT = "SCA Maps Project (group pin builder)"
-# Sit well below Nominatim's published 1 req/sec ceiling and well below
-# their rate-limit lockout threshold: 4 calls/minute = 15 sec/call.
-REQUEST_DELAY = 15.0
+USER_AGENT = geocoder.USER_AGENT
 
 
 def load_prior_coords() -> dict[tuple[str, str, str], tuple[str, str]]:
@@ -69,65 +76,19 @@ def load_prior_coords() -> dict[tuple[str, str, str], tuple[str, str]]:
     return cache
 
 
-# In-run query cache. Nominatim's bulk-geocoding policy forbids repeating
-# the same query, and our 531 groups include lots of identical fallback
-# strings — e.g. 35 Middle Kingdom groups all give the same multi-state
-# region text, 25 Northshield groups all say "Wisconsin". Cache the raw
-# (query, require_in_name) → result so any repeat skips the HTTP hit.
-_nominatim_cache: dict[tuple, tuple] = {}
-
-# Rate-limit gate: track the last real HTTP call's timestamp. Cache hits
-# skip the sleep — they don't contribute to Nominatim's rate either.
-_last_http_call_time = 0.0
-
-
-def _throttle_for_http() -> None:
-    """Sleep until at least REQUEST_DELAY seconds have passed since the last
-    Nominatim HTTP call. Cache hits don't go through here, so duplicate
-    queries don't waste 15s of throttling."""
-    global _last_http_call_time
-    elapsed = time.time() - _last_http_call_time
-    if 0 < elapsed < REQUEST_DELAY:
-        time.sleep(REQUEST_DELAY - elapsed)
-    _last_http_call_time = time.time()
-
-
 def _nominatim_one(query: str, session: requests.Session, *,
                     require_in_name: str = "") -> tuple:
-    """
-    One Nominatim call. Returns (lat, lng) or (None, None).
+    """One Nominatim call via the shared geocoder (cached + throttled there).
 
-    If `require_in_name` is set, the result is rejected unless its display_name
-    contains the given substring (case-insensitive). Useful for filtering out
-    Nominatim's "near miss" matches that degrade to the wrong county or state.
+    Uses the narrower country filter this script always used (us/ca/au/nz/gb/de)
+    plus addressdetails, so the require_in_name display-name check works.
     """
-    cache_key = (query, require_in_name)
-    if cache_key in _nominatim_cache:
-        return _nominatim_cache[cache_key]
-    result = (None, None)
-    _throttle_for_http()
-    try:
-        r = session.get(
-            NOMINATIM_URL,
-            params={"q": query, "format": "json", "limit": 1,
-                    "addressdetails": 1,
-                    "countrycodes": "us,ca,au,nz,gb,de"},
-            timeout=15,
-        )
-        r.raise_for_status()
-        results = r.json()
-        if results:
-            top = results[0]
-            if require_in_name:
-                display = (top.get("display_name") or "").lower()
-                if require_in_name.lower() in display:
-                    result = (float(top["lat"]), float(top["lon"]))
-            else:
-                result = (float(top["lat"]), float(top["lon"]))
-    except Exception as exc:
-        print(f"    WARNING: geocode error for '{query[:60]}': {exc}")
-    _nominatim_cache[cache_key] = result
-    return result
+    return geocoder.nominatim(
+        query, session,
+        countrycodes="us,ca,au,nz,gb,de",
+        require_in_name=require_in_name,
+        addressdetails=True,
+    )
 
 
 def geocode_region(text: str, session: requests.Session, kingdom: str = "") -> tuple:
@@ -244,7 +205,93 @@ def geocode_region(text: str, session: requests.Session, kingdom: str = "") -> t
         if lat is not None and in_kingdom(lat, lng):
             return (lat, lng)
 
+    # 4. General simplification fallback — handles vague text Nominatim can't
+    #    parse: "Gulfport/Biloxi, MS and surrounding area" (take first city),
+    #    "Western MA" (drop the direction, use the state), "Cold Lake, AB and
+    #    area" (Canadian province), "Helsinki area" / "Großraum Köln, Bonn"
+    #    (European, with a country hint). Each candidate is tried in turn.
+    for query in _simplify_candidates(text, state_hint, kingdom):
+        print(f"    retrying simplified: {query[:60]}")
+        lat, lng = _nominatim_one(query, session)
+        if lat is not None and in_kingdom(lat, lng):
+            return (lat, lng)
+
     return (None, None)
+
+
+# Full state/province names for expanding "Western MA" → "Massachusetts" etc.
+_US_STATE_NAMES = kingdoms.US_STATE_NAMES
+_CA_PROVINCE_NAMES = kingdoms.CA_PROVINCE_NAMES
+# Leading direction / region qualifiers we strip to find the actual placename.
+_DIRECTION_RE = re.compile(
+    r"^(?:großraum|greater|the whole|the|upper|lower|mid|"
+    r"north|south|east|west|central|northern|southern|eastern|western|"
+    r"northeast(?:ern)?|northwest(?:ern)?|southeast(?:ern)?|southwest(?:ern)?|"
+    r"north[\s-]central|south[\s-]central|east[\s-]central|west[\s-]central)"
+    r"[\s,-]+", re.IGNORECASE)
+
+
+def _simplify_candidates(text: str, state_hint: str, kingdom: str):
+    """Yield progressively-simpler geocode queries for vague region text."""
+    t = text.strip()
+    # Strip trailing noise the scrapers sometimes leave behind.
+    t = re.sub(r"\s*\bDates:.*$", "", t, flags=re.IGNORECASE)
+    t = re.sub(r"\s*\bContinue reading.*$", "", t, flags=re.IGNORECASE)
+    t = re.sub(r",?\s+and covers .*$", "", t, flags=re.IGNORECASE)
+    t = re.sub(r",?\s+(?:and )?surrounding areas?$", "", t, flags=re.IGNORECASE)
+    t = re.sub(r"\s+and area$", "", t, flags=re.IGNORECASE)
+    t = re.sub(r"\s+(?:metro(?:politan)?\s+)?area$", "", t, flags=re.IGNORECASE)
+    t = t.strip().rstrip(",.;:")
+
+    # "Region (i.e. City)" → City
+    m = re.search(r"\(i\.e\.?\s*([^),]+)", t, re.IGNORECASE)
+    if m:
+        t = m.group(1).strip()
+
+    # Detect a trailing 2-letter US state or Canadian province in the text.
+    prov = st = ""
+    m2 = re.search(r",\s*([A-Z]{2})\b", t)
+    if m2:
+        code = m2.group(1)
+        if code in _CA_PROVINCE_NAMES:
+            prov = code
+        elif code in _US_STATE_NAMES:
+            st = code
+    if not st and state_hint in _US_STATE_NAMES:
+        st = state_hint
+
+    # First token before a slash / comma / semicolon / " and ", direction stripped.
+    tok = re.split(r"\s*[/,;]\s*|\s+and\s+", t)[0].strip()
+    tok = _DIRECTION_RE.sub("", tok).strip().rstrip(",.;:")
+
+    candidates = []
+    # If the residual collapsed to nothing or a bare state code, geocode the
+    # state/province centroid.
+    if (not tok) or tok.upper() in _US_STATE_NAMES or tok.upper() in _CA_PROVINCE_NAMES or len(tok) <= 2:
+        if prov:
+            candidates.append(f"{_CA_PROVINCE_NAMES[prov]}, Canada")
+        elif st:
+            candidates.append(f"{_US_STATE_NAMES[st]}, USA")
+    else:
+        if prov:
+            candidates.append(f"{tok}, {_CA_PROVINCE_NAMES[prov]}, Canada")
+        elif st:
+            candidates.append(f"{tok}, {_US_STATE_NAMES[st]}, USA")
+        else:
+            # No state context: try the bare token (works for big cities) and,
+            # for non-US kingdoms, a country-qualified form.
+            candidates.append(tok)
+            country = {"Kingdom of Avacal": "Canada",
+                       "Kingdom of Ealdormere": "Canada",
+                       "Kingdom of Lochac": "Australia"}.get(kingdom)
+            if country:
+                candidates.append(f"{tok}, {country}")
+    # De-dup while preserving order
+    seen = set()
+    for c in candidates:
+        if c and c not in seen:
+            seen.add(c)
+            yield c
 
 
 def _in_box(lat: float, lng: float, box) -> bool:
@@ -256,77 +303,14 @@ def _in_box(lat: float, lng: float, box) -> bool:
 # we care about. Used by step 2 of geocode_region to verify that each
 # candidate location lies in the expected state. (Same shape as the
 # clean_sca_events bbox table, kept duplicated to avoid coupling.)
-_STATE_BBOX = {
-    "AL": (30.1, 35.1, -88.6, -84.8), "AK": (51.0, 71.5, -180.0, -129.0),
-    "AZ": (31.2, 37.1, -114.9, -109.0), "AR": (32.9, 36.6, -94.7, -89.6),
-    "CA": (32.4, 42.1, -124.5, -114.0), "CO": (36.9, 41.1, -109.1, -101.9),
-    "CT": (40.9, 42.1, -73.8, -71.7), "DE": (38.4, 39.9, -75.8, -75.0),
-    "DC": (38.7, 39.0, -77.2, -76.9), "FL": (24.4, 31.1, -87.7, -79.9),
-    "GA": (30.2, 35.1, -85.7, -80.7), "HI": (18.8, 22.3, -160.3, -154.7),
-    "ID": (41.9, 49.1, -117.3, -111.0), "IL": (36.9, 42.6, -91.6, -87.4),
-    "IN": (37.7, 41.9, -88.2, -84.7), "IA": (40.3, 43.6, -96.7, -90.1),
-    "KS": (36.9, 40.1, -102.1, -94.5), "KY": (36.4, 39.2, -89.7, -81.9),
-    "LA": (28.8, 33.1, -94.1, -88.7), "ME": (43.0, 47.6, -71.2, -66.8),
-    "MD": (37.8, 39.8, -79.6, -75.0), "MA": (41.1, 42.9, -73.6, -69.8),
-    "MI": (41.6, 48.4, -90.5, -82.3), "MN": (43.4, 49.5, -97.3, -89.4),
-    "MS": (30.1, 35.1, -91.8, -87.9), "MO": (35.9, 40.7, -95.9, -89.0),
-    "MT": (44.3, 49.1, -116.2, -103.9), "NE": (39.9, 43.1, -104.1, -95.2),
-    "NV": (34.9, 42.1, -120.1, -113.9), "NH": (42.6, 45.4, -72.7, -70.5),
-    "NJ": (38.8, 41.4, -75.7, -73.8), "NM": (31.2, 37.1, -109.2, -102.9),
-    "NY": (40.4, 45.1, -79.9, -71.7), "NC": (33.7, 36.7, -84.4, -75.4),
-    "ND": (45.8, 49.1, -104.1, -96.5), "OH": (38.3, 42.1, -84.9, -80.4),
-    "OK": (33.5, 37.1, -103.1, -94.3), "OR": (41.9, 46.4, -124.7, -116.4),
-    "PA": (39.6, 42.4, -80.6, -74.6), "RI": (41.0, 42.1, -71.9, -71.0),
-    "SC": (32.0, 35.3, -83.4, -78.4), "SD": (42.4, 45.9, -104.1, -96.3),
-    "TN": (34.9, 36.8, -90.4, -81.5), "TX": (25.7, 36.6, -106.7, -93.4),
-    "UT": (36.9, 42.1, -114.1, -108.9), "VT": (42.6, 45.1, -73.5, -71.4),
-    "VA": (36.4, 39.5, -83.7, -75.1), "WA": (45.4, 49.1, -124.9, -116.8),
-    "WV": (37.1, 40.7, -82.7, -77.6), "WI": (42.4, 47.1, -92.9, -86.7),
-    "WY": (40.9, 45.1, -111.1, -103.9),
-    # Canadian provinces — Avacal (AB+SK+BC) and Ealdormere (ON).
-    "AB": (49.0, 60.0, -120.0, -110.0),
-    "BC": (48.3, 60.0, -139.1, -114.0),
-    "SK": (49.0, 60.0, -110.0, -101.4),
-    "ON": (41.7, 56.9, -95.2, -74.3),
-    "QC": (45.0, 62.6, -79.8, -57.1),
-    "MB": (49.0, 60.0, -102.0, -88.9),
-    "NS": (43.4, 47.0, -66.4, -59.7),
-    "NB": (44.6, 48.1, -69.1, -63.8),
-    "NL": (46.6, 60.5, -67.8, -52.6),
-    "PE": (45.9, 47.1, -64.4, -61.9),
-    "YT": (60.0, 69.7, -141.1, -123.8),
-}
+_STATE_BBOX = kingdoms.STATE_BBOX
 
 
 # States a kingdom actually covers. geocode_region accepts any one when
 # scoring multi-chunk locations, since Atlantia is MD/VA/NC/SC/DC etc. —
 # treating any of those as "in the right place" prevents Misty Marsh's
 # all-SC-counties list from being mis-placed in VA.
-KINGDOM_STATES = {
-    "Kingdom of AEthelmearc":   ("PA", "WV", "NY"),
-    "Kingdom of An Tir":        ("WA", "OR", "ID", "MT", "BC"),
-    "Kingdom of Ansteorra":     ("OK", "TX"),
-    "Kingdom of Artemisia":     ("MT", "UT", "ID", "WY"),
-    "Kingdom of Atenveldt":     ("AZ",),
-    "Kingdom of Atlantia":      ("VA", "MD", "NC", "SC", "DC"),
-    "Kingdom of Avacal":        ("AB", "SK", "BC"),
-    "Kingdom of Caid":          ("CA", "NV", "HI"),
-    "Kingdom of Calontir":      ("KS", "MO", "IA", "NE"),
-    "Kingdom of Ealdormere":    ("ON",),
-    "Kingdom of the East":      ("CT", "DE", "ME", "MA", "NH", "NJ", "NY",
-                                 "PA", "RI", "VT",
-                                 # Crown Principality of Tir Mara — Atlantic Canada
-                                 "NS", "NB", "PE", "NL", "QC"),
-    "Kingdom of Gleann Abhann": ("LA", "AR", "MS", "TN"),
-    "Kingdom of Meridies":      ("AL", "GA", "TN", "KY", "FL"),
-    "Kingdom of the Middle":    ("IL", "IN", "OH", "MI"),
-    "Kingdom of Northshield":   ("MN", "WI", "ND", "SD"),
-    "Kingdom of the Outlands":  ("CO", "WY", "NM"),
-    "Kingdom of Trimaris":      ("FL",),
-    "Kingdom of the West":      ("CA", "NV", "AK"),
-    # Non-US kingdoms — we don't have state bboxes for these so they fall
-    # back to bare-name geocoding without state scoring.
-}
+KINGDOM_STATES = kingdoms.KINGDOM_STATES
 
 
 def main():
@@ -388,8 +372,10 @@ def main():
                 for r in rows[i:]
             ]
             save(out_rows + tail)
+            geocoder.save_cache()
 
     save(out_rows)
+    geocoder.save_cache()
 
     geocoded = sum(1 for r in out_rows if r["lat"] and r["lng"])
     with_site = sum(1 for r in out_rows if r["website"])
