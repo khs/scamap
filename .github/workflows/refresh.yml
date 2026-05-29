@@ -54,6 +54,15 @@ jobs:
           NOMINATIM_CONTACT_EMAIL: ${{ secrets.NOMINATIM_CONTACT_EMAIL }}
         run: python refresh.py
 
+      - name: Pipeline health check
+        # Flags silent breakage (a kingdom feed producing 0 events, a sharp
+        # drop vs the last run, a geocode-failure spike) as ::error::/::warning::
+        # annotations visible in the run summary. Non-blocking (exits 0), so the
+        # data commit below still happens; add --strict to fail the job instead.
+        env:
+          PYTHONIOENCODING: utf-8
+        run: python health_check.py
+
       - name: Commit data updates if anything changed
         run: |
           set -euo pipefail
@@ -63,7 +72,7 @@ jobs:
           # Commit the files the public site serves, plus the geocode cache
           # so the next scheduled run reuses prior lookups (and never repeats
           # the same Nominatim query, per their bulk-geocoding policy).
-          git add sca_events_clean.csv group_pins.csv group_locations.csv geocode_cache.json
+          git add sca_events_clean.csv group_pins.csv group_locations.csv geocode_cache.json health_state.json
 
           if git diff --cached --quiet; then
             echo "No data changes to commit."
