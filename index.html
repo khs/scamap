@@ -339,6 +339,27 @@
       vertical-align: middle;
     }
 
+    /* Online-meetings block inside a baronial "?" placeholder popup */
+    .ph-online {
+      margin-top: 0.55rem;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 0.4rem;
+    }
+    .ph-online-head {
+      font-family: 'Cinzel', serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #0f766e;
+      margin-bottom: 0.35rem;
+    }
+    .ph-online-row { margin-bottom: 0.45rem; }
+    .ph-online-row:last-child { margin-bottom: 0; }
+    .ph-online-title { font-weight: 600; color: #1e293b; font-size: 0.82rem; line-height: 1.25; }
+    .ph-online-when { color: #475569; font-size: 0.74rem; margin: 0.1rem 0; }
+    .ph-online-join { font-size: 0.76rem; color: #0f766e; font-weight: 600; text-decoration: none; }
+    .ph-online-join:hover { text-decoration: underline; }
+
     /* ── Kingdom-color overlay (optional) ───────────────────────── */
     .kingdom-overlay-toggle {
       display: flex;
@@ -1164,32 +1185,122 @@ function bestLinkFor(ev) {
 
 // ── Placeholder marker icon ───────────────────────────────────────
 // Hollow outlined pin with a "?" so it's visually distinct from real events.
-function makePlaceholderIcon() {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="22" height="33" opacity="0.85">
+function makePlaceholderIcon(onlineCount) {
+  // A teal count badge flags a group that holds online meetings, so its
+  // otherwise-empty "?" seat pin advertises events that would otherwise be
+  // stranded in the Online tab (their join links live in the popup).
+  const badge = onlineCount > 0 ? `
+    <circle cx="18.5" cy="6" r="5.4" fill="#0f766e" stroke="#ffffff" stroke-width="1"/>
+    <text x="18.5" y="8.5" text-anchor="middle" font-family="Georgia, serif"
+          font-size="7.5" font-weight="bold" fill="#ffffff">${onlineCount}</text>` : '';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="22" height="33">
     <path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 24 12 24S24 21 24 12C24 5.37 18.63 0 12 0z"
-          fill="#ffffff" stroke="#1e3a8a" stroke-width="1.5" stroke-dasharray="2,1.5"/>
-    <text x="12" y="17" text-anchor="middle"
+          fill="#ffffff" stroke="#1e3a8a" stroke-width="1.5" stroke-dasharray="2,1.5" opacity="0.85"/>
+    <text x="12" y="17" text-anchor="middle" opacity="0.85"
           font-family="Georgia, serif" font-size="13" font-weight="bold"
-          fill="#1e3a8a">?</text>
+          fill="#1e3a8a">?</text>${badge}
   </svg>`;
   return L.divIcon({
     html: svg, className: 'placeholder-icon',
     iconSize: [22, 33], iconAnchor: [11, 33], popupAnchor: [0, -31],
   });
 }
-const placeholderIcon = makePlaceholderIcon();
+const placeholderIcon = makePlaceholderIcon(0);
+// Badged variants are reused across pins, keyed by online-event count.
+const _badgedPlaceholderIcons = {};
+function placeholderIconWithBadge(n) {
+  if (n <= 0) return placeholderIcon;
+  return _badgedPlaceholderIcons[n] || (_badgedPlaceholderIcons[n] = makePlaceholderIcon(n));
+}
 
-function buildPlaceholderPopup(pin) {
+// ── Online meetings per group ─────────────────────────────────────
+// Many baronies (especially in the West & Ealdormere) run recurring business
+// meetings on Zoom. Those events carry no map coordinates, so on their own they
+// surface only in the Online tab — disconnected from where the group actually
+// sits. Match each virtual event to a group pin by kingdom + loose name
+// (apostrophe/spacing-insensitive, e.g. "Wintersgate" ↔ "Barony of Winter's
+// Gate") and hang it on the pin. Built once, lazily, from allEvents+groupPins.
+function normName(s) { return (s || "").toLowerCase().replace(/[^a-z0-9]/g, ""); }
+function groupShortName(group) {
+  return group.replace(/^(Barony|Shire|Canton|Stronghold|College|Province|Principality|Riding)\s+of\s+(?:the\s+)?/i, '');
+}
+let _onlineByGroup = null;
+function buildOnlineByGroup() {
+  const pinIdx = groupPins
+    .map(p => ({ group: p.group, kingdom: p.kingdom, s: normName(groupShortName(p.group)) }))
+    .filter(x => x.s.length >= 4);
+  const grouped = new Map();                  // pin.group -> Map(title -> [events])
+  allEvents.forEach(ev => {
+    if (ev.is_virtual !== 'True') return;
+    const nt = normName(ev.title);
+    let best = null;                          // most specific (longest-name) matching pin
+    pinIdx.forEach(x => {
+      if (x.kingdom !== ev.source) return;
+      if (!nt.includes(x.s)) return;
+      if (!best || x.s.length > best.s.length) best = x;
+    });
+    if (!best) return;
+    if (!grouped.has(best.group)) grouped.set(best.group, new Map());
+    const byMeeting = grouped.get(best.group);
+    // Collapse the same recurring meeting listed under varied title spellings
+    // (e.g. three "Silver Desert Business Meeting" wordings): its Zoom link is
+    // the stable identity; fall back to a normalized title when there's no link.
+    const mkey = ev.event_url || normName(ev.title);
+    if (!byMeeting.has(mkey)) byMeeting.set(mkey, []);
+    byMeeting.get(mkey).push(ev);
+  });
+  // Collapse each meeting series to its next upcoming instance (else the latest).
+  const nowIso = new Date().toISOString();
+  const out = new Map();
+  grouped.forEach((byMeeting, group) => {
+    const picks = [];
+    byMeeting.forEach(list => {
+      list.sort((a, b) => sortKey(a.start).localeCompare(sortKey(b.start)));
+      picks.push(list.find(ev => sortKey(ev.start) >= nowIso) || list[list.length - 1]);
+    });
+    picks.sort((a, b) => sortKey(a.start).localeCompare(sortKey(b.start)));
+    out.set(group, picks);
+  });
+  return out;
+}
+function onlineEventsForGroup(group) {
+  if (!_onlineByGroup) {
+    if (!allEvents.length || !groupPins.length) return [];   // data not ready; don't cache
+    _onlineByGroup = buildOnlineByGroup();
+  }
+  return _onlineByGroup.get(group) || [];
+}
+
+function buildPlaceholderPopup(pin, onlineEvents) {
   const linkBtn = pin.website
     ? `<div class="links"><a href="${escapeHtml(pin.website)}" target="_blank" rel="noopener">${escapeHtml(pin.group)} →</a></div>`
     : '';
+  let onlineBlock = '';
+  if (onlineEvents && onlineEvents.length) {
+    const rows = onlineEvents.map(ev => {
+      const link = bestLinkFor(ev);
+      const join = link
+        ? `<a class="ph-online-join" href="${escapeHtml(link)}" target="_blank" rel="noopener">Join →</a>`
+        : '';
+      return `<div class="ph-online-row">
+        <div class="ph-online-title">${escapeHtml(ev.title)}</div>
+        <div class="ph-online-when">🕒 ${escapeHtml(whenString(ev))}</div>
+        ${join}
+      </div>`;
+    }).join('');
+    onlineBlock = `<div class="ph-online">
+      <div class="ph-online-head">🖥 Online meeting${onlineEvents.length > 1 ? 's' : ''}</div>
+      ${rows}
+    </div>`;
+  }
+  const desc = (onlineEvents && onlineEvents.length) ? ''
+    : `<div class="desc" style="margin-top:0.4rem;">For information on events in this barony, please visit their website.</div>`;
   return `<div class="event-popup">
     <h3>${escapeHtml(pin.group)}</h3>
     <span class="source-pill">${escapeHtml(pin.kingdom)}</span>
-    <div class="desc" style="margin-top:0.4rem;">
-      For information on events in this barony, please visit their website.
-    </div>
-    <div class="loc">📍 ${escapeHtml(pin.location)}</div>
+    ${onlineBlock}
+    ${desc}
+    <div class="loc" style="margin-top:0.45rem;">📍 ${escapeHtml(pin.location)}</div>
     ${linkBtn}
   </div>`;
 }
@@ -1325,7 +1436,9 @@ function applyFilters() {
     sortedPins.forEach(pin => {
       const lat = parseFloat(pin.lat), lng = parseFloat(pin.lng);
       if (isNaN(lat) || isNaN(lng)) return;
-      if (!pin.website) return;
+      const online = onlineEventsForGroup(pin.group);
+      // Show the pin if we have a website OR online meetings to surface.
+      if (!pin.website && !online.length) return;
       if (sourcesWithMappedEvents.has(pin.group)) return;
       // Suppress when ANY mapped event's title contains the group's short name
       // (e.g. "Calafia Anniversary" → suppress Calafia placeholder)
@@ -1339,8 +1452,11 @@ function applyFilters() {
       // Use the same spiral so a barony pin lands beside any event already
       // pinned at that exact coord (Delftwood + its own Syracuse event etc.).
       const [plotLat, plotLng] = spiralOffset(lat, lng);
-      const marker = L.marker([plotLat, plotLng], { icon: placeholderIcon, opacity: 0.9 });
-      marker.bindPopup(buildPlaceholderPopup(pin), { maxWidth: 320 });
+      const marker = L.marker([plotLat, plotLng], {
+        icon: placeholderIconWithBadge(online.length),
+        opacity: online.length ? 1 : 0.9,
+      });
+      marker.bindPopup(buildPlaceholderPopup(pin, online), { maxWidth: 320 });
       placeholderLayer.addLayer(marker);
     });
   }
