@@ -120,7 +120,9 @@ def nominatim(query: str, session: requests.Session, *,
     cached = _cache_get(key)
     if cached is not _MISS:
         return cached
-    params = {"q": query, "format": "json", "limit": 1, "countrycodes": countrycodes}
+    params = {"q": query, "format": "json", "limit": 1}
+    if countrycodes:                      # omit when empty — Nominatim 403s on
+        params["countrycodes"] = countrycodes   # an empty countrycodes= value
     if addressdetails:
         params["addressdetails"] = 1
     result = (None, None)

@@ -77,15 +77,19 @@ def load_prior_coords() -> dict[tuple[str, str, str], tuple[str, str]]:
 
 
 def _nominatim_one(query: str, session: requests.Session, *,
-                    require_in_name: str = "") -> tuple:
+                    require_in_name: str = "",
+                    countrycodes: str = "us,ca,au,nz,gb,de") -> tuple:
     """One Nominatim call via the shared geocoder (cached + throttled there).
 
-    Uses the narrower country filter this script always used (us/ca/au/nz/gb/de)
-    plus addressdetails, so the require_in_name display-name check works.
+    countrycodes narrows the search (the default us/ca/au/nz/gb/de set this
+    script always used). Pass "" to search globally — needed for Europe-spanning
+    kingdoms like Drachenwald, where "Helsinki, Finland" would otherwise be
+    forced into Germany; the result is instead validated against the kingdom's
+    region bbox by the caller.
     """
     return geocoder.nominatim(
         query, session,
-        countrycodes="us,ca,au,nz,gb,de",
+        countrycodes=countrycodes,
         require_in_name=require_in_name,
         addressdetails=True,
     )
@@ -126,6 +130,15 @@ def geocode_region(text: str, session: requests.Session, kingdom: str = "") -> t
     acceptable_boxes = [_STATE_BBOX[s] for s in acceptable_states if s in _STATE_BBOX]
     state_hint = acceptable_states[0] if acceptable_states else ""
 
+    # Non-US kingdoms (Drachenwald = Europe) have no state list. Validate their
+    # results against the kingdom's region bbox, and search globally (cc="")
+    # instead of the US/CA/AU/NZ/GB/DE filter that would shove "Helsinki,
+    # Finland" into Germany. The bbox then rejects anything off-region.
+    region_boxes = [_REGION_BBOXES[r] for r in _KINGDOM_REGIONS.get(kingdom, ())
+                    if r in _REGION_BBOXES]
+    acceptable_boxes = acceptable_boxes + region_boxes
+    cc = "" if "europe" in _KINGDOM_REGIONS.get(kingdom, set()) else "us,ca,au,nz,gb,de"
+
     def in_kingdom(lat: float, lng: float) -> bool:
         """True if (lat, lng) is in any of the kingdom's acceptable states
         — or unconditionally true when we have no bbox for the kingdom
@@ -135,7 +148,7 @@ def geocode_region(text: str, session: requests.Session, kingdom: str = "") -> t
         return any(_in_box(lat, lng, box) for box in acceptable_boxes)
 
     # 1. Original — only accept if it lands in the kingdom's region.
-    lat, lng = _nominatim_one(text, session)
+    lat, lng = _nominatim_one(text, session, countrycodes=cc)
     if lat is not None and in_kingdom(lat, lng):
         return (lat, lng)
 
@@ -212,9 +225,16 @@ def geocode_region(text: str, session: requests.Session, kingdom: str = "") -> t
     #    (European, with a country hint). Each candidate is tried in turn.
     for query in _simplify_candidates(text, state_hint, kingdom):
         print(f"    retrying simplified: {query[:60]}")
-        lat, lng = _nominatim_one(query, session)
+        lat, lng = _nominatim_one(query, session, countrycodes=cc)
         if lat is not None and in_kingdom(lat, lng):
             return (lat, lng)
+
+    # 5. Photon fallback — a separate OSM-based geocoder that handles European
+    #    addresses well and keeps working when Nominatim rate-limits us (as
+    #    geocode_sca_events already does). Validate against the kingdom's region.
+    lat, lng = geocoder.photon(text, session)
+    if lat is not None and in_kingdom(lat, lng):
+        return (lat, lng)
 
     return (None, None)
 
@@ -311,6 +331,12 @@ _STATE_BBOX = kingdoms.STATE_BBOX
 # treating any of those as "in the right place" prevents Misty Marsh's
 # all-SC-counties list from being mis-placed in VA.
 KINGDOM_STATES = kingdoms.KINGDOM_STATES
+
+# Region bboxes (europe / australia / etc.) for kingdoms that aren't covered by
+# US/Canadian state boxes. Drachenwald spans ~30 European countries, so we
+# validate its group seats against the europe box rather than a state list.
+_REGION_BBOXES = kingdoms.SCA_REGION_BBOXES
+_KINGDOM_REGIONS = kingdoms.KINGDOM_REGIONS
 
 
 def main():

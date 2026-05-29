@@ -739,6 +739,23 @@ def scrape_drachenwald() -> list[tuple[str, str, str]]:
     r = requests.get(url, timeout=TIMEOUT, headers=HDRS)
     soup = BeautifulSoup(r.text, "lxml")
 
+    # Authoritative websites from the kingdom's machine-readable branch directory
+    # — more reliable than the HTML "Online:" anchors, which several groups omit.
+    # Keyed by a diacritic-tolerant normalised name ("Aarnimetsä" -> "aarnimets").
+    _bnorm = lambda s: re.sub(r"[^a-z0-9]", "", (s or "").lower())
+    branch_site: dict[str, str] = {}
+    try:
+        bdata = requests.get("https://dis.drachenwald.sca.org/data/branches.json",
+                             timeout=TIMEOUT, headers=HDRS).json().get("data", [])
+        for b in bdata:
+            nm = b.get("group") or b.get("barony") or b.get("canton-shire") or ""
+            site = (b.get("website") or "").strip().rstrip("/")
+            if nm and site:
+                branch_site[_bnorm(nm)] = site
+        print(f"  Drachenwald branch directory: {len(branch_site)} websites")
+    except Exception as exc:
+        print(f"  WARNING: Drachenwald branches.json fetch failed: {exc}")
+
     # Pass 1: Summary list of baronies → country mapping
     barony_country: dict[str, str] = {}
     for b in soup.find_all("b"):
@@ -825,6 +842,12 @@ def scrape_drachenwald() -> list[tuple[str, str, str]]:
             if website:
                 break
             sib = sib.find_next_sibling()
+
+        # Fall back to the branch-directory website when the page had no anchor.
+        if not website:
+            bare = re.sub(r"^(Barony|Shire|Canton|Stronghold|College|Province|Riding)\s+of\s+(?:the\s+)?",
+                          "", name, flags=re.IGNORECASE).strip()
+            website = branch_site.get(_bnorm(bare), "")
 
         if name not in out:
             out[name] = (region or "Europe", website)
