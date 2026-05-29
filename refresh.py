@@ -24,6 +24,10 @@ SCRIPT_DIR = Path(__file__).parent
 STEPS = [
     ("Fetching events from kingdom/baronial calendars", "ImportMaps.py"),
     ("Cleaning, deduping, and merging recurring events", "clean_sca_events.py"),
+    # Replace placeholder feed descriptions (e.g. Atlantia's "Upcoming event in
+    # … Event Flyer:") with the real text from the linked event page. Cached, so
+    # only new events fetch. Runs before geocoding, which preserves the column.
+    ("Enriching placeholder event descriptions",         "enrich_descriptions.py"),
     ("Geocoding new addresses",                          "geocode_sca_events.py"),
     # Group-level placeholder pins (so baronies without events still show on
     # the map with a "visit their website" link). Cached; only geocodes new
