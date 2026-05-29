@@ -146,9 +146,26 @@ def fetch_ics(calendar: dict) -> Calendar | None:
             headers={"User-Agent": "SCA Maps Project (calendar fetcher)"},
         )
         response.raise_for_status()
-        return Calendar.from_ical(response.content)
     except requests.RequestException as e:
         print(f"  WARNING: Could not fetch {calendar['source']}: {e}")
+        return None
+
+    # A feed sometimes returns an HTML page instead of ICS — e.g. a Cloudflare
+    # or WAF challenge served to a datacenter IP (this is what GitHub Actions
+    # often gets). Parsing that HTML with Calendar.from_ical raised a ValueError
+    # that ISN'T a RequestException, so it escaped the handler above and crashed
+    # the entire fetch step, taking every other kingdom down with it. Detect a
+    # non-ICS body and skip just this one feed.
+    if b"BEGIN:VCALENDAR" not in response.content:
+        ctype = response.headers.get("content-type", "?")
+        snippet = response.text[:80].replace("\n", " ").replace("\r", " ").strip()
+        print(f"  WARNING: {calendar['source']} returned non-ICS content "
+              f"(content-type {ctype}) — skipping. First bytes: {snippet!r}")
+        return None
+    try:
+        return Calendar.from_ical(response.content)
+    except Exception as e:                       # noqa: BLE001 — never crash the whole fetch
+        print(f"  WARNING: Could not parse ICS for {calendar['source']}: {e}")
         return None
 
 
