@@ -36,6 +36,7 @@ Usage:
 
 import csv
 import re
+import unicodedata
 from pathlib import Path
 
 import pandas as pd
@@ -311,6 +312,74 @@ def strip_steward_boilerplate(text: str) -> str:
     if not isinstance(text, str) or not text:
         return text
     return _STEWARD_BOILERPLATE_RE.sub("", text, count=1).strip()
+
+
+# Group-type prefix at the start of a title — strongly indicates a baronial-host
+# event ("Barony of Tarnmists Business Meeting (Virtual)").
+_BARONIAL_PREFIX_RE = re.compile(
+    r"^(Barony|Shire|Canton|Stronghold|College|Province|Principality|Riding|Hamlet)\s+of\s+",
+    re.IGNORECASE,
+)
+# Keyword hits for clearly-baronial recurring meetings whose title doesn't carry
+# the group prefix ("Ravenshore Business Meeting", "Fettburg Baronial Meeting").
+_BARONIAL_KEYWORD_RE = re.compile(r"\b(Business Meeting|Baronial Meeting|Baronial)\b", re.IGNORECASE)
+
+
+def _norm_name(s: str) -> str:
+    """Lowercase + diacritic-strip + alphanumeric-only — for loose name matches
+    so "Aarnimetsä"/"Winter's Gate"/etc. line up across spellings."""
+    s = unicodedata.normalize("NFKD", s or "")
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    return re.sub(r"[^a-z0-9]", "", s.lower())
+
+
+def _load_groups_by_kingdom(group_locations_path: Path) -> dict:
+    """{kingdom: set(normalized short-names without 'Barony of'/etc. prefix)}."""
+    out: dict = {}
+    if not group_locations_path.exists():
+        return out
+    with open(group_locations_path, encoding="utf-8", newline="") as f:
+        for row in csv.DictReader(f):
+            bare = _BARONIAL_PREFIX_RE.sub("", row.get("group", "") or "").strip()
+            bn = _norm_name(bare)
+            if len(bn) >= 4:
+                out.setdefault(row.get("kingdom", ""), set()).add(bn)
+    return out
+
+
+def promote_virtual_baronials(df, group_locations_path: Path) -> int:
+    """Reclassify virtual events from kingdom feeds to calendar_type=baronial
+    when their title clearly references a baronial group. The West & Ealdormere
+    kingdom feeds aggregate baronial business meetings that would otherwise be
+    filed as 'kingdom' — so the "Baronial" filter on the map should govern them.
+
+    A title qualifies if it (a) starts with a group-type prefix
+    ("Barony of …"/"Shire of …"), (b) contains a Business-Meeting / Baronial
+    keyword, or (c) matches a known group short-name from the same kingdom
+    (loose: diacritic- and spacing-insensitive). Returns count promoted.
+    """
+    groups_by_kingdom = _load_groups_by_kingdom(group_locations_path)
+    is_kingdom_virtual = (
+        (df["calendar_type"] == "kingdom")
+        & (df["is_virtual"].astype(str) == "True")
+    )
+    if not is_kingdom_virtual.any():
+        return 0
+
+    def is_baronial(row) -> bool:
+        title = row.get("title") or ""
+        if _BARONIAL_PREFIX_RE.match(title):
+            return True
+        if _BARONIAL_KEYWORD_RE.search(title):
+            return True
+        norm_title = _norm_name(title)
+        return any(sn in norm_title for sn in groups_by_kingdom.get(row.get("source", ""), ()))
+
+    mask = is_kingdom_virtual & df.apply(is_baronial, axis=1)
+    n = int(mask.sum())
+    if n:
+        df.loc[mask, "calendar_type"] = "baronial"
+    return n
 
 
 def clean_description(desc: str) -> tuple:
@@ -1121,6 +1190,13 @@ def main():
         )
         print(f"  stripped Steward/Email/Website boilerplate from "
               f"{int(lochac.sum())} Lochac descriptions")
+    # Promote virtual baronial business meetings from kingdom feeds into the
+    # baronial type, so the "Baronial" map filter governs them instead of the
+    # "Kingdom" one (mostly aggregated West/Ealdormere baronies).
+    promoted = promote_virtual_baronials(df, SCRIPT_DIR / "group_locations.csv")
+    if promoted:
+        print(f"  promoted {promoted} virtual events from kingdom -> baronial "
+              f"(aggregated baronial business meetings)")
     blanked = (df["description"] == "").sum()
     with_event_url = (df["event_url"] != "").sum()
     print(f"  {blanked} descriptions blanked (placeholder/widget/empty). "
