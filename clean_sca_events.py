@@ -320,9 +320,21 @@ _BARONIAL_PREFIX_RE = re.compile(
     r"^(Barony|Shire|Canton|Stronghold|College|Province|Principality|Riding|Hamlet)\s+of\s+",
     re.IGNORECASE,
 )
-# Keyword hits for clearly-baronial recurring meetings whose title doesn't carry
-# the group prefix ("Ravenshore Business Meeting", "Fettburg Baronial Meeting").
-_BARONIAL_KEYWORD_RE = re.compile(r"\b(Business Meeting|Baronial Meeting|Baronial)\b", re.IGNORECASE)
+# Keyword hits for clearly-baronial recurring meetings/practices whose title
+# doesn't carry the group prefix: "Ravenshore Business Meeting", "Fettburg
+# Baronial Meeting", "Skrael and Friends A&S Evenings". These are the regular
+# local activities (sword practice, A&S nights, business/officer meetings) that
+# belong under the "Baronial" filter rather than "Kingdom (Events)".
+_BARONIAL_KEYWORD_RE = re.compile(
+    r"\b(Business Meeting|Baronial Meeting|Baronial|"
+    r"A&S Evenings?|A&S Nights?|Sewing Circle|Drumming Circle|Bardic Circle|"
+    r"Choir Practice|Dance Practice|Pell Night|Fighter Practice|Fencing Practice|"
+    r"Archery Practice)\b",
+    re.IGNORECASE,
+)
+# "Officer/Council/Populace Meeting" deliberately NOT here -- they can be kingdom-
+# level too (e.g. "K. Officer Meeting", "MoD Council meeting"). The keywords above
+# are tight enough that a kingdom-level event won't be caught.
 
 
 def _norm_name(s: str) -> str:
