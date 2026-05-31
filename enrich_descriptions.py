@@ -11,11 +11,23 @@ with the actual text on https://atlantia.sca.org/event/?event_id=XXXX .
 
 This step fetches those pages and swaps the placeholder for the page's
 "Description:" field. Results are cached in description_cache.json (committed,
-like geocode_cache.json) so re-runs and the unattended cron don't re-fetch.
-Network failures are non-fatal — the event keeps its placeholder and we try
-again next run. Trivial page text ("Coming soon", empty) is intentionally NOT
-cached, so an event picks up its real description automatically once Atlantia
-publishes it.
+like geocode_cache.json), each entry stamped with the time it was fetched.
+Rather than caching forever, a cached description is re-validated against the
+live page on a cadence keyed to how soon the event is: monthly for events more
+than a month out, weekly inside the final month, daily inside the final week.
+Event pages get edited as the date nears (venue, schedule, and fees get
+finalised), and those kingdoms' servers send no ETag/Last-Modified, so a timed
+re-fetch is the only way to catch the edits — but we spend the effort where it
+matters and leave far-off events nearly untouched.
+
+Network failures are non-fatal — the event keeps its last good description (or
+its placeholder) and we try again next run. Trivial page text ("Coming soon",
+empty) is intentionally NOT cached, so an event picks up its real description
+automatically once the kingdom publishes it.
+
+Artemisia is the exception: its flyer PDFs (see extract_artemisia_description)
+are re-pulled every run and never cached, because a "save the date" PDF that
+initially says TBD gets the real prose dropped in as the event approaches.
 
 Run AFTER clean_sca_events.py and BEFORE geocode_sca_events.py — the geocoder
 preserves the description column when it rewrites the CSV.
@@ -31,6 +43,7 @@ import json
 import re
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 import requests
@@ -59,6 +72,22 @@ _ARTEMISIA_FB_MARKER_RE = re.compile(
 # Page text this short / this generic isn't a real description.
 TRIVIAL = {"", "coming soon", "tbd", "tba", "n/a"}
 MIN_DESC_LEN = 12
+
+# Re-fetch cadence for cached descriptions, keyed on how soon the event is.
+# Event pages get edited as the date nears (venue, schedule, fees finalised),
+# so we re-validate aggressively in the run-up and rarely for far-off events.
+# An event that first appears a year out is re-checked ~11 times monthly, then
+# ~3 times weekly, then daily in its final week — under 2x the work of a flat
+# monthly poll, with the extra effort spent where edits actually happen.
+# (tier_threshold_days, max_cache_age_days), ordered nearest-first.
+REFRESH_TIERS = (
+    (7, 1),     # < 1 week out  -> re-fetch when the cached copy is > 1 day old
+    (30, 7),    # < 1 month out -> ... > 1 week old
+)
+DEFAULT_REFRESH_DAYS = 30    # >= 1 month out, or undated -> monthly
+PAST_REFRESH_DAYS = 3650     # already happened -> details are settled; freeze it
+# NB: the refresh.yml cron runs every 2 days, which caps the "daily" tier at
+# every-other-day in practice — fine, and not worth a faster global schedule.
 
 REQUEST_DELAY = 1.5        # seconds between fetches — be polite to the kingdom site
 REQUEST_TIMEOUT = 30
@@ -160,6 +189,53 @@ def save_cache(cache: dict) -> None:
     )
 
 
+def cache_get(cache: dict, url: str) -> tuple[str | None, float]:
+    """Return (text, fetched_ts) for a cached URL.
+
+    Tolerates the legacy `{url: "text"}` format by reporting ts=0, so those
+    entries read as maximally stale and re-validate (and upgrade to the new
+    `{url: {"text", "ts"}}` shape) on the next eligible run."""
+    entry = cache.get(url)
+    if entry is None:
+        return None, 0.0
+    if isinstance(entry, str):              # legacy format
+        return entry, 0.0
+    return entry.get("text"), float(entry.get("ts") or 0)
+
+
+def cache_put(cache: dict, url: str, text: str, ts: float) -> None:
+    cache[url] = {"text": text, "ts": int(ts)}
+
+
+def days_until_event(start: str, today: datetime) -> int | None:
+    """Whole days from `today` to the event's start date (negative if past).
+
+    The CSV `start` column is ISO-ish: "2026-08-01" or "2026-08-01 00:00:00"."""
+    s = (start or "").strip()
+    if not s:
+        return None
+    try:
+        when = datetime.fromisoformat(s)
+    except ValueError:
+        try:
+            when = datetime.strptime(s[:10], "%Y-%m-%d")
+        except ValueError:
+            return None
+    return (when.date() - today.date()).days
+
+
+def refresh_interval_days(days_until: int | None) -> int:
+    """Max age a cached description may reach before re-fetch, by event proximity."""
+    if days_until is None:
+        return DEFAULT_REFRESH_DAYS
+    if days_until < 0:
+        return PAST_REFRESH_DAYS
+    for threshold, max_age in REFRESH_TIERS:
+        if days_until < threshold:
+            return max_age
+    return DEFAULT_REFRESH_DAYS
+
+
 def is_real(text: str | None) -> bool:
     return bool(text) and text.strip().lower() not in TRIVIAL and len(text.strip()) >= MIN_DESC_LEN
 
@@ -179,7 +255,9 @@ def main() -> int:
 
     cache = load_cache()
     session = requests.Session()
-    fetched = replaced = failed = 0
+    now_ts = time.time()
+    today = datetime.now()
+    fetched = replaced = failed = revalidated = 0
 
     for r in rows:
         desc = (r.get("description") or "")
@@ -202,31 +280,51 @@ def main() -> int:
         if not (is_atlantia or is_east or is_artemisia):
             continue
 
-        # Cache by URL for HTML extractors (those pages rarely change). Skip the
-        # cache for Artemisia PDFs -- a "save the date" flyer that initially
-        # says TBD often gets the real prose added as the event approaches, and
-        # we want each pipeline run to pick up that update.
+        # Artemisia PDFs are never cached -- they're re-pulled every run (see the
+        # module docstring). The HTML sources are cached, but a cached copy is
+        # only reused while it's fresher than the event's proximity tier allows;
+        # past that we re-validate it against the live page.
         use_cache = not is_artemisia
-        if use_cache and url in cache:
-            real = cache[url]
-        else:
-            try:
-                real = fetch_description(url, session)
-                fetched += 1
-                time.sleep(REQUEST_DELAY)
-            except Exception as exc:  # noqa: BLE001 — network is best-effort
-                print(f"  WARN  could not fetch {url}: {exc}")
-                failed += 1
+        cached_text, cached_ts = cache_get(cache, url) if use_cache else (None, 0.0)
+        if cached_text is not None:
+            max_age = refresh_interval_days(days_until_event(r.get("start", ""), today))
+            if (now_ts - cached_ts) < max_age * 86400:
+                if is_real(cached_text):                 # still fresh -> reuse
+                    r["description"] = cached_text.strip()
+                    replaced += 1
                 continue
-            # Cache only real descriptions (and only for cacheable sources), so
-            # "Coming soon" events are retried next run and pick up their text
-            # once it's published.
-            if use_cache and is_real(real):
-                cache[url] = real
-                save_cache(cache)
+            revalidated += 1                             # cache hit, but past its tier
+
+        try:
+            real = fetch_description(url, session)
+            fetched += 1
+            time.sleep(REQUEST_DELAY)
+        except Exception as exc:  # noqa: BLE001 — network is best-effort
+            print(f"  WARN  could not fetch {url}: {exc}")
+            failed += 1
+            # Don't lose a good prior description to a transient fetch error:
+            # keep the stale copy (with its old timestamp, so we retry next run).
+            if is_real(cached_text):
+                r["description"] = cached_text.strip()
+                replaced += 1
+            continue
 
         if is_real(real):
+            # Cache only real descriptions (and only for cacheable sources), so
+            # "Coming soon" pages are retried next run and pick up their text
+            # once published. Stamp the fetch time to drive the refresh cadence.
+            if use_cache:
+                cache_put(cache, url, real, now_ts)
+                save_cache(cache)
             r["description"] = real.strip()
+            replaced += 1
+        elif is_real(cached_text):
+            # Re-validation came back empty/placeholder but we have good prior
+            # text -- keep it, and reset its clock so a one-off empty response
+            # doesn't make us re-fetch every single run.
+            cache_put(cache, url, cached_text, now_ts)
+            save_cache(cache)
+            r["description"] = cached_text.strip()
             replaced += 1
 
     with open(EVENTS_FILE, "w", encoding="utf-8", newline="") as f:
@@ -234,8 +332,8 @@ def main() -> int:
         writer.writeheader()
         writer.writerows(rows)
 
-    print(f"enrich_descriptions: fetched {fetched}, replaced {replaced}, failed {failed} "
-          f"(cache now {len(cache)} entries)")
+    print(f"enrich_descriptions: fetched {fetched} ({revalidated} cadence re-validations), "
+          f"replaced {replaced}, failed {failed} (cache now {len(cache)} entries)")
     return 0
 
 

@@ -10,8 +10,14 @@ Run:
 """
 from __future__ import annotations
 
+import csv
 import io
+import shutil
+import tempfile
+import time
 import unittest
+from datetime import datetime, timedelta
+from pathlib import Path
 
 import enrich_descriptions as ed
 
@@ -270,6 +276,215 @@ class TestDriveIdExtraction(unittest.TestCase):
         m = ed._DRIVE_ID_RE.search("https://drive.google.com/file/d/xyz_777/edit?usp=sharing")
         self.assertIsNotNone(m)
         self.assertEqual(m.group(1), "xyz_777")
+
+
+class TestDaysUntilEvent(unittest.TestCase):
+    NOW = datetime(2026, 6, 1, 12, 0, 0)
+
+    def test_date_only_format(self):
+        self.assertEqual(ed.days_until_event("2026-06-15", self.NOW), 14)
+
+    def test_datetime_format(self):
+        self.assertEqual(ed.days_until_event("2026-06-08 09:00:00", self.NOW), 7)
+
+    def test_same_day_is_zero(self):
+        self.assertEqual(ed.days_until_event("2026-06-01 20:00:00", self.NOW), 0)
+
+    def test_past_event_is_negative(self):
+        self.assertEqual(ed.days_until_event("2026-05-01", self.NOW), -31)
+
+    def test_empty_and_garbage_return_none(self):
+        self.assertIsNone(ed.days_until_event("", self.NOW))
+        self.assertIsNone(ed.days_until_event("   ", self.NOW))
+        self.assertIsNone(ed.days_until_event("sometime next spring", self.NOW))
+
+
+class TestRefreshInterval(unittest.TestCase):
+    """The proximity cadence: monthly far out, weekly in the final month,
+    daily in the final week, frozen once the event is in the past."""
+
+    def test_far_future_is_monthly(self):
+        self.assertEqual(ed.refresh_interval_days(200), 30)
+        self.assertEqual(ed.refresh_interval_days(30), 30)   # boundary: 30 is "a month out"
+
+    def test_inside_a_month_is_weekly(self):
+        self.assertEqual(ed.refresh_interval_days(29), 7)
+        self.assertEqual(ed.refresh_interval_days(7), 7)     # boundary: 7 is "a week out"
+
+    def test_inside_a_week_is_daily(self):
+        self.assertEqual(ed.refresh_interval_days(6), 1)
+        self.assertEqual(ed.refresh_interval_days(0), 1)     # event day
+
+    def test_past_event_is_frozen(self):
+        self.assertEqual(ed.refresh_interval_days(-1), ed.PAST_REFRESH_DAYS)
+        self.assertGreater(ed.PAST_REFRESH_DAYS, 365)
+
+    def test_undated_defaults_to_monthly(self):
+        self.assertEqual(ed.refresh_interval_days(None), 30)
+
+    def test_cadence_is_under_2x_a_flat_monthly_poll(self):
+        # Sanity-check the user's "11 + 3 + 6 < 2x monthly" reasoning: simulate
+        # one event from a year out down to its date, polling at whatever
+        # interval the tier dictates, and count the fetches.
+        day, fetches = 365, 0
+        while day >= 0:
+            fetches += 1
+            day -= ed.refresh_interval_days(day)
+        flat_monthly = 365 // 30 + 1            # ~13
+        self.assertLess(fetches, 2 * flat_monthly)
+        self.assertGreater(fetches, flat_monthly)   # but more than a flat poll
+
+
+class TestCacheSchema(unittest.TestCase):
+    def test_get_missing_url(self):
+        self.assertEqual(ed.cache_get({}, "http://x"), (None, 0.0))
+
+    def test_get_legacy_string_entry(self):
+        # Old format {url: "text"} reads as ts=0 so it re-validates next run.
+        text, ts = ed.cache_get({"http://x": "old description text"}, "http://x")
+        self.assertEqual(text, "old description text")
+        self.assertEqual(ts, 0.0)
+
+    def test_get_new_dict_entry(self):
+        cache = {"http://x": {"text": "fresh", "ts": 1780000000}}
+        text, ts = ed.cache_get(cache, "http://x")
+        self.assertEqual(text, "fresh")
+        self.assertEqual(ts, 1780000000.0)
+
+    def test_put_writes_dict_with_int_ts(self):
+        cache = {}
+        ed.cache_put(cache, "http://x", "hello", 1780000000.7)
+        self.assertEqual(cache["http://x"], {"text": "hello", "ts": 1780000000})
+
+    def test_put_then_get_roundtrips(self):
+        cache = {}
+        ed.cache_put(cache, "http://x", "roundtrip", 1779999999)
+        text, ts = ed.cache_get(cache, "http://x")
+        self.assertEqual(text, "roundtrip")
+        self.assertEqual(ts, 1779999999.0)
+
+
+class TestMainCadenceIntegration(unittest.TestCase):
+    """Drive main() over a tiny CSV with the network stubbed and temp cache/
+    events files, asserting the proximity cadence actually governs re-fetches.
+    This covers the loop wiring the pure-function tests above can't reach."""
+
+    CSV_COLS = ["title", "start", "end", "location", "clean_location",
+                "address_confidence", "description", "event_url", "facebook_url",
+                "source", "calendar_type", "is_virtual", "lat", "lng",
+                "geocode_status"]
+    # Atlantia always ships this placeholder from its feed, so the trigger fires
+    # every run -- which is what lets the cadence re-validate already-known URLs.
+    PLACEHOLDER = "Upcoming event in Storvik Event Flyer:"
+    URL = "https://atlantia.sca.org/event/?event_id=abc123"
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.events = Path(self.tmp) / "events.csv"
+        self.cache = Path(self.tmp) / "cache.json"
+        self._orig = (ed.EVENTS_FILE, ed.CACHE_FILE, ed.REQUEST_DELAY,
+                      ed.fetch_description)
+        ed.EVENTS_FILE = self.events
+        ed.CACHE_FILE = self.cache
+        ed.REQUEST_DELAY = 0                       # don't sleep in tests
+        self.fetch_calls = []
+
+        def fake_fetch(url, session):
+            self.fetch_calls.append(url)
+            return "FRESH LIVE DESCRIPTION pulled just now from the event page."
+        ed.fetch_description = fake_fetch
+
+    def tearDown(self):
+        (ed.EVENTS_FILE, ed.CACHE_FILE, ed.REQUEST_DELAY,
+         ed.fetch_description) = self._orig
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    # -- helpers ----------------------------------------------------------
+    def _write_event(self, *, days_out, description):
+        start = (datetime.now() + timedelta(days=days_out)).strftime("%Y-%m-%d")
+        row = {c: "" for c in self.CSV_COLS}
+        row.update(title="Test Event", start=start, end=start,
+                   description=description, event_url=self.URL,
+                   source="Kingdom of Atlantia", calendar_type="kingdom")
+        with open(self.events, "w", encoding="utf-8", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=self.CSV_COLS, quoting=csv.QUOTE_ALL)
+            w.writeheader()
+            w.writerow(row)
+
+    def _seed_cache(self, *, text, age_days):
+        ts = int(time.time() - age_days * 86400)
+        self.cache.write_text(
+            ed.json.dumps({self.URL: {"text": text, "ts": ts}}),
+            encoding="utf-8")
+
+    def _seed_legacy_cache(self, text):
+        self.cache.write_text(ed.json.dumps({self.URL: text}), encoding="utf-8")
+
+    def _desc(self):
+        with open(self.events, encoding="utf-8") as f:
+            return next(csv.DictReader(f))["description"]
+
+    # -- tests ------------------------------------------------------------
+    def test_no_cache_fetches_and_stamps(self):
+        self._write_event(days_out=200, description=self.PLACEHOLDER)
+        ed.main()
+        self.assertEqual(self.fetch_calls, [self.URL])
+        self.assertIn("FRESH LIVE", self._desc())
+        text, ts = ed.cache_get(ed.load_cache(), self.URL)
+        self.assertIn("FRESH LIVE", text)
+        self.assertGreater(ts, 0)                  # stamped with a real time
+
+    def test_fresh_cache_is_reused_without_fetching(self):
+        # 10 days old, event 200 days out -> monthly tier (30d) -> still fresh.
+        self._write_event(days_out=200, description=self.PLACEHOLDER)
+        self._seed_cache(text="CACHED PROSE that is plenty long to be real.",
+                         age_days=10)
+        ed.main()
+        self.assertEqual(self.fetch_calls, [])     # no network
+        self.assertIn("CACHED PROSE", self._desc())
+
+    def test_stale_cache_far_event_refetches(self):
+        # 40 days old, event 200 days out -> monthly tier (30d) -> stale.
+        self._write_event(days_out=200, description=self.PLACEHOLDER)
+        self._seed_cache(text="STALE PROSE from over a month ago, still long.",
+                         age_days=40)
+        ed.main()
+        self.assertEqual(self.fetch_calls, [self.URL])
+        self.assertIn("FRESH LIVE", self._desc())
+
+    def test_same_age_cache_near_event_refetches_but_far_does_not(self):
+        # A 2-day-old cache: stale for an event 3 days out (daily tier = 1d),
+        # but fresh for one 200 days out (monthly tier = 30d). Same cache age,
+        # opposite decision -> proves proximity, not just age, drives it.
+        for days_out, expect_fetch in [(3, True), (200, False)]:
+            with self.subTest(days_out=days_out):
+                self.fetch_calls.clear()
+                self._write_event(days_out=days_out, description=self.PLACEHOLDER)
+                self._seed_cache(text="TWO DAY OLD cached prose, long enough.",
+                                 age_days=2)
+                ed.main()
+                self.assertEqual(bool(self.fetch_calls), expect_fetch)
+
+    def test_legacy_string_entry_revalidates_and_upgrades(self):
+        # Bare-string cache entry (ts=0) reads as stale -> refetch + upgrade.
+        self._write_event(days_out=200, description=self.PLACEHOLDER)
+        self._seed_legacy_cache("LEGACY bare-string description, long enough.")
+        ed.main()
+        self.assertEqual(self.fetch_calls, [self.URL])
+        self.assertIsInstance(ed.load_cache()[self.URL], dict)  # migrated
+
+    def test_fetch_error_keeps_last_good_description(self):
+        # Network blows up on a stale entry: we must NOT lose the cached prose.
+        def boom(url, session):
+            self.fetch_calls.append(url)
+            raise RuntimeError("network down")
+        ed.fetch_description = boom
+        self._write_event(days_out=200, description=self.PLACEHOLDER)
+        self._seed_cache(text="GOOD PRIOR description we must not drop.",
+                         age_days=40)
+        ed.main()
+        self.assertEqual(self.fetch_calls, [self.URL])   # tried
+        self.assertIn("GOOD PRIOR", self._desc())        # kept anyway
 
 
 if __name__ == "__main__":
