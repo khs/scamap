@@ -419,13 +419,21 @@ def scrape_mec_rest(site_url: str, name: str) -> Optional[str]:
         more_info_a = meta.select_one(".mec-event-more-info a")
         external_url = more_info_a["href"] if more_info_a else ""
 
+        # Real event description sits in .mec-single-event-description on the
+        # same page we just fetched. Pull it as plain text so the map popup has
+        # actual content instead of an empty string.
+        desc_el = soup.select_one(".mec-single-event-description")
+        description = ""
+        if desc_el:
+            description = re.sub(r"\s+", " ", desc_el.get_text(" ", strip=True)).strip()
+
         events.append({
             "uid":         f"mec-{item.get('id', uuid.uuid4())}@{site_url}",
             "start":       start,
             "end":         end,
             "summary":     re.sub(r"&#\d+;|<[^>]+>", "", title) or "(untitled)",
             "location":    location,
-            "description": "",   # description sits in item.content (HTML); skip for now
+            "description": description,
             "url":         event_url or external_url,
         })
 

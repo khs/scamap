@@ -39,12 +39,12 @@ SCRIPT_DIR = Path(__file__).parent
 EVENTS_FILE = SCRIPT_DIR / "sca_events_clean.csv"
 CACHE_FILE = SCRIPT_DIR / "description_cache.json"
 
-# The placeholder we replace, e.g. "Upcoming event in Storvik Event Flyer:".
-# Anchored at the start so a genuine write-up that merely mentions a flyer is
-# never clobbered.
+# Atlantia: the placeholder we replace, e.g. "Upcoming event in Storvik Event
+# Flyer:". Anchored at the start so a genuine write-up that merely mentions a
+# flyer is never clobbered.
 PLACEHOLDER_RE = re.compile(r"^\s*Upcoming event in .*Event Flyer", re.IGNORECASE)
-# Only enrich from this host (the only feed with the placeholder today).
 ATLANTIA_HOST = "atlantia.sca.org/event"
+EAST_HOST = "eastkingdom.org/EventDetails.php"
 # Page text this short / this generic isn't a real description.
 TRIVIAL = {"", "coming soon", "tbd", "tba", "n/a"}
 MIN_DESC_LEN = 12
@@ -70,13 +70,31 @@ def extract_atlantia_description(html: str) -> str | None:
     return None
 
 
+def extract_east_description(html: str) -> str | None:
+    """Pull the body of an eastkingdom.org/EventDetails.php page.
+
+    The real description sits in `<div class="eventDetailsContent">`, right
+    after the event header. East's feed only ships the URL as the description,
+    so we have to fetch the page to get any actual text."""
+    soup = BeautifulSoup(html, "lxml")
+    el = soup.select_one("div.eventDetailsContent")
+    if el is None:
+        return None
+    return re.sub(r"\s+", " ", el.get_text(" ", strip=True)).strip()
+
+
 def fetch_description(url: str, session: requests.Session) -> str | None:
+    """Fetch `url` and run the right extractor for its host."""
     resp = session.get(url, timeout=REQUEST_TIMEOUT, headers={"User-Agent": USER_AGENT})
     resp.raise_for_status()
     # The pages are UTF-8; requests guesses latin-1 when the header is silent.
     if not resp.encoding or resp.encoding.lower() == "iso-8859-1":
         resp.encoding = resp.apparent_encoding or "utf-8"
-    return extract_atlantia_description(resp.text)
+    if ATLANTIA_HOST in url:
+        return extract_atlantia_description(resp.text)
+    if EAST_HOST in url:
+        return extract_east_description(resp.text)
+    return None
 
 
 def load_cache() -> dict:
@@ -117,9 +135,18 @@ def main() -> int:
     fetched = replaced = failed = 0
 
     for r in rows:
-        desc = r.get("description") or ""
+        desc = (r.get("description") or "")
         url = (r.get("event_url") or "").strip()
-        if not url or ATLANTIA_HOST not in url or not PLACEHOLDER_RE.match(desc):
+        if not url:
+            continue
+        # Atlantia: trigger only when the placeholder is present (a real write-up
+        # in the description column means the page has already been enriched).
+        is_atlantia = ATLANTIA_HOST in url and PLACEHOLDER_RE.match(desc)
+        # East: the Google Calendar feed ships only the URL as the description,
+        # so trigger when the description is empty OR is itself a URL.
+        is_east = (EAST_HOST in url
+                   and (not desc.strip() or desc.strip().startswith("http")))
+        if not (is_atlantia or is_east):
             continue
 
         if url in cache:

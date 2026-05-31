@@ -49,6 +49,29 @@ class TestExtract(unittest.TestCase):
         self.assertIsNone(ed.extract_atlantia_description(NO_DESC_FIXTURE))
 
 
+EAST_FIXTURE = """
+<html><body>
+<article>
+  <h2>A Day in the Park</h2>
+  <div class="eventDetailsContent">
+    The Shire of Blak Rose cordially invites you to join us at the
+    Bandshell Pavilion on Saturday, May 30, 2026.
+  </div>
+</article>
+</body></html>
+"""
+
+
+class TestExtractEast(unittest.TestCase):
+    def test_extracts_eventDetailsContent(self):
+        got = ed.extract_east_description(EAST_FIXTURE)
+        self.assertIn("Shire of Blak Rose cordially invites", got)
+        self.assertNotIn("<", got)   # tags stripped
+
+    def test_missing_section_returns_none(self):
+        self.assertIsNone(ed.extract_east_description("<html><body>no section</body></html>"))
+
+
 class TestPlaceholder(unittest.TestCase):
     def test_matches_the_placeholder(self):
         self.assertTrue(ed.PLACEHOLDER_RE.match("Upcoming event in Storvik Event Flyer:"))

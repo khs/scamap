@@ -336,10 +336,27 @@ class TestAEthelmearcNoteStrip(unittest.TestCase):
                    "War is on the horizon, prepare yourself."),
             "Hosted by: The Dominion of Myrkfaelinn War is on the horizon, prepare yourself.")
 
-    def test_late_mention_not_stripped(self):
-        # An "Additional Notes on" deep in real description shouldn't trigger.
-        long_real = "X" * 300 + " Additional Notes on Pet Policy: see flyer."
-        self.assertEqual(self.s(long_real), long_real)
+    def test_inline_an_block_also_stripped(self):
+        # Road to Rouen shape: leading boilerplate, then real description
+        # spanning hundreds of characters (more than the 400-char block-grouping
+        # threshold), then ANOTHER inline boilerplate block. Both blocks should
+        # be stripped; the real description between is preserved.
+        leading = "Additional Notes on Flames: fires in pits only. "
+        real_desc = (
+            "Please join us for The Road to Rouen, a 14th-century camping event. "
+            + ("This event will feature heavy combat, fencing, archery, thrown "
+               "weapons, Arts & Sciences competitions, equestrian activities, "
+               "and a feast. ") * 5
+        )
+        inline = (
+            "Additional Notes on Accessibility: cabins available. "
+            "Additional Notes on Alcohol Policy: beer and wine only. "
+            "— Directions: From the West, take I-86."
+        )
+        result = self.s(leading + real_desc + inline)
+        self.assertIn("Please join us for The Road to Rouen", result)
+        self.assertIn("— Directions:", result)
+        self.assertNotIn("Additional Notes on", result)
 
 
 if __name__ == "__main__":

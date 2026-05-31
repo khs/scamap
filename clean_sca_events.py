@@ -339,68 +339,58 @@ _AENOTE_SENTINEL_RE = re.compile(
 _SENTENCE_END_RE = re.compile(r"\.\s+(?=[A-Z][a-z])")
 
 
+def _ae_block_end(text: str, last_header_pos: int) -> int:
+    """Find where an AN block (ending at last_header_pos) terminates.
+
+    A known sentinel (Royal Progress:, Hark!, Lordes, Greetings, Unto, etc.)
+    always wins when it matches — it's the strongest signal of the real desc
+    starting. Otherwise pick the EARLIEST of: a ". <Capital>" sentence end, a
+    lowercase+Capital run-on (when the feed drops the last note's period), or
+    a section marker (" — Directions:" etc.)."""
+    after_colon = text.find(":", last_header_pos) + 1
+    sent = _AENOTE_SENTINEL_RE.search(text, after_colon)
+    if sent:
+        return sent.start()
+    candidates = []
+    sent_end = _SENTENCE_END_RE.search(text, after_colon)
+    if sent_end: candidates.append(sent_end.end())
+    runon = re.search(r"(?<=[a-z])\s+(?=[A-Z][a-z]{2,})", text[after_colon:])
+    if runon: candidates.append(after_colon + runon.end())
+    section = re.search(r"\s+[—-]\s+(?=[A-Z][a-z]+:)", text[after_colon:])
+    if section: candidates.append(after_colon + section.start())
+    return min(candidates) if candidates else len(text)
+
+
 def strip_aethelmearc_notes(text: str) -> str:
-    """Strip a run of 'Additional Notes on …' boilerplate (AEthelmearc).
+    """Strip every 'Additional Notes on …' boilerplate block (AEthelmearc).
 
-    Handles two shapes:
-      * Description starts with the boilerplate ("Additional Notes on Pet Policy: …").
-      * Description starts with a "Hosted by: <group>" attribution and THEN the
-        boilerplate begins — the attribution is preserved as a prefix.
-
-    Each note segment ends at either the next 'Additional Notes on' header, a
-    known sentinel (Royal Progress:, Hark!, Lordes, Greetings, Unto, Please
-    join, Announcing, "The Barony of …", etc.), a period + capital-word
-    sentence boundary, or -- last resort -- a lowercase + Capital run-on (some
-    feeds drop the terminating period of the last note).
+    Each block is a run of consecutive notes (next header within ~400 chars).
+    The block's end is the earliest of: a known sentinel (Royal Progress:,
+    Hark!, Lordes, Greetings, Unto, Announcing, "The Barony of …"), a period +
+    capital-word sentence boundary, a lowercase+Capital run-on (some feeds
+    drop the last note's terminating period), or a section marker ("— Directions:").
+    Handles leading boilerplate, "Hosted by: <group>" prefix + boilerplate,
+    AND inline AN blocks deep in the description (Road to Rouen has both).
     """
     if not isinstance(text, str) or not text:
         return text
-    s = text.lstrip()
-    # Find the first "Additional Notes on" header in the first ~250 chars so a
-    # legitimate mention deep in the description can't be mistaken for boilerplate.
-    m_first = _AENOTE_HEADER_RE.search(s)
-    if not m_first or m_first.start() > 250:
+    headers = [m.start() for m in _AENOTE_HEADER_RE.finditer(text)]
+    if not headers:
         return text
-    prefix = s[:m_first.start()].rstrip()
-    body   = s[m_first.start():]
-
-    for _ in range(10):                                 # safety bound
-        if not _AENOTE_HEADER_RE.match(body):
-            break
-        nxt = _AENOTE_HEADER_RE.search(body, 1)
-        # Only treat the next AN as part of the same boilerplate BLOCK when it
-        # sits within ~400 chars. Otherwise (e.g. Road to Rouen's inline notes
-        # that appear in the middle of the real description, ~1500 chars later)
-        # don't strip across the real content -- treat the current note as the
-        # last in its block and end it via the sentinel/sentence/run-on logic.
-        if nxt and nxt.start() <= 400:
-            body = body[nxt.start():].lstrip()
-            continue
-        # Last note: try sentinel first; otherwise pick whichever boundary is
-        # EARLIEST -- the ". <Capital>" sentence end (usual case) or a
-        # lowercase+Capital run-on (Myrkfaelinn's "...vaccine War is on...",
-        # where the feed dropped the terminator). Earliest wins so a run-on
-        # match mid-title (Wickerman's "the Barony", Academy's "of Assisi")
-        # loses to the real period boundary three sentences earlier.
-        sent = _AENOTE_SENTINEL_RE.search(body, 1)
-        if sent:
-            body = body[sent.start():].lstrip()
-            break
-        after_colon = body.find(":") + 1
-        sent_end = _SENTENCE_END_RE.search(body, after_colon)
-        runon = re.search(r"(?<=[a-z])\s+(?=[A-Z][a-z]{2,})", body[after_colon:])
-        ends = []
-        if sent_end:
-            ends.append(sent_end.end())
-        if runon:
-            ends.append(after_colon + runon.end())
-        if ends:
-            body = body[min(ends):].lstrip()
-        break
-
-    if prefix and body:
-        return prefix + " " + body
-    return prefix or body
+    # Group into blocks: consecutive headers within ~400 chars belong together;
+    # a wider gap means the next note is a separate inline block.
+    blocks = [[headers[0]]]
+    for h in headers[1:]:
+        if h - blocks[-1][-1] <= 400:
+            blocks[-1].append(h)
+        else:
+            blocks.append([h])
+    cuts = [(b[0], _ae_block_end(text, b[-1])) for b in blocks]
+    # Apply cuts in reverse so earlier positions stay valid.
+    result = text
+    for start, end in reversed(cuts):
+        result = result[:start] + " " + result[end:]
+    return re.sub(r"\s{2,}", " ", result).strip()
 
 
 # Group-type prefix at the start of a title — strongly indicates a baronial-host
