@@ -1503,7 +1503,10 @@ function applyFilters() {
     const t = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
     return TYPE_PRIORITY[t] ?? 9;
   }
-  if (document.getElementById('chk-baronial').checked) {
+  // Skip placeholder "?" pins entirely on the Online Only tab -- they're
+  // baronial seats with no current event, which just clutters the view when
+  // the user is hunting for actual online events to attend.
+  if (document.getElementById('chk-baronial').checked && !onlineOnly) {
     const query = document.getElementById('search-input').value.toLowerCase().trim();
     const sortedPins = [...groupPins].sort(
       (a, b) => pinTypePriority(a.group) - pinTypePriority(b.group)
