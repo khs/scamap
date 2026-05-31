@@ -1385,8 +1385,18 @@ function applyFilters() {
       if (toDate   && evStart > toDate)          return false;       // starts past window
     }
     if (onlineOnly) {
-      // Online-only view: just the virtual events, no other filters
-      return ev.is_virtual === 'True';
+      // Online-only view: virtual events, still honouring the Kingdom/Baronial
+      // checkboxes (unchecking Baronial hides baronial business meetings here
+      // too, not just on the map). The search box also applies further down.
+      if (ev.is_virtual !== 'True') return false;
+      if (ev.calendar_type === 'kingdom'  && !showKingdom)  return false;
+      if (ev.calendar_type === 'baronial' && !showBaronial) return false;
+      if (query) {
+        const hay = [ev.title, ev.location, ev.clean_location, ev.source, ev.description]
+          .join(' ').toLowerCase();
+        if (!hay.includes(query)) return false;
+      }
+      return true;
     }
     if (ev.is_virtual === 'True' && !showVirtual) return false;
     if (ev.calendar_type === 'kingdom'  && !showKingdom)  return false;
