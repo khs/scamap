@@ -5,3 +5,4 @@ pandas>=2.0
 icalendar>=6.0
 recurring-ical-events>=3.0
 python-dotenv>=1.0   # loads .env for local secrets (NOMINATIM_CONTACT_EMAIL)
+pypdf>=4.0           # extracts Artemisia event descriptions from Sage PDFs

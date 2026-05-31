@@ -75,8 +75,11 @@ SCRIPT_DIR = Path(__file__).parent
 
 
 HTTP_HEADERS = {
-    # Some sites (Tribe Events in particular) gate ICS responses on User-Agent
-    "User-Agent": "Mozilla/5.0 (compatible; SCA Maps calendar fetcher)",
+    # Some sites gate responses on User-Agent. Northshield's WAF rejects UAs
+    # containing the literal word "compatible" with 403, and Trimaris's WAF
+    # was also rejecting the old "(compatible; SCA Maps …)" string. This UA
+    # works for both, plus all Tribe Events feeds we've seen.
+    "User-Agent": "Mozilla/5.0 (SCAMap event aggregator; +https://github.com/khs/scamap)",
 }
 HTTP_TIMEOUT = 30
 
@@ -443,23 +446,67 @@ def scrape_mec_rest(site_url: str, name: str) -> Optional[str]:
 
 
 # ---------------------------------------------------------------------------
-# Calontir custom JSON endpoint
+# Calon plugin — Calontir and Northshield
 # ---------------------------------------------------------------------------
-# The Kingdom of Calontir's calendar plugin (`calon`) exposes its event
-# list as JSON at /wp-content/plugins/calon/calon_vload.php?didi=50. Each
-# entry has separate street/city/state/zip fields, which is unusually clean
-# for an SCA calendar source. Their Google Calendar feed, by contrast, is
-# polluted with recurring "Deadline for articles for The Mews" entries.
+# Calontir built the `calon` WordPress plugin and shares it with Northshield.
+# Both expose the event list as JSON at
+#     <site>/wp-content/plugins/calon/calon_vload.php?didi=50
+# and render per-event pages at <site>/calendar/<event_id>/ -- each page has
+# the actual event description in a `#event_tab` div (the page's "Overview"
+# tab). We pull the JSON for the structured fields and fetch each per-event
+# page once for the description text, caching the result so re-runs are fast.
+# The kingdom's site root is derived from the JSON endpoint URL, so the same
+# adapter handles both kingdoms.
 
-def scrape_calontir_json(url: str, name: str) -> Optional[str]:
-    """Fetch and convert Calontir's custom JSON event list to ICS."""
+CALON_DESC_CACHE = SCRIPT_DIR / "calon_desc_cache.json"
+CALON_FETCH_DELAY = 1.0   # seconds between per-event-page fetches
+
+
+def _load_calon_cache() -> dict:
+    if CALON_DESC_CACHE.exists():
+        try:
+            return json.loads(CALON_DESC_CACHE.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+
+def _fetch_calon_overview(event_url: str, session: requests.Session) -> str:
+    """Fetch a calon per-event page and pull the Overview text from #event_tab."""
+    try:
+        r = session.get(event_url, timeout=HTTP_TIMEOUT, headers=HTTP_HEADERS)
+        r.raise_for_status()
+    except requests.RequestException as exc:
+        print(f"  WARNING: calon page fetch failed {event_url}: {exc}")
+        return ""
+    soup = BeautifulSoup(r.text, "lxml")
+    tab = soup.select_one("#event_tab")
+    if not tab:
+        return ""
+    return re.sub(r"\s+", " ", tab.get_text(" ", strip=True)).strip()
+
+
+def scrape_calon_json(url: str, name: str) -> Optional[str]:
+    """Fetch a calon-plugin kingdom's JSON event list and convert it to ICS.
+
+    Used by Calontir (calontir.org) and Northshield (northshield.org). Picks
+    the kingdom's site root from the JSON endpoint URL and uses it to build
+    per-event URLs and to fetch the Overview description text.
+    """
     try:
         r = requests.get(url, timeout=HTTP_TIMEOUT, headers=HTTP_HEADERS)
         r.raise_for_status()
         records = r.json()
     except (requests.RequestException, ValueError) as exc:
-        print(f"  WARNING: Calontir JSON fetch failed for {name}: {exc}")
+        print(f"  WARNING: calon JSON fetch failed for {name}: {exc}")
         return None
+
+    parsed = urlparse(url)
+    site_root = f"{parsed.scheme}://{parsed.netloc}"
+    host = parsed.netloc
+    cache = _load_calon_cache()
+    session = requests.Session()
+    new_fetches = 0
 
     events = []
     for rec in records:
@@ -482,32 +529,55 @@ def scrape_calontir_json(url: str, name: str) -> Optional[str]:
         if website and not website.startswith("http"):
             website = "https://" + website
 
-        # Build a description that includes the host group and website
-        desc_parts = []
-        if rec.get("group_name"):
-            desc_parts.append(f"Hosted by: {rec['group_name']}")
-        if website:
-            desc_parts.append(f"Website: {website}")
-
-        # Canonical event URL is the kingdom-calendar's per-event page,
-        # https://www.calontir.org/calendar/<event_id>/. The "primary_website"
-        # field on each record points to the HOST GROUP (e.g. shirecai.
-        # calontir.org for Feast of Eagles) -- useful, but not the link the
-        # user expects when clicking the event. Fall back to it when there's
-        # no event_id, and keep it in the description either way.
+        # Canonical event URL is the kingdom calendar's per-event page,
+        # <site>/calendar/<event_id>/. The "primary_website" field on each
+        # record points to the HOST GROUP (e.g. shirecai.calontir.org for
+        # Feast of Eagles) -- useful, but not the link a user clicking the
+        # event expects. Fall back to it only when there's no event_id.
         event_id = rec.get("event_id")
-        event_url = (f"https://www.calontir.org/calendar/{event_id}/"
-                     if event_id else website)
+        event_url = f"{site_root}/calendar/{event_id}/" if event_id else (website or "")
+
+        # Try to pull the real description from the per-event page (cached).
+        overview = ""
+        if event_url and event_url.startswith(site_root):
+            if event_url in cache:
+                overview = cache[event_url]
+            else:
+                overview = _fetch_calon_overview(event_url, session)
+                cache[event_url] = overview
+                new_fetches += 1
+                time.sleep(CALON_FETCH_DELAY)
+
+        if overview:
+            description = overview
+        else:
+            # Fallback: just the host-group attribution + website link.
+            parts = []
+            if rec.get("group_name"):
+                parts.append(f"Hosted by: {rec['group_name']}")
+            if website:
+                parts.append(f"Website: {website}")
+            description = " | ".join(parts)
 
         events.append({
-            "uid":         f"calontir-{event_id or uuid.uuid4()}@calontir.org",
+            "uid":         f"calon-{event_id or uuid.uuid4()}@{host}",
             "start":       start,
             "end":         end,
             "summary":     rec.get("event_name", "(untitled)"),
             "location":    location,
-            "description": " | ".join(desc_parts),
+            "description": description,
             "url":         event_url,
         })
+
+    try:
+        CALON_DESC_CACHE.write_text(
+            json.dumps(cache, indent=0, ensure_ascii=False, sort_keys=True),
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        print(f"  WARNING: could not write {CALON_DESC_CACHE.name}: {exc}")
+    print(f"  calon {name}: {len(events)} events "
+          f"({new_fetches} per-event pages fetched this run)")
 
     if not events:
         return None
@@ -824,7 +894,7 @@ def scrape_drachenwald_json(url: str, name: str) -> Optional[str]:
 # "calendar.google.com/.../eventprime:..."). Adding a new adapter? Add its
 # prefix here and a branch in maybe_scrape — nothing in ImportMaps to touch.
 SCRAPER_PREFIXES = (
-    "simcal:", "tribe-rest:", "calontir-json:", "nuevent:", "mec-rest:",
+    "simcal:", "tribe-rest:", "calon-json:", "nuevent:", "mec-rest:",
     "eventprime:", "drachenwald-json:",
 )
 
@@ -843,7 +913,7 @@ def maybe_scrape(calendar_id: str, source_name: str) -> Optional[str]:
     Recognised prefixes:
         simcal:<page-url>
         tribe-rest:<site-url>
-        calontir-json:<json-endpoint-url>
+        calon-json:<json-endpoint-url>      (Calontir + Northshield)
         nuevent:<base-site-url>
         mec-rest:<base-site-url>
         eventprime:<base-site-url>
@@ -853,8 +923,8 @@ def maybe_scrape(calendar_id: str, source_name: str) -> Optional[str]:
         return scrape_simple_calendar(calendar_id[len("simcal:"):], source_name)
     if calendar_id.startswith("tribe-rest:"):
         return scrape_tribe_rest(calendar_id[len("tribe-rest:"):], source_name)
-    if calendar_id.startswith("calontir-json:"):
-        return scrape_calontir_json(calendar_id[len("calontir-json:"):], source_name)
+    if calendar_id.startswith("calon-json:"):
+        return scrape_calon_json(calendar_id[len("calon-json:"):], source_name)
     if calendar_id.startswith("nuevent:"):
         return scrape_meridies_nuevent(calendar_id[len("nuevent:"):], source_name)
     if calendar_id.startswith("mec-rest:"):
