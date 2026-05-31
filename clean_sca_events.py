@@ -1191,7 +1191,17 @@ def main():
     print("Step 2: Cleaning descriptions and extracting URLs ...")
     cleaned_descs = df["description"].apply(clean_description)
     df["description"]  = cleaned_descs.apply(lambda x: x[0])
-    df["event_url"]    = cleaned_descs.apply(lambda x: x[1].get("event_url") or "")
+    # Prefer the URL from the ICS VEVENT (captured by ImportMaps; populated by
+    # scrapers.py's _emit_calendar). When the feed doesn't carry one, fall back
+    # to whatever the description-text URL extractor found. Without this, every
+    # MEC-scraped Middle event linked to the kingdom calendar instead of its
+    # own page (midrealm.org/events/smurf-shoot-4/).
+    extracted_url = cleaned_descs.apply(lambda x: x[1].get("event_url") or "")
+    if "event_url" in df.columns:
+        raw_url = df["event_url"].fillna("").astype(str)
+        df["event_url"] = raw_url.where(raw_url.str.strip() != "", extracted_url)
+    else:
+        df["event_url"] = extracted_url
     df["facebook_url"] = cleaned_descs.apply(lambda x: x[1].get("facebook_url") or "")
     # Lochac's feed prefixes every description with a "Steward:… Email:… Website:…"
     # autocrat block — strip it, keeping the real event description.

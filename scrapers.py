@@ -412,7 +412,10 @@ def scrape_mec_rest(site_url: str, name: str) -> Optional[str]:
             loc_parts.append(addr_el.get_text(" ", strip=True))
         location = ", ".join(p for p in loc_parts if p)
 
-        # External event website if linked
+        # External "More Info" link (often a host-group page or a Facebook event
+        # with tracking params) -- kept as a fallback only. Prefer the canonical
+        # midrealm.org/events/<slug>/ WordPress page, which is what users expect
+        # and stays clean of fbclid/utm noise.
         more_info_a = meta.select_one(".mec-event-more-info a")
         external_url = more_info_a["href"] if more_info_a else ""
 
@@ -423,7 +426,7 @@ def scrape_mec_rest(site_url: str, name: str) -> Optional[str]:
             "summary":     re.sub(r"&#\d+;|<[^>]+>", "", title) or "(untitled)",
             "location":    location,
             "description": "",   # description sits in item.content (HTML); skip for now
-            "url":         external_url or event_url,
+            "url":         event_url or external_url,
         })
 
     if not events:

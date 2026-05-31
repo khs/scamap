@@ -289,6 +289,7 @@ def fetch_all_events(calendars: list[dict]) -> list[dict]:
             title    = clean_text(get_text(component, "SUMMARY"))
             location = clean_text(get_text(component, "LOCATION"))
             desc     = clean_text(get_text(component, "DESCRIPTION"))
+            url_raw  = clean_text(get_text(component, "URL"))
             start    = get_datetime(component, "DTSTART")
             end_dt   = get_datetime(component, "DTEND")
 
@@ -311,6 +312,12 @@ def fetch_all_events(calendars: list[dict]) -> list[dict]:
                 "source":        calendar["source"],
                 "calendar_type": calendar["type"],
                 "is_virtual":    virtual,
+                # ICS VEVENT URL — the per-event page (e.g. midrealm.org/events/
+                # smurf-shoot-4/) that the scrapers in scrapers.py put in URL:.
+                # clean_sca_events.py prefers this over a URL scraped from the
+                # description, so events link to their own page rather than the
+                # kingdom calendar.
+                "event_url":     url_raw,
             })
             count += 1
 
@@ -331,7 +338,7 @@ def save_to_csv(events: list[dict], filename: Path):
 
     fieldnames = [
         "title", "start", "end", "location",
-        "description", "source", "calendar_type", "is_virtual",
+        "description", "source", "calendar_type", "is_virtual", "event_url",
     ]
 
     with open(filename, "w", newline="", encoding="utf-8") as f:
