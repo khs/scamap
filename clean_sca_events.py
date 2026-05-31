@@ -314,6 +314,95 @@ def strip_steward_boilerplate(text: str) -> str:
     return _STEWARD_BOILERPLATE_RE.sub("", text, count=1).strip()
 
 
+# AEthelmearc's calendar prepends one or more "Additional Notes on <topic>:
+# <text>" segments to event descriptions (Pet Policy, Flames, Alcohol Policy,
+# Weapons, …). They're logistics boilerplate from a calendar-plugin form, not
+# part of the actual event description, so strip them.
+_AENOTE_HEADER_RE = re.compile(r"\bAdditional Notes on [^:]+:", re.IGNORECASE)
+# Phrases that mark the start of the REAL event description right after the
+# boilerplate. Anchored to a sentence boundary so "welcome" inside note text
+# ("service dogs are welcome.") can't be mistaken for the sentinel "Welcome".
+_AENOTE_SENTINELS = (
+    # Strong openers — formal/archaic phrases unlikely to appear naturally in
+    # the body of a real description. "Welcome", "Join us", "Please join" are
+    # NOT here: they false-positive deep in real descriptions ("...invites you
+    # to join us in preparation!" matched mid-paragraph for Myrkfaelinn).
+    r"Royal Progress:", r"Hark[!,]", r"Lordes\b", r"Lords and Ladies",
+    r"Greetings", r"Unto\s", r"Come one", r"Come all",
+    r"Announcing", r"All are cordially invited",
+    r"The (?:Barony|Shire|Canton|Stronghold|College|Province|Principality|Riding) of",
+)
+_AENOTE_SENTINEL_RE = re.compile(
+    r"(?:(?<=\.\s)|\A)(?:" + "|".join(_AENOTE_SENTINELS) + r")",
+    re.IGNORECASE,
+)
+_SENTENCE_END_RE = re.compile(r"\.\s+(?=[A-Z][a-z])")
+
+
+def strip_aethelmearc_notes(text: str) -> str:
+    """Strip a run of 'Additional Notes on …' boilerplate (AEthelmearc).
+
+    Handles two shapes:
+      * Description starts with the boilerplate ("Additional Notes on Pet Policy: …").
+      * Description starts with a "Hosted by: <group>" attribution and THEN the
+        boilerplate begins — the attribution is preserved as a prefix.
+
+    Each note segment ends at either the next 'Additional Notes on' header, a
+    known sentinel (Royal Progress:, Hark!, Lordes, Greetings, Unto, Please
+    join, Announcing, "The Barony of …", etc.), a period + capital-word
+    sentence boundary, or -- last resort -- a lowercase + Capital run-on (some
+    feeds drop the terminating period of the last note).
+    """
+    if not isinstance(text, str) or not text:
+        return text
+    s = text.lstrip()
+    # Find the first "Additional Notes on" header in the first ~250 chars so a
+    # legitimate mention deep in the description can't be mistaken for boilerplate.
+    m_first = _AENOTE_HEADER_RE.search(s)
+    if not m_first or m_first.start() > 250:
+        return text
+    prefix = s[:m_first.start()].rstrip()
+    body   = s[m_first.start():]
+
+    for _ in range(10):                                 # safety bound
+        if not _AENOTE_HEADER_RE.match(body):
+            break
+        nxt = _AENOTE_HEADER_RE.search(body, 1)
+        # Only treat the next AN as part of the same boilerplate BLOCK when it
+        # sits within ~400 chars. Otherwise (e.g. Road to Rouen's inline notes
+        # that appear in the middle of the real description, ~1500 chars later)
+        # don't strip across the real content -- treat the current note as the
+        # last in its block and end it via the sentinel/sentence/run-on logic.
+        if nxt and nxt.start() <= 400:
+            body = body[nxt.start():].lstrip()
+            continue
+        # Last note: try sentinel first; otherwise pick whichever boundary is
+        # EARLIEST -- the ". <Capital>" sentence end (usual case) or a
+        # lowercase+Capital run-on (Myrkfaelinn's "...vaccine War is on...",
+        # where the feed dropped the terminator). Earliest wins so a run-on
+        # match mid-title (Wickerman's "the Barony", Academy's "of Assisi")
+        # loses to the real period boundary three sentences earlier.
+        sent = _AENOTE_SENTINEL_RE.search(body, 1)
+        if sent:
+            body = body[sent.start():].lstrip()
+            break
+        after_colon = body.find(":") + 1
+        sent_end = _SENTENCE_END_RE.search(body, after_colon)
+        runon = re.search(r"(?<=[a-z])\s+(?=[A-Z][a-z]{2,})", body[after_colon:])
+        ends = []
+        if sent_end:
+            ends.append(sent_end.end())
+        if runon:
+            ends.append(after_colon + runon.end())
+        if ends:
+            body = body[min(ends):].lstrip()
+        break
+
+    if prefix and body:
+        return prefix + " " + body
+    return prefix or body
+
+
 # Group-type prefix at the start of a title — strongly indicates a baronial-host
 # event ("Barony of Tarnmists Business Meeting (Virtual)").
 _BARONIAL_PREFIX_RE = re.compile(
@@ -1212,6 +1301,15 @@ def main():
         )
         print(f"  stripped Steward/Email/Website boilerplate from "
               f"{int(lochac.sum())} Lochac descriptions")
+    aeth = df["source"] == "Kingdom of AEthelmearc"
+    if aeth.any():
+        before = df.loc[aeth, "description"].astype(str)
+        after  = before.apply(strip_aethelmearc_notes)
+        changed = int((before != after).sum())
+        df.loc[aeth, "description"] = after
+        if changed:
+            print(f"  stripped 'Additional Notes on …' boilerplate from "
+                  f"{changed} AEthelmearc descriptions")
     # Promote virtual baronial business meetings from kingdom feeds into the
     # baronial type, so the "Baronial" map filter governs them instead of the
     # "Kingdom" one (mostly aggregated West/Ealdormere baronies).

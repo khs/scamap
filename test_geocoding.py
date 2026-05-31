@@ -29,6 +29,7 @@ import kingdoms
 import geocode_sca_events as gse
 import build_group_locations as bgl
 import ImportMaps as im
+import clean_sca_events as cse
 
 SCRIPT_DIR = Path(__file__).parent
 _SENTINEL = "\x00__no_seat__"
@@ -266,6 +267,79 @@ class TestIsVirtual(unittest.TestCase):
         # in-person.
         self.assertFalse(self.v("Crown Tournament", "",
                                 "We will livestream the finals for those unable to attend."))
+
+
+class TestAEthelmearcNoteStrip(unittest.TestCase):
+    """The AEthelmearc Google Calendar prepends 'Additional Notes on …'
+    boilerplate (Pet Policy, Flames, Alcohol, Weapons) to many descriptions.
+    strip_aethelmearc_notes peels it off; here are the real-world shapes."""
+
+    def s(self, text):
+        return cse.strip_aethelmearc_notes(text)
+
+    def test_single_note_with_capital_sentinel(self):
+        # "Come" is a recognised sentinel — strips up to it.
+        self.assertEqual(
+            self.s("Additional Notes on Pet Policy: If pets are unruly. "
+                   "Come and join us for our 4th annual event!"),
+            "Come and join us for our 4th annual event!")
+
+    def test_two_notes_then_sentence_end(self):
+        # Two consecutive notes; "Whether" isn't a sentinel, so fall back to
+        # the first ". <Capital>" boundary after the last note's header.
+        self.assertEqual(
+            self.s("Additional Notes on Pet Policy: contact the autocrat. "
+                   "Additional Notes on Flames: No open flames in tents. "
+                   "Whether you are new to needle arts, this event is for you."),
+            "Whether you are new to needle arts, this event is for you.")
+
+    def test_multi_note_ending_with_hark_sentinel(self):
+        # Three notes ending with "Hark!" — sentinel hits, all notes drop.
+        self.assertEqual(
+            self.s("Additional Notes on Alcohol Policy: family friendly. "
+                   "Additional Notes on Flames: must be elevated. "
+                   "Additional Notes on Weapons: no untied weapons. "
+                   "Hark! A Proclamation from the Sylvan Kingdom."),
+            "Hark! A Proclamation from the Sylvan Kingdom.")
+
+    def test_multi_sentence_note_then_lordes_sentinel(self):
+        # Note has TWO internal sentences ("...used. Otherwise, fires..."); the
+        # sentinel "Lordes" wins so we don't over-strip at "Otherwise".
+        self.assertEqual(
+            self.s("Additional Notes on Flames: A campfire ring can be used. "
+                   "Otherwise, fires must be in raised braziers. "
+                   "Lordes and Ladyes, Heed This Call!"),
+            "Lordes and Ladyes, Heed This Call!")
+
+    def test_royal_progress_sentinel(self):
+        self.assertEqual(
+            self.s("Additional Notes on Flames: fires in rings only. "
+                   "Royal Progress: The Barony of Thescorre cordially invites you."),
+            "Royal Progress: The Barony of Thescorre cordially invites you.")
+
+    def test_no_boilerplate_unchanged(self):
+        plain = "The Shire of Sylvan Glen joyfully invites all to a Halloween event."
+        self.assertEqual(self.s(plain), plain)
+
+    def test_empty_and_none_safe(self):
+        self.assertEqual(self.s(""), "")
+        self.assertIsNone(self.s(None))
+
+    def test_hosted_by_prefix_then_notes(self):
+        # Myrkfaelinn shape: "Hosted by: …" attribution, THEN the AN blocks,
+        # then run-on (missing period) into the real description. The prefix
+        # is preserved; the AN blocks are stripped via the run-on fallback.
+        self.assertEqual(
+            self.s("Hosted by: The Dominion of Myrkfaelinn "
+                   "Additional Notes on Alcohol Policy: No alcohol. "
+                   "Additional Notes on Pet Policy: leash and rabies vaccine "
+                   "War is on the horizon, prepare yourself."),
+            "Hosted by: The Dominion of Myrkfaelinn War is on the horizon, prepare yourself.")
+
+    def test_late_mention_not_stripped(self):
+        # An "Additional Notes on" deep in real description shouldn't trigger.
+        long_real = "X" * 300 + " Additional Notes on Pet Policy: see flyer."
+        self.assertEqual(self.s(long_real), long_real)
 
 
 if __name__ == "__main__":
