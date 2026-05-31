@@ -481,14 +481,24 @@ def scrape_calontir_json(url: str, name: str) -> Optional[str]:
         if website:
             desc_parts.append(f"Website: {website}")
 
+        # Canonical event URL is the kingdom-calendar's per-event page,
+        # https://www.calontir.org/calendar/<event_id>/. The "primary_website"
+        # field on each record points to the HOST GROUP (e.g. shirecai.
+        # calontir.org for Feast of Eagles) -- useful, but not the link the
+        # user expects when clicking the event. Fall back to it when there's
+        # no event_id, and keep it in the description either way.
+        event_id = rec.get("event_id")
+        event_url = (f"https://www.calontir.org/calendar/{event_id}/"
+                     if event_id else website)
+
         events.append({
-            "uid":         f"calontir-{rec.get('event_id', uuid.uuid4())}@calontir.org",
+            "uid":         f"calontir-{event_id or uuid.uuid4()}@calontir.org",
             "start":       start,
             "end":         end,
             "summary":     rec.get("event_name", "(untitled)"),
             "location":    location,
             "description": " | ".join(desc_parts),
-            "url":         website,
+            "url":         event_url,
         })
 
     if not events:
