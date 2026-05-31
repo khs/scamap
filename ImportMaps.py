@@ -57,11 +57,13 @@ VIRTUAL_KEYWORDS = [
     "virtual",
     "online",
     "zoom",
-    "discord",
-    "remote",
-    "livestream",
-    "live stream",
 ]
+# "discord", "remote", "livestream", "live stream" deliberately NOT here -- they
+# are weak signals dominated by false positives. SCA groups routinely run their
+# in-person event coordination over Discord ("posted to our Discord event page"),
+# describe campsites as "remote", and offer optional livestreams of in-person
+# tournaments. Highlands War (Atenveldt, in-person camping at Camp Raymond) was
+# flagged virtual purely because its description mentioned "Discord event pages".
 
 
 # ---------------------------------------------------------------------------

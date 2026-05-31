@@ -246,6 +246,27 @@ class TestIsVirtual(unittest.TestCase):
     def test_plain_in_person_event(self):
         self.assertFalse(self.v("Arts & Sciences Night", "Town Hall, Springfield", "bring your projects"))
 
+    def test_discord_in_desc_is_not_virtual(self):
+        # Highlands War regression: an in-person camping event whose description
+        # mentioned "Discord event pages" got flipped to virtual because
+        # "discord" had been added to VIRTUAL_KEYWORDS. SCA groups routinely run
+        # in-person event coordination through Discord -- the word is a weak
+        # signal dominated by false positives, so it's been removed.
+        self.assertFalse(self.v("Highlands War (BES)", "",
+                                "Coming soon to Facebook and Discord event pages."))
+
+    def test_remote_campsite_is_not_virtual(self):
+        # "remote campsite" describes a physical-but-isolated location, not a
+        # remote/virtual gathering.
+        self.assertFalse(self.v("Mountain Faire", "",
+                                "Held at our remote campsite in the high desert."))
+
+    def test_livestream_in_desc_is_not_virtual(self):
+        # An in-person tournament that happens to be livestreamed is still
+        # in-person.
+        self.assertFalse(self.v("Crown Tournament", "",
+                                "We will livestream the finals for those unable to attend."))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
