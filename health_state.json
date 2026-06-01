@@ -1,6 +1,6 @@
 {
-  "failed": 14,
-  "geocodable": 609,
+  "failed": 15,
+  "geocodable": 614,
   "kingdom_counts": {
     "Kingdom of AEthelmearc": 29,
     "Kingdom of Ansteorra": 48,
@@ -13,14 +13,14 @@
     "Kingdom of Drachenwald": 71,
     "Kingdom of Ealdormere": 45,
     "Kingdom of Gleann Abhann": 30,
-    "Kingdom of Lochac": 33,
+    "Kingdom of Lochac": 31,
     "Kingdom of Meridies": 39,
     "Kingdom of Northshield": 0,
-    "Kingdom of Trimaris": 25,
-    "Kingdom of the East": 42,
+    "Kingdom of Trimaris": 26,
+    "Kingdom of the East": 41,
     "Kingdom of the Middle": 0,
-    "Kingdom of the Outlands": 20,
-    "Kingdom of the West": 392
+    "Kingdom of the Outlands": 19,
+    "Kingdom of the West": 391
   },
-  "total": 1119
+  "total": 1123
 }
