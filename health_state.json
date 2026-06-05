@@ -1,16 +1,16 @@
 {
   "failed": 18,
-  "geocodable": 662,
+  "geocodable": 676,
   "kingdom_counts": {
     "Kingdom of AEthelmearc": 29,
     "Kingdom of Ansteorra": 48,
     "Kingdom of Artemisia": 72,
     "Kingdom of Atenveldt": 28,
-    "Kingdom of Atlantia": 28,
+    "Kingdom of Atlantia": 29,
     "Kingdom of Avacal": 39,
-    "Kingdom of Caid": 82,
+    "Kingdom of Caid": 114,
     "Kingdom of Calontir": 0,
-    "Kingdom of Drachenwald": 71,
+    "Kingdom of Drachenwald": 72,
     "Kingdom of Ealdormere": 45,
     "Kingdom of Gleann Abhann": 30,
     "Kingdom of Lochac": 32,
@@ -20,7 +20,7 @@
     "Kingdom of the East": 41,
     "Kingdom of the Middle": 0,
     "Kingdom of the Outlands": 19,
-    "Kingdom of the West": 389
+    "Kingdom of the West": 385
   },
-  "total": 1142
+  "total": 1158
 }
