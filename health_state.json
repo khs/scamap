@@ -1,6 +1,6 @@
 {
-  "failed": 18,
-  "geocodable": 669,
+  "failed": 19,
+  "geocodable": 667,
   "kingdom_counts": {
     "Kingdom of AEthelmearc": 29,
     "Kingdom of Ansteorra": 46,
@@ -10,17 +10,17 @@
     "Kingdom of Avacal": 39,
     "Kingdom of Caid": 113,
     "Kingdom of Calontir": 0,
-    "Kingdom of Drachenwald": 72,
+    "Kingdom of Drachenwald": 73,
     "Kingdom of Ealdormere": 44,
     "Kingdom of Gleann Abhann": 30,
     "Kingdom of Lochac": 31,
-    "Kingdom of Meridies": 41,
+    "Kingdom of Meridies": 40,
     "Kingdom of Northshield": 0,
     "Kingdom of Trimaris": 26,
     "Kingdom of the East": 36,
     "Kingdom of the Middle": 0,
     "Kingdom of the Outlands": 17,
-    "Kingdom of the West": 383
+    "Kingdom of the West": 379
   },
-  "total": 1147
+  "total": 1142
 }
