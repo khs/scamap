@@ -1326,6 +1326,21 @@ function onlineEventsForGroup(group) {
   return _onlineByGroup.get(group) || [];
 }
 
+// SCA group names are "<Type> of <Name>" (Principality of Oertha, Shire of …,
+// Crown Province of …). Pull the type so a popup never calls a principality —
+// or a shire, canton, college, province, riding, stronghold — a "barony".
+const _GROUP_TYPES = ["principality", "barony", "shire", "canton", "college",
+  "province", "riding", "stronghold", "hamlet", "march", "crown"];
+function groupTypeWord(groupName) {
+  const name = (groupName || "").trim();
+  const m = /^(.*?)\s+of\s+/i.exec(name);
+  if (m) return m[1].toLowerCase();
+  // No "… of …" (e.g. "Shire Des Forges"): use the leading word if it's a
+  // recognised SCA group type, else a neutral fallback.
+  const first = name.split(/\s+/)[0].toLowerCase();
+  return _GROUP_TYPES.includes(first) ? first : "group";
+}
+
 function buildPlaceholderPopup(pin, onlineEvents) {
   const linkBtn = pin.website
     ? `<div class="links"><a href="${escapeHtml(pin.website)}" target="_blank" rel="noopener">${escapeHtml(pin.group)} →</a></div>`
@@ -1349,7 +1364,7 @@ function buildPlaceholderPopup(pin, onlineEvents) {
     </div>`;
   }
   const desc = (onlineEvents && onlineEvents.length) ? ''
-    : `<div class="desc" style="margin-top:0.4rem;">For information on events in this barony, please visit their website.</div>`;
+    : `<div class="desc" style="margin-top:0.4rem;">For information on events in this ${escapeHtml(groupTypeWord(pin.group))}, please visit their website.</div>`;
   return `<div class="event-popup">
     <h3>${escapeHtml(pin.group)}</h3>
     <span class="source-pill">${escapeHtml(pin.kingdom)}</span>

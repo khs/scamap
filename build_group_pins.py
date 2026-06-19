@@ -4,8 +4,9 @@ build_group_pins.py
 Geocodes each group's region from group_locations.csv and writes a
 matching group_pins.csv with lat/lng coordinates. The map uses this file
 to render placeholder pins for groups that have a website but no events
-currently on the map: "For information on events in this barony, please
-visit their website."
+currently on the map: "For information on events in this <type>, please
+visit their website." (the map derives <type> — barony, shire, principality,
+etc. — from the group name so it never mislabels a group's rank).
 
 The placeholder pin disappears automatically as soon as the group has any
 event in sca_events_clean.csv (the map does that check at render time).
