@@ -296,16 +296,15 @@ def _emit_calendar(name: str, events: list[dict]) -> str:
 # tooltip with microdata. We pull title, start/end (as unix timestamps), the
 # venue address (in `<meta itemprop="address">`), and the description (HTML).
 
-def scrape_simple_calendar(page_url: str, name: str) -> Optional[str]:
-    """Scrape a Simple Calendar plugin page and return an ICS string."""
-    try:
-        r = requests.get(page_url, timeout=HTTP_TIMEOUT, headers=HTTP_HEADERS)
-        r.raise_for_status()
-    except requests.RequestException as exc:
-        print(f"  WARNING: SimCal scrape failed for {name}: {exc}")
-        return None
+def _parse_simcal_events(html: str, page_url: str) -> list[dict]:
+    """Parse a Simple Calendar plugin page's tooltip microdata into event dicts.
 
-    soup = BeautifulSoup(r.text, "lxml")
+    Pure (no network) — `page_url` is used only to namespace the stable UID.
+    Each `.simcal-tooltip-content` carries the title, unix-timestamp start/end,
+    a meta address, and an HTML description. SimCal repeats a tooltip when an
+    event spans multiple displayed weeks, so we de-dupe on (title, start).
+    """
+    soup = BeautifulSoup(html, "lxml")
     tooltips = soup.select(".simcal-event-details.simcal-tooltip-content")
 
     events = []
@@ -350,6 +349,19 @@ def scrape_simple_calendar(page_url: str, name: str) -> Optional[str]:
             "description": description,
         })
 
+    return events
+
+
+def scrape_simple_calendar(page_url: str, name: str) -> Optional[str]:
+    """Scrape a Simple Calendar plugin page and return an ICS string."""
+    try:
+        r = requests.get(page_url, timeout=HTTP_TIMEOUT, headers=HTTP_HEADERS)
+        r.raise_for_status()
+    except requests.RequestException as exc:
+        print(f"  WARNING: SimCal scrape failed for {name}: {exc}")
+        return None
+
+    events = _parse_simcal_events(r.text, page_url)
     if not events:
         return None
     return _emit_calendar(name, events)
@@ -480,6 +492,65 @@ def _parse_mec_date_range(text: str) -> tuple:
     return (None, None)
 
 
+def _parse_mec_event_page(html: str, item: dict, site_url: str) -> Optional[dict]:
+    """Parse one MEC event page's `.mec-event-meta` block into an event dict.
+
+    Pure (no network). `item` is the list-API record (its `title`/`id`/`link`);
+    the page HTML holds the date range, venue + street address, an optional
+    "More Info" link, and the description. Returns None when there's no meta
+    block or the date range can't be parsed.
+    """
+    event_url = item.get("link", "")
+    title = (item.get("title") or {}).get("rendered", "")
+
+    soup = BeautifulSoup(html, "lxml")
+    meta = soup.select_one(".mec-event-meta")
+    if not meta:
+        return None
+
+    # Date
+    date_el = meta.select_one(".mec-start-date-label")
+    if not date_el:
+        return None
+    start, end = _parse_mec_date_range(date_el.get_text(" ", strip=True))
+    if start is None:
+        return None
+
+    # Location: venue name + address
+    venue_el = meta.select_one(".mec-single-event-location dd.author h6")
+    addr_el  = meta.select_one(".mec-single-event-location span.mec-address")
+    loc_parts = []
+    if venue_el:
+        loc_parts.append(venue_el.get_text(" ", strip=True))
+    if addr_el:
+        loc_parts.append(addr_el.get_text(" ", strip=True))
+    location = ", ".join(p for p in loc_parts if p)
+
+    # External "More Info" link (often a host-group page or a Facebook event
+    # with tracking params) -- kept as a fallback only. Prefer the canonical
+    # midrealm.org/events/<slug>/ WordPress page, which is what users expect
+    # and stays clean of fbclid/utm noise.
+    more_info_a = meta.select_one(".mec-event-more-info a")
+    external_url = more_info_a["href"] if more_info_a else ""
+
+    # Real event description sits in .mec-single-event-description on the same
+    # page. Pull it as plain text so the map popup has actual content.
+    desc_el = soup.select_one(".mec-single-event-description")
+    description = ""
+    if desc_el:
+        description = re.sub(r"\s+", " ", desc_el.get_text(" ", strip=True)).strip()
+
+    return {
+        "uid":         f"mec-{item.get('id', uuid.uuid4())}@{site_url}",
+        "start":       start,
+        "end":         end,
+        "summary":     re.sub(r"&#\d+;|<[^>]+>", "", title) or "(untitled)",
+        "location":    location,
+        "description": description,
+        "url":         event_url or external_url,
+    }
+
+
 def scrape_mec_rest(site_url: str, name: str) -> Optional[str]:
     """
     Scrape a Modern Events Calendar (MEC) WordPress site.
@@ -525,7 +596,6 @@ def scrape_mec_rest(site_url: str, name: str) -> Optional[str]:
     events = []
     for item in items:
         event_url = item.get("link", "")
-        title = (item.get("title") or {}).get("rendered", "")
         if not event_url:
             continue
         try:
@@ -534,54 +604,9 @@ def scrape_mec_rest(site_url: str, name: str) -> Optional[str]:
         except requests.RequestException as exc:
             print(f"  WARNING: MEC event page failed {event_url}: {exc}")
             continue
-
-        soup = BeautifulSoup(ep.text, "lxml")
-        meta = soup.select_one(".mec-event-meta")
-        if not meta:
-            continue
-
-        # Date
-        date_el = meta.select_one(".mec-start-date-label")
-        if not date_el:
-            continue
-        start, end = _parse_mec_date_range(date_el.get_text(" ", strip=True))
-        if start is None:
-            continue
-
-        # Location: venue name + address
-        venue_el = meta.select_one(".mec-single-event-location dd.author h6")
-        addr_el  = meta.select_one(".mec-single-event-location span.mec-address")
-        loc_parts = []
-        if venue_el:
-            loc_parts.append(venue_el.get_text(" ", strip=True))
-        if addr_el:
-            loc_parts.append(addr_el.get_text(" ", strip=True))
-        location = ", ".join(p for p in loc_parts if p)
-
-        # External "More Info" link (often a host-group page or a Facebook event
-        # with tracking params) -- kept as a fallback only. Prefer the canonical
-        # midrealm.org/events/<slug>/ WordPress page, which is what users expect
-        # and stays clean of fbclid/utm noise.
-        more_info_a = meta.select_one(".mec-event-more-info a")
-        external_url = more_info_a["href"] if more_info_a else ""
-
-        # Real event description sits in .mec-single-event-description on the
-        # same page we just fetched. Pull it as plain text so the map popup has
-        # actual content instead of an empty string.
-        desc_el = soup.select_one(".mec-single-event-description")
-        description = ""
-        if desc_el:
-            description = re.sub(r"\s+", " ", desc_el.get_text(" ", strip=True)).strip()
-
-        events.append({
-            "uid":         f"mec-{item.get('id', uuid.uuid4())}@{site_url}",
-            "start":       start,
-            "end":         end,
-            "summary":     re.sub(r"&#\d+;|<[^>]+>", "", title) or "(untitled)",
-            "location":    location,
-            "description": description,
-            "url":         event_url or external_url,
-        })
+        ev = _parse_mec_event_page(ep.text, item, site_url)
+        if ev:
+            events.append(ev)
 
     if not events:
         return None
@@ -738,6 +763,58 @@ def scrape_calon_json(url: str, name: str) -> Optional[str]:
 # metadata (title, host, date, location). The Google Calendar feed they also
 # publish is missing locations on most events — this scraper recovers them.
 
+def _parse_nuevent_page(html: str, base_url: str) -> list[dict]:
+    """Parse one NuEvent (Meridies) /events/?view=list page into event dicts.
+
+    Pure (no network). Each `article.event-list-item` carries an `id=event-NNN`,
+    a titled link, a host, an ISO `<time datetime>`, and a location element with
+    a screen-reader "Location:" prefix we strip. Returns one dict per parseable
+    article; the caller handles pagination and cross-page de-duplication by uid.
+    """
+    soup = BeautifulSoup(html, "lxml")
+    events = []
+    for art in soup.select("article.event-list-item"):
+        # ID is in the `id="event-1234"` attribute
+        art_id = (art.get("id") or "").replace("event-", "")
+        if not art_id:
+            continue
+
+        title_el = art.select_one(".event-title a")
+        host_el  = art.select_one(".event-host")
+        time_el  = art.select_one("time[datetime]")
+        loc_el   = art.select_one(".meta-item.location")
+
+        if not title_el or not time_el:
+            continue
+
+        try:
+            start_date = datetime.fromisoformat(time_el["datetime"])
+        except (KeyError, ValueError):
+            continue
+
+        # Strip the inline SVG icon / screen-reader prefix out of the location
+        location_text = ""
+        if loc_el:
+            for sr in loc_el.select(".screen-reader-text"):
+                sr.decompose()
+            location_text = loc_el.get_text(" ", strip=True)
+
+        description_parts = []
+        if host_el:
+            description_parts.append(host_el.get_text(" ", strip=True))
+
+        events.append({
+            "uid":         f"nuevent-{art_id}@{base_url}",
+            "start":       start_date,
+            "end":         start_date,
+            "summary":     title_el.get_text(strip=True),
+            "location":    location_text,
+            "description": " | ".join(p for p in description_parts if p),
+            "url":         title_el.get("href", "") or "",
+        })
+    return events
+
+
 def scrape_meridies_nuevent(base_url: str, name: str) -> Optional[str]:
     """Scrape Meridies' paginated /events/ list view."""
     base = base_url.rstrip("/")
@@ -745,8 +822,8 @@ def scrape_meridies_nuevent(base_url: str, name: str) -> Optional[str]:
         base += "/events"
 
     events = []
-    seen_ids = set()
-    for page in range(1, 30):  # generous upper bound; loop exits when no new IDs
+    seen_uids = set()
+    for page in range(1, 30):  # upper bound; loop exits when a page adds nothing new
         url = f"{base}/?view=list&cal_page={page}"
         try:
             r = requests.get(url, timeout=HTTP_TIMEOUT, headers=HTTP_HEADERS)
@@ -755,58 +832,13 @@ def scrape_meridies_nuevent(base_url: str, name: str) -> Optional[str]:
             print(f"  WARNING: NuEvent fetch failed for {name} page {page}: {exc}")
             break
 
-        soup = BeautifulSoup(r.text, "lxml")
-        articles = soup.select("article.event-list-item")
-        if not articles:
+        new = [e for e in _parse_nuevent_page(r.text, base_url)
+               if e["uid"] not in seen_uids]
+        if not new:
             break
-
-        new_this_page = 0
-        for art in articles:
-            # ID is in the `id="event-1234"` attribute
-            art_id = (art.get("id") or "").replace("event-", "")
-            if not art_id or art_id in seen_ids:
-                continue
-            seen_ids.add(art_id)
-            new_this_page += 1
-
-            title_el = art.select_one(".event-title a")
-            host_el  = art.select_one(".event-host")
-            time_el  = art.select_one("time[datetime]")
-            loc_el   = art.select_one(".meta-item.location")
-
-            if not title_el or not time_el:
-                continue
-
-            try:
-                start_date = datetime.fromisoformat(time_el["datetime"])
-            except (KeyError, ValueError):
-                continue
-
-            # Strip the inline SVG icon out of the location element's text
-            location_text = ""
-            if loc_el:
-                # Drop the screen-reader "Location:" prefix
-                for sr in loc_el.select(".screen-reader-text"):
-                    sr.decompose()
-                location_text = loc_el.get_text(" ", strip=True)
-
-            event_url = title_el.get("href", "") or ""
-            description_parts = []
-            if host_el:
-                description_parts.append(host_el.get_text(" ", strip=True))
-
-            events.append({
-                "uid":         f"nuevent-{art_id}@{base_url}",
-                "start":       start_date,
-                "end":         start_date,
-                "summary":     title_el.get_text(strip=True),
-                "location":    location_text,
-                "description": " | ".join(p for p in description_parts if p),
-                "url":         event_url,
-            })
-
-        if not new_this_page:
-            break
+        for e in new:
+            seen_uids.add(e["uid"])
+        events.extend(new)
 
     if not events:
         return None
