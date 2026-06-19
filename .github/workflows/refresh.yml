@@ -82,4 +82,21 @@ jobs:
           # Brief commit message naming the changed files
           git commit -m "Auto-refresh: $(git diff --cached --name-only | xargs)" \
             -m "Triggered by ${{ github.event_name }} on $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          git push
+
+          # Another commit (a manual run, or a developer push) may have landed
+          # while this job was running. Our commit only touches generated data
+          # files, so rebasing onto it is conflict-free; retry a few times
+          # rather than failing the whole run on a lost push race.
+          pushed=false
+          for attempt in 1 2 3; do
+            if git push; then
+              pushed=true
+              break
+            fi
+            echo "push rejected (attempt $attempt) — rebasing on origin/main and retrying"
+            git pull --rebase --autostash origin main
+          done
+          if [ "$pushed" = false ]; then
+            echo "::error::could not push data update after 3 attempts"
+            exit 1
+          fi

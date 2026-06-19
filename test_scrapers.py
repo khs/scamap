@@ -167,19 +167,22 @@ class TestDateRobustness(unittest.TestCase):
 
 
 class _FakeResp:
-    def __init__(self, status_code):
+    def __init__(self, status_code, text="[]"):
         self.status_code = status_code
+        self.text = text                 # body, for the expect_json soft-block check
 
 
 class _FakeGetter:
-    """Records each .get() call's headers and returns a scripted status code."""
-    def __init__(self, status_sequence):
-        self.statuses = list(status_sequence)
+    """Records each .get() call's headers and returns scripted responses.
+    Each element of `responses` is an int status code or a _FakeResp."""
+    def __init__(self, responses):
+        self.responses = [r if isinstance(r, _FakeResp) else _FakeResp(r)
+                          for r in responses]
         self.calls = []          # list of (url, headers)
 
     def get(self, url, headers=None, **kwargs):
         self.calls.append((url, headers))
-        return _FakeResp(self.statuses[len(self.calls) - 1])
+        return self.responses[len(self.calls) - 1]
 
 
 class TestWafFallback(unittest.TestCase):
@@ -190,9 +193,11 @@ class TestWafFallback(unittest.TestCase):
 
     def setUp(self):
         self._real_cffi = scrapers._curl_cffi_get
+        scrapers._TLS_REQUIRED_HOSTS.clear()     # don't leak the host-memo across tests
 
     def tearDown(self):
         scrapers._curl_cffi_get = self._real_cffi
+        scrapers._TLS_REQUIRED_HOSTS.clear()
 
     def _stub_cffi(self, return_value):
         scrapers._curl_cffi_get = lambda url, **kw: return_value
@@ -240,6 +245,31 @@ class TestWafFallback(unittest.TestCase):
         g = _FakeGetter([200])
         scrapers._http_get("https://x.test/a", session=g, params={"page": 2})
         self.assertEqual(len(g.calls), 1)
+
+    def test_non_json_200_escalates_when_expect_json(self):
+        # Northshield's soft block: 200 status but an HTML challenge body.
+        self._stub_cffi(_FakeResp(200, text='[{"ok":1}]'))
+        g = _FakeGetter([_FakeResp(200, text="<html>Just a moment…</html>")])
+        resp = scrapers._http_get("https://x.test/a", session=g, expect_json=True)
+        self.assertEqual(len(g.calls), 1)               # honest, then curl_cffi
+        self.assertEqual(resp.text, '[{"ok":1}]')       # curl_cffi response used
+
+    def test_non_json_200_is_fine_without_expect_json(self):
+        # An HTML page (a normal event page) must NOT be treated as a block.
+        self._stub_cffi(_FakeResp(200))
+        g = _FakeGetter([_FakeResp(200, text="<html>event page</html>")])
+        scrapers._http_get("https://x.test/page", session=g)   # expect_json=False
+        self.assertEqual(len(g.calls), 1)               # no escalation
+
+    def test_blocked_host_is_memoized_and_skips_honest_next_time(self):
+        self._stub_cffi(_FakeResp(200))
+        g = _FakeGetter([403])                          # first call: blocked
+        scrapers._http_get("https://memo.test/a", session=g)
+        self.assertIn("memo.test", scrapers._TLS_REQUIRED_HOSTS)
+        # Second call to the same host goes straight to curl_cffi — honest
+        # getter is not called again.
+        scrapers._http_get("https://memo.test/b", session=g)
+        self.assertEqual(len(g.calls), 1)               # still just the first call
 
 
 if __name__ == "__main__":

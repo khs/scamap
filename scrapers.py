@@ -108,6 +108,22 @@ BROWSER_HEADERS = {
 # Status codes that signal "WAF turned us away" (vs. a genuine 404/500). 503 is
 # Cloudflare's "under attack" interstitial; 429 is rate-limit throttling.
 _WAF_BLOCK_CODES = (403, 429, 503)
+# Hosts that forced us onto curl_cffi this run. We skip the honest request for
+# them on later calls (it would only 403), halving the round-trips and load for
+# a feed like the Middle that fetches hundreds of per-event pages from one
+# blocked host. Process-local; rebuilt each run.
+_TLS_REQUIRED_HOSTS: set[str] = set()
+
+
+def _looks_like_json(resp) -> bool:
+    """True if a 200 body is actually JSON, not a WAF challenge page (which is
+    served as HTML even with a 200 status — that's how Northshield's feed
+    intermittently fails with 'Expecting value: line 1 column 1')."""
+    try:
+        body = (resp.text or "").lstrip()
+    except Exception:                  # noqa: BLE001
+        return False
+    return body[:1] in ("{", "[")
 
 
 def _curl_cffi_get(url, **kwargs):
@@ -132,24 +148,42 @@ def _curl_cffi_get(url, **kwargs):
         return None
 
 
-def _http_get(url, *, session=None, **kwargs):
+def _http_get(url, *, session=None, expect_json=False, **kwargs):
     """GET `url` with our honest headers, escalating on a WAF block.
 
-    Order: honest aggregator UA → (on 403/429/503) a Chrome TLS fingerprint via
-    curl_cffi → if curl_cffi is unavailable, a plain browser header set as a
-    last resort. `kwargs` pass through (params=, etc.); a default timeout is
-    supplied. Pass session= to reuse a connection pool on the first attempt. On
-    a network error the exception propagates, exactly as a bare requests.get
-    would, so existing try/except blocks keep working unchanged.
+    A block is a 403/429/503 OR (when expect_json=True) a 200 whose body isn't
+    JSON — a soft Cloudflare challenge served as HTML. On a block we escalate to
+    a real Chrome TLS fingerprint via curl_cffi, and fall back to a plain
+    browser header set only if curl_cffi is unavailable. Once a host has needed
+    curl_cffi this run we go straight to it for that host (skipping the honest
+    request that would just 403).
+
+    `kwargs` pass through (params=, etc.); a default timeout is supplied. Pass
+    session= to reuse a connection pool. On a network error the exception
+    propagates, exactly as a bare requests.get would.
     """
     kwargs.setdefault("timeout", HTTP_TIMEOUT)
     getter = (session or requests).get
-    resp = getter(url, headers=HTTP_HEADERS, **kwargs)
-    if resp.status_code in _WAF_BLOCK_CODES:
-        print(f"  NOTE: {resp.status_code} on {url[:60]} — retrying with a "
-              f"browser TLS fingerprint")
+    host = urlparse(url).netloc
+
+    # Known fingerprint-blocked host: skip the honest attempt entirely.
+    if host in _TLS_REQUIRED_HOSTS:
         cffi_resp = _curl_cffi_get(url, **kwargs)
         if cffi_resp is not None:
+            return cffi_resp
+
+    resp = getter(url, headers=HTTP_HEADERS, **kwargs)
+    blocked = (resp.status_code in _WAF_BLOCK_CODES
+               or (expect_json and resp.status_code == 200
+                   and not _looks_like_json(resp)))
+    if blocked:
+        why = (resp.status_code if resp.status_code in _WAF_BLOCK_CODES
+               else "non-JSON 200")
+        print(f"  NOTE: {why} on {url[:60]} — retrying with a browser TLS "
+              f"fingerprint")
+        cffi_resp = _curl_cffi_get(url, **kwargs)
+        if cffi_resp is not None and cffi_resp.status_code not in _WAF_BLOCK_CODES:
+            _TLS_REQUIRED_HOSTS.add(host)        # remember: skip honest next time
             return cffi_resp
         resp = getter(url, headers=BROWSER_HEADERS, **kwargs)   # last resort
     return resp
@@ -463,6 +497,7 @@ def scrape_mec_rest(site_url: str, name: str) -> Optional[str]:
             r = _http_get(
                 list_url,
                 params={"per_page": 100, "page": page, "orderby": "date", "order": "asc"},
+                expect_json=True,
             )
             if r.status_code == 400:
                 break
@@ -596,7 +631,7 @@ def scrape_calon_json(url: str, name: str) -> Optional[str]:
     per-event URLs and to fetch the Overview description text.
     """
     try:
-        r = _http_get(url)
+        r = _http_get(url, expect_json=True)
         r.raise_for_status()
         records = r.json()
     except (requests.RequestException, ValueError) as exc:
