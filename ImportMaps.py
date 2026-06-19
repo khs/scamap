@@ -260,6 +260,47 @@ def is_virtual_event(title: str, location: str, description: str) -> bool:
 # Main fetch logic
 # ---------------------------------------------------------------------------
 
+def expand_events(cal, start, end, source: str):
+    """Expand a feed's recurring events, isolating any that fail to parse.
+
+    The fast path is a single recurring_ical_events.between() over the whole
+    feed. But ONE malformed event — e.g. Northshield's "The Catfish Ball" with
+    a 0026-for-2026 year typo — makes that whole call raise, which used to drop
+    the ENTIRE kingdom's events silently. Most kingdoms (and nearly every
+    barony) are plain ICS feeds that never pass through scrapers.py's date
+    guards, so this is the only chokepoint that protects all of them.
+
+    On a bulk failure we fall back to expanding one VEVENT at a time so a
+    single bad event can take down only itself. We carry the feed's VTIMEZONE
+    definitions into each throwaway calendar so TZID references still resolve.
+    """
+    try:
+        return recurring_ical_events.of(cal).between(start, end)
+    except Exception as e:
+        print(f"  WARNING: bulk expand failed for {source}: {e}"
+              f" — falling back to per-event expansion")
+
+    timezones = [c for c in cal.subcomponents if c.name == "VTIMEZONE"]
+    good, bad_summaries = [], []
+    for vevent in cal.walk("VEVENT"):
+        mini = Calendar()
+        for tz in timezones:
+            mini.add_component(tz)
+        mini.add_component(vevent)
+        try:
+            good.extend(recurring_ical_events.of(mini).between(start, end))
+        except Exception:
+            try:
+                bad_summaries.append(str(vevent.get("SUMMARY", "?")))
+            except Exception:
+                bad_summaries.append("?")
+    if bad_summaries:
+        sample = ", ".join(f"'{s}'" for s in bad_summaries[:3])
+        print(f"  NOTE: {source}: skipped {len(bad_summaries)} unparseable "
+              f"event(s) ({sample}); kept {len(good)}")
+    return good
+
+
 def fetch_all_events(calendars: list[dict]) -> list[dict]:
     all_events = []
 
@@ -273,11 +314,7 @@ def fetch_all_events(calendars: list[dict]) -> list[dict]:
         if cal is None:
             continue
 
-        try:
-            components = recurring_ical_events.of(cal).between(TODAY, end_date)
-        except Exception as e:
-            print(f"  WARNING: Could not expand events for {calendar['source']}: {e}")
-            continue
+        components = expand_events(cal, TODAY, end_date, calendar["source"])
 
         count = 0
         skipped_virtual = 0

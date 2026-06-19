@@ -39,3 +39,13 @@ Walks the baronies in group_locations.csv for a configurable set of kingdoms
 and hunts for any ICS or scrape-able calendar feed: Tribe Events `?ical=1`,
 R34 plugin, MEC, Simple Calendar, embedded Google Calendar URLs. Appends
 discoveries to calendars.csv. Use when you want to expand baronial coverage.
+
+
+measure_date_anomalies.py
+-------------------------
+One-shot audit that pulls every KINGDOM feed's raw start/end dates (bypassing
+the scrapers' own drop/clamp where possible) and counts date anomalies: years
+outside 1900-2100, end-before-start, and unparseable/missing dates. Written to
+size how widespread bad source dates are before generalizing the date guards
+(answer at the time: 2 anomalies in 6,810 events). Re-run if you suspect a feed
+is shipping corrupt dates, or to re-check the rate after upstream changes.

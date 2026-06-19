@@ -128,18 +128,42 @@ class TestDateRobustness(unittest.TestCase):
         self.assertFalse(scrapers._plausible_year(datetime(26, 1, 1)))
         self.assertFalse(scrapers._plausible_year(datetime(3000, 1, 1)))
 
-    def test_emit_calendar_skips_implausible_event(self):
+    def _emit_one(self, start, end, summary="E"):
+        return scrapers._emit_calendar("Test", [{
+            "uid": "u", "start": start, "end": end, "summary": summary,
+            "location": "", "description": "", "url": ""}])
+
+    def test_emit_clamps_bad_end_year_but_keeps_event(self):
+        # Northshield "Catfish Ball": good start, end year 0026. Keep the event,
+        # clamp DTEND to DTSTART, never emit the malformed 6-digit date.
+        ics = self._emit_one(datetime(2026, 11, 21), datetime(26, 11, 21), "Catfish")
+        self.assertEqual(ics.count("BEGIN:VEVENT"), 1)       # kept, not dropped
+        self.assertIn("Catfish", ics)
+        self.assertNotIn("DTEND:261121T", ics)               # no malformed 6-digit date
+        self.assertIn("DTSTART:20261121T000000Z", ics)
+        self.assertIn("DTEND:20261121T000000Z", ics)         # clamped to start
+
+    def test_emit_clamps_backwards_range_with_valid_years(self):
+        # Drachenwald "Smouldering Arrow 5": end a month before start, both
+        # valid years — the year-only guard misses it; the end<start clamp catches it.
+        ics = self._emit_one(datetime(2026, 7, 4), datetime(2026, 6, 7), "Smoulder")
+        self.assertEqual(ics.count("BEGIN:VEVENT"), 1)       # kept
+        self.assertIn("DTSTART:20260704T000000Z", ics)
+        self.assertIn("DTEND:20260704T000000Z", ics)         # clamped to start
+
+    def test_emit_drops_only_on_bad_start(self):
+        # A bogus START has no safe fallback — drop just that event, keep the rest.
         evs = [
             {"uid": "a", "start": datetime(2026, 7, 1), "end": datetime(2026, 7, 2),
              "summary": "Good", "location": "", "description": "", "url": ""},
-            {"uid": "b", "start": datetime(2026, 11, 21), "end": datetime(26, 11, 21),
-             "summary": "BadEnd", "location": "", "description": "", "url": ""},
+            {"uid": "b", "start": datetime(26, 11, 21), "end": datetime(2026, 11, 21),
+             "summary": "BadStart", "location": "", "description": "", "url": ""},
         ]
         ics = scrapers._emit_calendar("Test", evs)
-        self.assertEqual(ics.count("BEGIN:VEVENT"), 1)   # bad event dropped
-        self.assertNotIn("261121T", ics)                 # no malformed date emitted
+        self.assertEqual(ics.count("BEGIN:VEVENT"), 1)
         self.assertIn("Good", ics)
-        self.assertNotIn("BadEnd", ics)
+        self.assertNotIn("BadStart", ics)
+        self.assertNotIn("261121T", ics)
 
 
 class _FakeResp:

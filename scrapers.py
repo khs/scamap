@@ -193,19 +193,27 @@ def _emit_calendar(name: str, events: list[dict]) -> str:
         f"X-WR-CALNAME:{_ics_escape(name)}",
     ]
     for ev in events:
-        # Defense in depth: never emit an event with an implausible year. One
-        # bad DATE-TIME (e.g. a 0026 typo) otherwise crashes the whole feed's
-        # icalendar expansion downstream — better to drop the one event.
-        if not (_plausible_year(ev["start"]) and _plausible_year(ev["end"])):
-            print(f"  WARNING: {name}: skipping '{ev.get('summary','?')}' "
-                  f"with implausible date {ev['start']}..{ev['end']}")
+        start, end = ev["start"], ev["end"]
+        # Drop only when the START is unusable: a bogus start year has no safe
+        # fallback, and an implausible year (e.g. a 0026 typo) also crashes the
+        # whole feed's downstream icalendar expansion, so dropping the one bad
+        # event protects all the others.
+        if not _plausible_year(start):
+            print(f"  WARNING: {name}: dropping '{ev.get('summary','?')}' "
+                  f"— implausible start {start}")
             continue
+        # Clamp a bad or backwards END to the start instead of dropping: we
+        # still know WHEN the event is, just not how long. This catches both
+        # year typos (Northshield's 0026 end) and inverted-but-valid ranges
+        # (Drachenwald's 'Smouldering Arrow 5', end a month before its start).
+        if not _plausible_year(end) or end < start:
+            end = start
         lines.extend([
             "BEGIN:VEVENT",
             f"UID:{ev['uid']}",
             f"DTSTAMP:{now}",
-            f"DTSTART:{_fmt_utc(ev['start'])}",
-            f"DTEND:{_fmt_utc(ev['end'])}",
+            f"DTSTART:{_fmt_utc(start)}",
+            f"DTEND:{_fmt_utc(end)}",
             _fold(f"SUMMARY:{_ics_escape(ev['summary'])}"),
         ])
         if ev.get("location"):
@@ -583,17 +591,9 @@ def scrape_calon_json(url: str, name: str) -> Optional[str]:
             end   = datetime.fromisoformat(rec.get("end_date") or rec["start_date"])
         except (KeyError, ValueError):
             continue
-        # Guard against typo'd source years (Northshield's "The Catfish Ball"
-        # shipped end_date "0026-11-21" for 2026). A year < 1000 makes
-        # strftime("%Y") emit a short ICS date on glibc, which crashes the
-        # downstream icalendar expansion and silently zeroes the whole feed.
-        # Drop the event if the START is bogus; clamp a bogus END to the start.
-        if not (2000 <= start.year <= 2100):
-            print(f"  WARNING: calon {name}: dropping '{rec.get('event_name','?')}'"
-                  f" — implausible start_date {rec.get('start_date')!r}")
-            continue
-        if not (2000 <= end.year <= 2100) or end < start:
-            end = start
+        # Bad source years (Northshield's "The Catfish Ball" ships end_date
+        # "0026-11-21" for 2026) and backwards ranges are handled uniformly in
+        # _emit_calendar now — it drops a bogus start and clamps a bogus end.
 
         addr_parts = [
             rec.get("event_site_name", ""),
