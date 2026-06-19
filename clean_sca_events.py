@@ -56,6 +56,10 @@ INPUT_FILE   = SCRIPT_DIR / "sca_events.csv"
 OUTPUT_FILE  = SCRIPT_DIR / "sca_events_clean.csv"
 # Written by ImportMaps.py: sources whose fetch failed this run (see Step 6).
 FETCH_FAILURES_FILE = SCRIPT_DIR / "fetch_failures.json"
+# Hand-maintained corrections applied every run (see EDITING_EVENTS.md and the
+# apply_event_overrides step). Lets a human fix a vague/wrong event location
+# permanently, keyed on a stable identifier so it survives upstream edits.
+OVERRIDES_FILE = SCRIPT_DIR / "event_overrides.csv"
 
 # Titles containing any of these (case-insensitive) are not real events
 NON_EVENT_PATTERNS = [
@@ -1178,6 +1182,114 @@ def carry_forward_failed_sources(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------------------
+# Hand-maintained event overrides (event_overrides.csv)
+# ---------------------------------------------------------------------------
+# The pipeline rebuilds every event from the upstream feeds on each run, so a
+# manual edit to sca_events_clean.csv would be wiped the next run. This applies
+# a committed, human-edited correction file INSTEAD, every run, so a fix to a
+# vague or wrong event location is permanent. Full handoff docs in
+# EDITING_EVENTS.md; the format is also described in event_overrides.csv itself.
+#
+# Each override row carries MATCH fields (how to find the event) and NEW fields
+# (what to change). Matching is deliberately location-INDEPENDENT — the whole
+# point is the location is wrong — and tolerant of minor upstream edits:
+#   - match_event_url : the event's permalink. Most stable; survives title,
+#                       date, and location edits. Preferred when the event
+#                       has a URL.
+#   - match_source + match_title [+ match_date] : for events with no URL.
+#                       Title is compared normalized (case/punctuation-
+#                       insensitive) so small wording tweaks still match;
+#                       match_date (YYYY-MM-DD) is optional and pins one
+#                       instance of an annually-repeating title.
+
+OVERRIDE_COLUMNS = [
+    "match_event_url", "match_source", "match_title", "match_date",
+    "new_location", "new_lat", "new_lng", "note",
+]
+
+
+def _load_overrides() -> list[dict]:
+    """Read event_overrides.csv. Skips blank rows, `#` comment rows, and any
+    row with no usable match key (so an empty row can't match every event)."""
+    if not OVERRIDES_FILE.exists():
+        return []
+    out = []
+    try:
+        with open(OVERRIDES_FILE, encoding="utf-8", newline="") as f:
+            for raw in csv.DictReader(f):
+                row = {k: (raw.get(k) or "").strip() for k in OVERRIDE_COLUMNS}
+                if row["match_event_url"].startswith("#"):
+                    continue                                    # comment line
+                if not (row["match_event_url"] or row["match_source"]
+                        or row["match_title"]):
+                    continue                                    # no match key
+                out.append(row)
+    except Exception as e:
+        print(f"  WARNING: could not read {OVERRIDES_FILE.name}: {e}")
+    return out
+
+
+def _override_matches(ov: dict, row) -> bool:
+    """True if override `ov` applies to event `row`. URL match wins outright;
+    otherwise ALL of the provided source/title/date fields must match."""
+    if ov["match_event_url"]:
+        return str(row.get("event_url", "")).strip() == ov["match_event_url"]
+    if ov["match_source"] and str(row.get("source", "")).strip() != ov["match_source"]:
+        return False
+    if ov["match_title"] and (_normalize_title_for_match(row.get("title", ""))
+                              != _normalize_title_for_match(ov["match_title"])):
+        return False
+    if ov["match_date"] and str(row.get("start", ""))[:10] != ov["match_date"]:
+        return False
+    return True
+
+
+def apply_event_overrides(df: pd.DataFrame) -> pd.DataFrame:
+    """Apply each correction in event_overrides.csv to every matching event.
+
+    new_location  -> replaces the displayed location AND the geocoder input,
+                     and clears any coords so the corrected address is geocoded
+                     fresh (unless new_lat/new_lng are also given).
+    new_lat+new_lng -> pins the event to exact coordinates and marks it
+                     geocode_status="override" so the geocoder leaves it alone.
+    Both may be given: corrected text plus an exact pin (use this when even the
+    fixed address won't geocode cleanly).
+    """
+    overrides = _load_overrides()
+    if not overrides:
+        return df
+    applied = 0
+    for ov in overrides:
+        mask = df.apply(lambda r: _override_matches(ov, r), axis=1)
+        n = int(mask.sum())
+        label = (ov["note"] or ov["match_title"] or ov["match_event_url"]
+                 or ov["match_source"])
+        if n == 0:
+            print(f"  Override matched nothing (check the match fields): {label}")
+            continue
+        new_loc, new_lat, new_lng = ov["new_location"], ov["new_lat"], ov["new_lng"]
+        for idx in df[mask].index:
+            if new_loc:
+                df.at[idx, "location"]           = new_loc
+                df.at[idx, "clean_location"]     = new_loc
+                df.at[idx, "address_confidence"] = "high"
+                if not (new_lat and new_lng):     # corrected address -> re-geocode
+                    df.at[idx, "lat"] = ""
+                    df.at[idx, "lng"] = ""
+                    df.at[idx, "geocode_status"] = ""
+            if new_lat and new_lng:               # exact pin -> skip the geocoder
+                df.at[idx, "lat"]            = new_lat
+                df.at[idx, "lng"]            = new_lng
+                df.at[idx, "geocode_status"] = "override"
+        applied += n
+        print(f"  Override applied to {n} event(s): {label}")
+    if applied:
+        print(f"  Applied {len(overrides)} override row(s), {applied} event(s) "
+              f"changed.")
+    return df
+
+
+# ---------------------------------------------------------------------------
 # Per-kingdom URL backfill from their public REST APIs
 # ---------------------------------------------------------------------------
 
@@ -1461,6 +1573,13 @@ def main():
     # WAF 403) produced zero events above and would vanish from the map. Restore
     # its last-good upcoming events so a transient blip doesn't blank a kingdom.
     df = carry_forward_failed_sources(df)
+
+    # Step 6c: apply hand-maintained corrections from event_overrides.csv (run
+    # AFTER carry-forward so restored events get corrected too, and AFTER the
+    # geocode merge/invalidation so a human pin is never second-guessed). See
+    # EDITING_EVENTS.md.
+    print("Step 6c: Applying event_overrides.csv corrections ...")
+    df = apply_event_overrides(df)
 
     # Step 7: For kingdoms whose calendars import from a Google Calendar
     # (and therefore lose the original WordPress event URL), backfill the

@@ -545,7 +545,10 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
 # Main
 # ---------------------------------------------------------------------------
 
-SUCCESS_STATUSES = {"ok", "ok_retry", "ok_photon", "cached"}
+# "override" = a human pinned exact coords in event_overrides.csv; treat it as
+# done/successful so the geocoder never touches it (see clean_sca_events.py
+# apply_event_overrides and EDITING_EVENTS.md).
+SUCCESS_STATUSES = {"ok", "ok_retry", "ok_photon", "cached", "override"}
 
 
 def main(retry_failed: bool = False):

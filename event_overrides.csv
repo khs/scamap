@@ -1,0 +1,22 @@
+match_event_url,match_source,match_title,match_date,new_location,new_lat,new_lng,note
+# ---------------------------------------------------------------------------
+# event_overrides.csv — hand-maintained corrections, re-applied on EVERY run.
+# Editing sca_events_clean.csv directly does nothing: the pipeline rebuilds it
+# from the upstream calendars each run. Put corrections HERE instead.
+# Full guide with worked examples: EDITING_EVENTS.md  (READ IT FIRST).
+# Tip: edit this in a spreadsheet (Excel / Google Sheets / LibreOffice) so it
+# quotes commas for you. Lines whose first cell starts with # are ignored.
+#
+# MATCH the event (location-independent, survives minor upstream edits):
+#   best    -> match_event_url  (the event's permalink; most durable)
+#   else    -> match_source + match_title  (+ match_date YYYY-MM-DD to pin one
+#              instance of a title that repeats annually)
+# CHANGE the event:
+#   new_location ......... fixes a vague/wrong address; gets geocoded
+#   new_lat + new_lng .... exact pin in decimal degrees (use when no address
+#                          will geocode); skips the geocoder entirely
+#   both ................. corrected text AND an exact pin
+#
+# Example (remove the leading # and edit to use):
+# ,Kingdom of Meridies,Greater Savannah Gathering,,"Savannah, GA, USA",,,"'Greater Savannah area' would not geocode; set to the city"
+# ---------------------------------------------------------------------------
