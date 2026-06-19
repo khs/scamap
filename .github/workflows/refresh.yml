@@ -20,6 +20,7 @@ on:
 
 permissions:
   contents: write              # needed for the auto-commit step below
+  issues: write                # needed to open/close the health-alert issue
 
 jobs:
   refresh:
@@ -99,4 +100,39 @@ jobs:
           if [ "$pushed" = false ]; then
             echo "::error::could not push data update after 3 attempts"
             exit 1
+          fi
+
+      - name: Open/update health-alert issue
+        # health_check.py drops health_alert.md when a kingdom feed produced 0
+        # events. Surface that as a single GitHub issue the maintainer is
+        # notified about (it transfers with repo ownership), and auto-close it
+        # when the feeds recover. Runs even if an earlier step failed.
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          gh label create pipeline-health --color B60205 \
+            --description "Automated: a kingdom feed produced 0 events" 2>/dev/null || true
+          existing=$(gh issue list --label pipeline-health --state open \
+            --json number --jq '.[0].number // empty' 2>/dev/null || true)
+          stamp="run ${{ github.run_id }} at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          if [ -f health_alert.md ]; then
+            body="$(cat health_alert.md)"$'\n\n'"_Detected on ${stamp}._"
+            if [ -n "$existing" ]; then
+              echo "Health alert active — commenting on issue #$existing"
+              gh issue comment "$existing" --body "$body" || true
+            else
+              echo "Health alert active — opening a new issue"
+              gh issue create --label pipeline-health \
+                --title "⚠️ A kingdom feed is broken (0 events)" --body "$body" || true
+            fi
+          elif [ -n "$existing" ]; then
+            echo "Feeds healthy again — closing issue #$existing"
+            gh issue comment "$existing" \
+              --body "✅ All configured feeds healthy again as of ${stamp}. Closing automatically." || true
+            gh issue close "$existing" || true
+          else
+            echo "Feeds healthy, no open alert issue. Nothing to do."
           fi

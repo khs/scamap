@@ -37,8 +37,16 @@ SCRIPT_DIR = Path(__file__).parent
 EVENTS_FILE = SCRIPT_DIR / "sca_events_clean.csv"
 CALENDARS_FILE = SCRIPT_DIR / "calendars.csv"
 STATE_FILE = SCRIPT_DIR / "health_state.json"
+# Written iff there are CRITICAL findings; the refresh workflow turns it into /
+# updates a GitHub issue, and removes-on-clean so the issue auto-closes. Not
+# committed (gitignored) — it's a per-run signal, not site data.
+ALERT_FILE = SCRIPT_DIR / "health_alert.md"
 
 IN_CI = os.getenv("GITHUB_ACTIONS") == "true"
+
+# Collected during a run so we can also write the alert file for the workflow.
+_critical_msgs: list[str] = []
+_warning_msgs: list[str] = []
 
 # Tunables
 KINGDOM_DROP_FRAC = 0.60   # warn if a kingdom loses >= this fraction vs last run
@@ -49,12 +57,43 @@ FAILRATE_WARN = 0.08       # warn if > this fraction of geocodable events failed
 
 def emit(level: str, msg: str) -> None:
     """level: 'error' | 'warning' | 'notice'. Uses GitHub Actions annotation
-    syntax in CI (visible in the run summary), plain text locally."""
+    syntax in CI (visible in the run summary), plain text locally. Errors and
+    warnings are also collected for the alert file."""
+    if level == "error":
+        _critical_msgs.append(msg)
+    elif level == "warning":
+        _warning_msgs.append(msg)
     if IN_CI:
         print(f"::{level}::{msg}")
     else:
         tag = {"error": "CRITICAL", "warning": "WARN", "notice": "INFO"}[level]
         print(f"  [{tag}] {msg}")
+
+
+def _write_alert_file(total: int, failed: int, geocodable: int) -> None:
+    """Write health_alert.md when there are CRITICAL findings, else remove it.
+    The refresh workflow opens/updates a GitHub issue from this file, and
+    closes the issue when the file is gone (feeds recovered)."""
+    if _critical_msgs:
+        lines = [
+            "The automated SCAMap refresh found feed(s) producing **0 events**.",
+            "These are almost certainly broken upstream calendars or scrapers, and",
+            "the affected kingdom's events are missing from the live map until fixed.",
+            "",
+            "**Critical — feed produced no events:**",
+            *[f"- {m}" for m in _critical_msgs],
+        ]
+        if _warning_msgs:
+            lines += ["", "**Warnings:**", *[f"- {m}" for m in _warning_msgs]]
+        lines += [
+            "",
+            f"_This run: {total} events total, {failed}/{geocodable} geocode failures._",
+            "",
+            "How to diagnose and fix: see **MAINTAINING.md → \"When a feed breaks\"**.",
+        ]
+        ALERT_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    else:
+        ALERT_FILE.unlink(missing_ok=True)
 
 
 def configured_kingdoms() -> list:
@@ -65,8 +104,11 @@ def configured_kingdoms() -> list:
 
 
 def main(strict: bool = False) -> int:
+    _critical_msgs.clear()
+    _warning_msgs.clear()
     if not EVENTS_FILE.exists():
         emit("error", f"{EVENTS_FILE.name} missing — the pipeline produced no output")
+        _write_alert_file(0, 0, 0)
         return 1
 
     with open(EVENTS_FILE, encoding="utf-8") as f:
@@ -126,6 +168,8 @@ def main(strict: bool = False) -> int:
         "geocodable": geocodable,
         "kingdom_counts": {k: counts.get(k, 0) for k in kingdoms},
     }, indent=2, sort_keys=True), encoding="utf-8")
+
+    _write_alert_file(total, failed, geocodable)
 
     print(f"\n  {critical} critical, {warnings} warning(s). "
           f"(baseline written to {STATE_FILE.name})")

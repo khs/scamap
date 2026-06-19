@@ -13,6 +13,13 @@ If an event is in the wrong place or has a vague location, **don't edit
 
 ➡️ **[EDITING_EVENTS.md](EDITING_EVENTS.md)**
 
+## Running or handing off the project
+
+Operating it, troubleshooting a broken feed, and the owner's hand-off
+checklist (repo transfer, the Nominatim contact secret, monitoring):
+
+➡️ **[MAINTAINING.md](MAINTAINING.md)**
+
 ## How the data pipeline works
 
 `refresh.py` runs five steps in order (each is a standalone script you can also

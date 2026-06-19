@@ -27,6 +27,10 @@ sca_events.csv
 # it, clean_sca_events reads it for carry-forward). Regenerated every run.
 fetch_failures.json
 
+# Run-local signal: written by health_check.py when a feed breaks, turned into
+# a GitHub issue by the refresh workflow. Never committed.
+health_alert.md
+
 # OS / editor
 .DS_Store
 Thumbs.db
