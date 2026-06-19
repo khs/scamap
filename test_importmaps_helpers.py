@@ -18,8 +18,11 @@ Run:
 """
 from __future__ import annotations
 
+import shutil
+import tempfile
 import unittest
 from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 
 from icalendar import Event
 
@@ -163,6 +166,41 @@ class TestMakeIcsUrl(unittest.TestCase):
             m.make_ics_url(f"  {cid}  "),
             self.GCAL.format(cid=cid),
         )
+
+
+class TestFileSource(unittest.TestCase):
+    """fetch_ics' `file:` branch ingests a committed local ICS (An Tir, behind
+    Cloudflare). Missing / eventless / unparseable files are quiet skips."""
+
+    SAMPLE = ("BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//t//EN\n"
+              "BEGIN:VEVENT\nUID:a@x\nDTSTART:20260815T000000Z\n"
+              "DTEND:20260816T000000Z\nSUMMARY:An Tir Coronation\n"
+              "LOCATION:Olympia, WA\nEND:VEVENT\nEND:VCALENDAR\n")
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self._orig = m.SCRIPT_DIR
+        m.SCRIPT_DIR = self.tmp
+
+    def tearDown(self):
+        m.SCRIPT_DIR = self._orig
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _cal(self):
+        return {"id": "file:antir.ics", "source": "Kingdom of An Tir", "type": "kingdom"}
+
+    def test_valid_file_parses(self):
+        (self.tmp / "antir.ics").write_text(self.SAMPLE, encoding="utf-8")
+        cal = m.fetch_ics(self._cal())
+        self.assertIsNotNone(cal)
+        self.assertEqual(len(cal.walk("VEVENT")), 1)
+
+    def test_missing_file_is_quiet_skip(self):
+        self.assertIsNone(m.fetch_ics(self._cal()))
+
+    def test_eventless_calendar_skipped(self):
+        (self.tmp / "antir.ics").write_text("nothing here", encoding="utf-8")
+        self.assertIsNone(m.fetch_ics(self._cal()))
 
 
 if __name__ == "__main__":

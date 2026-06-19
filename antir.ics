@@ -1,0 +1,10 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//SCA Maps Project//An Tir placeholder//EN
+X-WR-CALNAME:Kingdom of An Tir
+X-COMMENT:PLACEHOLDER. An Tir is behind Cloudflare so the cron can't fetch it.
+X-COMMENT:To add An Tir events, REPLACE THIS WHOLE FILE with the calendar from
+X-COMMENT:https://antir.org/events.ics (open it in a browser, Save As antir.ics)
+X-COMMENT:then commit. See MAINTAINING.md - "Updating An Tir". Until then An Tir
+X-COMMENT:simply shows no events; this empty calendar is intentional.
+END:VCALENDAR

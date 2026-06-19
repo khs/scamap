@@ -103,6 +103,17 @@ def configured_kingdoms() -> list:
         return [r["source"] for r in csv.DictReader(f) if r.get("type") == "kingdom"]
 
 
+def manual_kingdoms() -> set:
+    """Kingdoms whose feed is a hand-maintained local file (a `file:` source,
+    e.g. An Tir behind Cloudflare). They're expected to sometimes be empty or
+    stale, so they're exempt from the 0-events CRITICAL alarm."""
+    if not CALENDARS_FILE.exists():
+        return set()
+    with open(CALENDARS_FILE, encoding="utf-8") as f:
+        return {r["source"] for r in csv.DictReader(f)
+                if r.get("type") == "kingdom" and (r.get("id") or "").startswith("file:")}
+
+
 def main(strict: bool = False) -> int:
     _critical_msgs.clear()
     _warning_msgs.clear()
@@ -134,16 +145,24 @@ def main(strict: bool = False) -> int:
     print(f"  geocode failures: {failed}/{geocodable} ({failrate:.1%})")
 
     kingdoms = configured_kingdoms()
+    manual = manual_kingdoms()
     critical = warnings = 0
 
     # 1. A configured kingdom with zero events — almost certainly a dead feed.
+    #    Hand-maintained `file:` feeds (An Tir) are expected to be empty/stale,
+    #    so they get an informational notice instead of a CRITICAL alarm.
     for k in sorted(kingdoms):
         if counts.get(k, 0) == 0:
+            if k in manual:
+                emit("notice", f"{k}: 0 events (hand-maintained feed — not alarmed)")
+                continue
             emit("error", f"{k}: 0 events — feed/scraper likely broken")
             critical += 1
 
     # 2. A kingdom that lost a big share of its events vs the last run.
     for k in sorted(kingdoms):
+        if k in manual:
+            continue
         now, before = counts.get(k, 0), prev_counts.get(k, 0)
         if before >= MIN_BASELINE and now < before * (1 - KINGDOM_DROP_FRAC):
             emit("warning", f"{k}: events {before} -> {now} ({100 * (before - now) // before}% drop)")

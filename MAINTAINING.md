@@ -73,13 +73,43 @@ latest **Actions → "Refresh events + group pins"** run and read that kingdom's
 
 To re-run on demand: **Actions → Refresh events + group pins → Run workflow**.
 
-### An Tir / hard-blocked feeds
+### Updating An Tir
 
-An Tir sits behind a Cloudflare challenge that blocks datacenter IPs outright,
-so it isn't in `calendars.csv`. `reference/` has the scripts from past attempts
-(a Playwright browser run, and a manual-cookie `curl_cffi` approach) if anyone
-wants to revisit it from a non-datacenter machine. Don't expect it to work from
-the cron.
+An Tir sits behind Cloudflare, which blocks the cron's datacenter IP — so the
+cron **can't** fetch it automatically. But a normal **web browser** passes
+Cloudflare with no trouble, and An Tir publishes a standard calendar file. So
+keeping An Tir on the map is just: download that file in your browser and drop
+it into the repo. It needs no scripts and no code — the pipeline reads it like
+any other feed.
+
+**To update An Tir (takes about a minute, do it whenever you like — monthly is
+plenty):**
+
+1. In your browser, go to **https://antir.org/events.ics** . Wait for the
+   "Just a moment…" Cloudflare screen to pass. The browser will download a file
+   (usually named `events.ics`), or show calendar text you can save with
+   **Ctrl-S / ⌘-S**.
+2. **Save / rename it to `antir.ics`** and put it in the SCAMap project folder,
+   replacing the placeholder `antir.ics` that's already there.
+   - Doing it on GitHub instead? Open `antir.ics` in the repo → the pencil
+     (Edit) → paste in the downloaded file's contents → Commit.
+3. Commit and push (`git add antir.ics && git commit -m "Update An Tir" &&
+   git push`), or just commit on GitHub.
+
+That's it. The next refresh (within two days) folds An Tir's events into the
+map, geocoded and coloured like every other kingdom. Until you first add real
+data, An Tir simply shows nothing — that's expected, and it does **not** trip
+the health alarm.
+
+How it works: `calendars.csv` has the row `file:antir.ics,Kingdom of An Tir,
+kingdom`. The `file:` prefix tells the pipeline to read that committed file
+instead of fetching a URL, so it works from the cron with no network.
+
+If your browser won't give you a clean `.ics` (some open it in a calendar app),
+`reference/fetch_antir_with_cookie.py` is a fallback: it uses a `cf_clearance`
+cookie you copy from your browser's DevTools to pull `antir.org/events.ics` via
+`curl_cffi`. Its header comment has the step-by-step; save its output over
+`antir.ics`.
 
 ---
 

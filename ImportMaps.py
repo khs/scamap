@@ -130,6 +130,30 @@ def fetch_ics(calendar: dict) -> Calendar | None:
     runs the corresponding scraper from scrapers.py to synthesise ICS text from
     a non-ICS source. Otherwise fetches the ICS URL over HTTP.
     """
+    # Local committed ICS file, e.g. "file:antir.ics" — for a kingdom whose feed
+    # can't be fetched from CI (An Tir, behind Cloudflare). A human downloads the
+    # .ics from a browser and commits it; every run ingests it like any other
+    # feed, no network needed. A missing or eventless file is a quiet skip, not a
+    # failure. See MAINTAINING.md → "Updating An Tir".
+    if calendar["id"].startswith("file:"):
+        path = SCRIPT_DIR / calendar["id"][len("file:"):]
+        if not path.exists():
+            print(f"  NOTE: {calendar['source']}: {path.name} not present yet — skipping")
+            return None
+        try:
+            data = path.read_text(encoding="utf-8", errors="replace")
+        except OSError as e:
+            print(f"  WARNING: could not read {path.name} for {calendar['source']}: {e}")
+            return None
+        if "BEGIN:VCALENDAR" not in data:
+            print(f"  NOTE: {calendar['source']}: {path.name} has no events yet — skipping")
+            return None
+        try:
+            return Calendar.from_ical(data)
+        except Exception as e:                       # noqa: BLE001
+            print(f"  WARNING: could not parse {path.name} for {calendar['source']}: {e}")
+            return None
+
     # Scraper-prefixed sources go through scrapers.py exclusively. If a
     # scraper finds no events, treat that as a legitimate empty result rather
     # than falling through to the URL fetcher (which would try to fetch
