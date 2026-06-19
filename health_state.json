@@ -1,6 +1,6 @@
 {
   "failed": 20,
-  "geocodable": 747,
+  "geocodable": 741,
   "kingdom_counts": {
     "Kingdom of AEthelmearc": 29,
     "Kingdom of Ansteorra": 44,
@@ -9,7 +9,7 @@
     "Kingdom of Atlantia": 29,
     "Kingdom of Avacal": 38,
     "Kingdom of Caid": 112,
-    "Kingdom of Calontir": 20,
+    "Kingdom of Calontir": 21,
     "Kingdom of Drachenwald": 73,
     "Kingdom of Ealdormere": 44,
     "Kingdom of Gleann Abhann": 30,
@@ -22,5 +22,5 @@
     "Kingdom of the Outlands": 18,
     "Kingdom of the West": 373
   },
-  "total": 1234
+  "total": 1228
 }
