@@ -1,6 +1,6 @@
 {
   "failed": 20,
-  "geocodable": 761,
+  "geocodable": 747,
   "kingdom_counts": {
     "Kingdom of AEthelmearc": 29,
     "Kingdom of Ansteorra": 44,
@@ -22,5 +22,5 @@
     "Kingdom of the Outlands": 18,
     "Kingdom of the West": 373
   },
-  "total": 1248
+  "total": 1234
 }
