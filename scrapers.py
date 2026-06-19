@@ -444,33 +444,39 @@ def _parse_mec_date_range(text: str) -> tuple:
     if not text:
         return (None, None)
     s = text.strip()
-    # Single-day: "May 16 2026"
-    m = re.match(r"^(\w{3,9})\s+(\d{1,2})(?:,?\s+)(\d{4})\s*$", s)
-    if m:
-        mon = _MEC_MONTH.get(m.group(1)[:3].lower())
-        if mon:
-            d = datetime(int(m.group(3)), mon, int(m.group(2)))
-            return (d, d)
-    # Same-month range: "Dec 19 - 21 2026" or "May 1 - 3 2026"
-    m = re.match(r"^(\w{3,9})\s+(\d{1,2})\s*[-–—]\s*(\d{1,2})(?:,?\s+)(\d{4})\s*$", s)
-    if m:
-        mon = _MEC_MONTH.get(m.group(1)[:3].lower())
-        if mon:
-            start = datetime(int(m.group(4)), mon, int(m.group(2)))
-            end   = datetime(int(m.group(4)), mon, int(m.group(3)))
-            return (start, end)
-    # Cross-month: "Dec 19 2026 - Jan 2 2027"
-    m = re.match(
-        r"^(\w{3,9})\s+(\d{1,2})(?:,?\s+)(\d{4})\s*[-–—]\s*(\w{3,9})\s+(\d{1,2})(?:,?\s+)(\d{4})\s*$",
-        s,
-    )
-    if m:
-        s_mon = _MEC_MONTH.get(m.group(1)[:3].lower())
-        e_mon = _MEC_MONTH.get(m.group(4)[:3].lower())
-        if s_mon and e_mon:
-            start = datetime(int(m.group(3)), s_mon, int(m.group(2)))
-            end   = datetime(int(m.group(6)), e_mon, int(m.group(5)))
-            return (start, end)
+    # A regex can match a well-formed but impossible date ("Feb 30 2026"), which
+    # makes datetime() raise ValueError. Treat that as unparseable rather than
+    # letting one typo'd source date crash the whole feed's scrape.
+    try:
+        # Single-day: "May 16 2026"
+        m = re.match(r"^(\w{3,9})\s+(\d{1,2})(?:,?\s+)(\d{4})\s*$", s)
+        if m:
+            mon = _MEC_MONTH.get(m.group(1)[:3].lower())
+            if mon:
+                d = datetime(int(m.group(3)), mon, int(m.group(2)))
+                return (d, d)
+        # Same-month range: "Dec 19 - 21 2026" or "May 1 - 3 2026"
+        m = re.match(r"^(\w{3,9})\s+(\d{1,2})\s*[-–—]\s*(\d{1,2})(?:,?\s+)(\d{4})\s*$", s)
+        if m:
+            mon = _MEC_MONTH.get(m.group(1)[:3].lower())
+            if mon:
+                start = datetime(int(m.group(4)), mon, int(m.group(2)))
+                end   = datetime(int(m.group(4)), mon, int(m.group(3)))
+                return (start, end)
+        # Cross-month: "Dec 19 2026 - Jan 2 2027"
+        m = re.match(
+            r"^(\w{3,9})\s+(\d{1,2})(?:,?\s+)(\d{4})\s*[-–—]\s*(\w{3,9})\s+(\d{1,2})(?:,?\s+)(\d{4})\s*$",
+            s,
+        )
+        if m:
+            s_mon = _MEC_MONTH.get(m.group(1)[:3].lower())
+            e_mon = _MEC_MONTH.get(m.group(4)[:3].lower())
+            if s_mon and e_mon:
+                start = datetime(int(m.group(3)), s_mon, int(m.group(2)))
+                end   = datetime(int(m.group(6)), e_mon, int(m.group(5)))
+                return (start, end)
+    except ValueError:
+        return (None, None)
     return (None, None)
 
 

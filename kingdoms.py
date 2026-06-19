@@ -142,8 +142,11 @@ KINGDOM_STATES = {
     "Kingdom of the West":      ("CA", "NV", "AK"),
 }
 
-# US member states per kingdom, for *event* validation (expanded with
-# US_STATE_ADJACENT at use sites). Sets; US-only.
+# Home states/provinces per kingdom, for *event* validation (expanded with
+# US_STATE_ADJACENT at use sites — that adjacency table is US-only, so the
+# Canadian-province entries here, e.g. Avacal's {AB, SK, BC}, simply get no
+# neighbour expansion). Every code used here also has a STATE_BBOX entry so
+# coord_state can resolve it.
 KINGDOM_HOME_STATES = {
     "Kingdom of AEthelmearc":   {"PA", "WV", "NY"},
     "Kingdom of An Tir":        {"WA", "OR", "ID", "MT"},
