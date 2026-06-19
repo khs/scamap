@@ -24,6 +24,7 @@ Usage:
 """
 
 import csv
+import json
 import re
 from datetime import datetime, date, timezone, timedelta
 from pathlib import Path
@@ -50,6 +51,10 @@ NEAR_END   = TODAY + timedelta(days=60)    # ~2 months — Baronial calendars
 SCRIPT_DIR      = Path(__file__).parent
 CALENDARS_FILE  = SCRIPT_DIR / "calendars.csv"
 OUTPUT_FILE     = SCRIPT_DIR / "sca_events.csv"
+# Run-local (gitignored) handoff: which sources failed to fetch THIS run, so
+# clean_sca_events can carry forward their last-good events instead of letting
+# a transient outage / WAF block wipe a kingdom off the map.
+FETCH_FAILURES_FILE = SCRIPT_DIR / "fetch_failures.json"
 
 # Keywords that indicate a virtual/online event (checked against location + description,
 # case-insensitive substring match). Add more here as needed.
@@ -303,6 +308,7 @@ def expand_events(cal, start, end, source: str):
 
 def fetch_all_events(calendars: list[dict]) -> list[dict]:
     all_events = []
+    failed_sources = []
 
     for calendar in calendars:
         is_baronial = calendar["type"] == "baronial"
@@ -312,6 +318,10 @@ def fetch_all_events(calendars: list[dict]) -> list[dict]:
 
         cal = fetch_ics(calendar)
         if cal is None:
+            # A None here means the fetch itself failed (network refused,
+            # timeout, 403, non-ICS body) — NOT that the source is legitimately
+            # empty. Record it so clean_sca_events keeps the last-good events.
+            failed_sources.append(calendar["source"])
             continue
 
         components = expand_events(cal, TODAY, end_date, calendar["source"])
@@ -360,6 +370,19 @@ def fetch_all_events(calendars: list[dict]) -> list[dict]:
 
         skip_note = f" ({skipped_virtual} virtual skipped)" if skipped_virtual else ""
         print(f"  → {count} events collected{skip_note}")
+
+    # Hand the failed-source list to clean_sca_events (always rewrite it, even
+    # when empty, so a stale file from a previous run can't carry events forward
+    # for a source that's actually fine now).
+    try:
+        FETCH_FAILURES_FILE.write_text(
+            json.dumps(sorted(set(failed_sources))), encoding="utf-8")
+    except OSError as e:
+        print(f"  WARNING: could not write {FETCH_FAILURES_FILE.name}: {e}")
+    if failed_sources:
+        print(f"\n{len(failed_sources)} source(s) failed to fetch this run "
+              f"(last-good events will be carried forward): "
+              f"{', '.join(sorted(set(failed_sources)))}")
 
     return all_events
 

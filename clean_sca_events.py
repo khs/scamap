@@ -35,8 +35,10 @@ Usage:
 """
 
 import csv
+import json
 import re
 import unicodedata
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -52,6 +54,8 @@ import kingdoms
 SCRIPT_DIR   = Path(__file__).parent
 INPUT_FILE   = SCRIPT_DIR / "sca_events.csv"
 OUTPUT_FILE  = SCRIPT_DIR / "sca_events_clean.csv"
+# Written by ImportMaps.py: sources whose fetch failed this run (see Step 6).
+FETCH_FAILURES_FILE = SCRIPT_DIR / "fetch_failures.json"
 
 # Titles containing any of these (case-insensitive) are not real events
 NON_EVENT_PATTERNS = [
@@ -1119,6 +1123,60 @@ def _invalidate_misgeocoded_rows(df: pd.DataFrame) -> int:
     return invalidated
 
 
+def _load_fetch_failures() -> set:
+    """Sources whose fetch failed this run, per ImportMaps' fetch_failures.json."""
+    try:
+        return set(json.loads(FETCH_FAILURES_FILE.read_text(encoding="utf-8")))
+    except Exception:
+        return set()
+
+
+def carry_forward_failed_sources(df: pd.DataFrame) -> pd.DataFrame:
+    """Re-attach the last-good FUTURE events for any source that failed to fetch
+    this run, so a transient outage / WAF block doesn't wipe a kingdom off the
+    map until the next good run.
+
+    Only still-upcoming events are carried (anything already in the past is left
+    to drop), so a source that stays down simply fades out as its events pass,
+    rather than freezing a stale snapshot forever. Carried rows keep the prior
+    run's coordinates and geocode_status, so they aren't re-geocoded.
+    """
+    failed = _load_fetch_failures()
+    if not failed or not OUTPUT_FILE.exists():
+        return df
+    try:
+        prior = pd.read_csv(OUTPUT_FILE, dtype=str).fillna("")
+    except Exception as e:
+        print(f"  Could not read prior events for carry-forward: {e}")
+        return df
+    if prior.empty or "source" not in prior.columns:
+        return df
+
+    today   = datetime.now().strftime("%Y-%m-%d")
+    present = set(zip(df.get("source", []), df.get("title", []), df.get("start", [])))
+    keep = []
+    for _, row in prior.iterrows():
+        if row.get("source") not in failed:
+            continue
+        if str(row.get("start", ""))[:10] < today:          # already past
+            continue
+        if (row.get("source"), row.get("title"), row.get("start")) in present:
+            continue                                          # already present
+        keep.append(row)
+
+    if not keep:
+        print(f"  Carry-forward: {len(failed)} source(s) failed, no future "
+              f"last-good events to restore.")
+        return df
+
+    carried = pd.DataFrame(keep).reindex(columns=df.columns, fill_value="")
+    by_src  = carried["source"].value_counts().to_dict()
+    note    = ", ".join(f"{s} ({n})" for s, n in sorted(by_src.items()))
+    print(f"  Carry-forward: restored {len(carried)} last-good event(s) for "
+          f"failed source(s): {note}")
+    return pd.concat([df, carried], ignore_index=True)
+
+
 # ---------------------------------------------------------------------------
 # Per-kingdom URL backfill from their public REST APIs
 # ---------------------------------------------------------------------------
@@ -1398,6 +1456,11 @@ def main():
                 print("  No prior geocoding columns found.\n")
         except Exception as e:
             print(f"  Could not merge prior results: {e}\n")
+
+    # Step 6b: a source that failed to fetch this run (network refused, timeout,
+    # WAF 403) produced zero events above and would vanish from the map. Restore
+    # its last-good upcoming events so a transient blip doesn't blank a kingdom.
+    df = carry_forward_failed_sources(df)
 
     # Step 7: For kingdoms whose calendars import from a Google Calendar
     # (and therefore lose the original WordPress event URL), backfill the

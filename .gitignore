@@ -23,6 +23,10 @@ _probe_baronies.py
 # cleaned + geocoded outputs (sca_events_clean.csv) ship to the site.
 sca_events.csv
 
+# Run-local handoff: which sources failed to fetch this run (ImportMaps writes
+# it, clean_sca_events reads it for carry-forward). Regenerated every run.
+fetch_failures.json
+
 # OS / editor
 .DS_Store
 Thumbs.db
