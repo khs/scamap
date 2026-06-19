@@ -1159,20 +1159,36 @@ function buildPopup(ev) {
   // source's barony/kingdom site. Every event should expose at least one of
   // these — if the event itself has no URL, the source link is the floor.
   const linkButtons = [];
-  if (ev.event_url) {
-    linkButtons.push(`<a href="${escapeHtml(ev.event_url)}" target="_blank" rel="noopener">Event page →</a>`);
-  }
-  if (ev.facebook_url) {
-    linkButtons.push(`<a href="${escapeHtml(ev.facebook_url)}" target="_blank" rel="noopener">Facebook</a>`);
-  }
-  if (!ev.event_url) {
+  const used = new Set();
+  const pushLink = (url, label) => {
+    if (url && !used.has(url)) {
+      used.add(url);
+      linkButtons.push(`<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${label}</a>`);
+    }
+  };
+  const evUrlSpecific = ev.event_url && !isGenericListing(ev.event_url);
+  const fbSpecific = isSpecificFacebookEvent(ev.facebook_url);
+
+  // Primary link: the most event-specific destination we have.
+  if (evUrlSpecific)      pushLink(ev.event_url, 'Event page →');
+  else if (fbSpecific)    pushLink(ev.facebook_url, 'Event page (Facebook) →');
+
+  // A generic listing event_url (a branch/kingdom events page) — keep it, but
+  // labelled honestly as the host's page rather than this event.
+  if (ev.event_url && isGenericListing(ev.event_url)) pushLink(ev.event_url, 'Host events →');
+
+  // Facebook as a secondary link, when it wasn't already used as the primary.
+  pushLink(ev.facebook_url, 'Facebook');
+
+  // Floor: no event_url and no specific Facebook event → the source's site.
+  if (!ev.event_url && !fbSpecific) {
     const canon = canonicalSource(ev.source);
     const baronySite = sourceWebsite[ev.source] || sourceWebsite[canon];
     const kingdomUrl = KINGDOM_CALENDAR_URLS[ev.source] || KINGDOM_CALENDAR_URLS[canon];
     if (baronySite) {
-      linkButtons.push(`<a href="${escapeHtml(baronySite)}" target="_blank" rel="noopener">${escapeHtml(ev.source)} website →</a>`);
+      pushLink(baronySite, `${escapeHtml(ev.source)} website →`);
     } else if (kingdomUrl) {
-      linkButtons.push(`<a href="${escapeHtml(kingdomUrl)}" target="_blank" rel="noopener">${escapeHtml(ev.source)} calendar →</a>`);
+      pushLink(kingdomUrl, `${escapeHtml(ev.source)} calendar →`);
     }
   }
   const links = linkButtons.length
@@ -1229,10 +1245,30 @@ function websiteForSource(source) {
       || "";
 }
 
-// Best clickable URL we can offer for an event. Fallback chain:
-//   event_url → facebook_url → barony website → kingdom calendar URL → ""
-// Used by the popup, the sidebar item's hover/click, and the source-name link.
+// A branch/kingdom events-LISTING page or calendar index (path ends in /events
+// or /calendar), or a bare domain root — useful, but NOT a link to *this* event.
+// A deep slug (…/vindheim/summer-war-maneuvers/) or an /event/?event_id=… page
+// is specific and does NOT match.
+function isGenericListing(url) {
+  if (!url) return true;
+  try {
+    const p = new URL(url).pathname.replace(/\/+$/, '');
+    return p === '' || /\/(events|calendar)$/i.test(p);
+  } catch (e) { return false; }
+}
+// A Facebook EVENT (facebook.com/events/<id>) — specific to this event, unlike
+// a Facebook page/group.
+function isSpecificFacebookEvent(url) {
+  return /facebook\.com\/events\/\d/i.test(url || '');
+}
+
+// Best clickable URL for an event, ranked by how SPECIFIC it is to the event
+// (not just whichever field is non-empty): a specific event page, then a
+// specific Facebook event, then a generic listing event_url, then any facebook
+// url, then the source's barony/kingdom site.
 function bestLinkFor(ev) {
+  if (ev.event_url && !isGenericListing(ev.event_url)) return ev.event_url;
+  if (isSpecificFacebookEvent(ev.facebook_url)) return ev.facebook_url;
   return ev.event_url
       || ev.facebook_url
       || websiteForSource(ev.source);
