@@ -481,6 +481,85 @@ def promote_virtual_baronials(df, group_locations_path: Path) -> int:
     return n
 
 
+# ---------------------------------------------------------------------------
+# Structured-bits stripping (per-kingdom form/metadata leakage)
+# ---------------------------------------------------------------------------
+# Many kingdom calendars dump a fixed form/metadata block — gate-fee tables,
+# site hours, steward labels, calendar-widget button rows — into the event
+# description, so the map popup shows that junk instead of (or buried in) the
+# real write-up. A per-kingdom description audit found that for most of them the
+# genuine prose sits cleanly on one side of a stable marker. These rules cut at
+# that marker. Markers are intentionally specific so they don't fire on real
+# prose; they're applied only to the kingdom they were observed in.
+
+# Source -> markers; the real prose is BEFORE the first marker hit.
+_DESC_CUT_BEFORE = {
+    "Kingdom of Calontir":     ["Details Site Opens:"],
+    "Kingdom of Northshield":  ["Details Site Opens:"],
+    "Kingdom of the East":     ["Site Opens:"],
+    "Kingdom of Artemisia":    ["Site opens :", "Site opens:"],
+    "Kingdom of Avacal":       ["Adult Event Registration"],
+    "Kingdom of the Outlands": ["Event Website Event Steward Admission", "Gate: "],
+    "Kingdom of Ansteorra":    ["Event Website"],
+}
+# "Hosted by: <group> | <prose>" prefix stub (Drachenwald, calon fallback).
+_HOSTED_PREFIX_RE = re.compile(r"^\s*Hosted\s+by:?\s*[^|]*\|\s*", re.IGNORECASE)
+# A description that is ONLY "Hosted by <group>" — a leaked label, not prose
+# (Meridies, some AEthelmearc). No comma/pipe so a real sentence isn't caught.
+_HOSTED_ONLY_RE = re.compile(r"^\s*Hosted\s+by:?\s*[\w'’.&\- ]+$", re.IGNORECASE)
+# An Tir prefixes every description with a level classification sentence.
+_ANTIR_LEVEL_RE = re.compile(r"^\s*This is a Level [^.]*\.\s*", re.IGNORECASE)
+# A West recurring business-meeting description that is only a Zoom invite.
+_ZOOM_ONLY_RE = re.compile(r"is inviting you to a scheduled Zoom meeting", re.IGNORECASE)
+# Ealdormere ALL-CAPS section headers that start the metadata tail.
+_CAPS_HEADER_RE = re.compile(
+    r"\b(SCHEDULE|EVENT REGISTRATION|REGISTRATION INFORMATION|SITE INFORMATION|"
+    r"EVENT STEWARD|EVENT EMAIL|DIRECTIONS|A&S COMPETITION|MERCHANT INFORMATION):")
+
+
+def strip_structured_bits(desc: str, source: str) -> str:
+    """Remove leaked form/metadata blocks from a kingdom's event description,
+    keeping the genuine prose. Per-source rules from the description audit."""
+    if not isinstance(desc, str) or not desc.strip():
+        return ""
+    s = desc
+
+    if source == "Kingdom of An Tir":
+        s = _ANTIR_LEVEL_RE.sub("", s, count=1)
+
+    # Leading "Hosted by: X | " stub.
+    s = _HOSTED_PREFIX_RE.sub("", s, count=1)
+
+    # West: the real prose is the slice between two form labels.
+    if source == "Kingdom of the West":
+        if _ZOOM_ONLY_RE.search(s):
+            return ""
+        if "Further Event Information:" in s:
+            s = s.split("Further Event Information:", 1)[1].split("Site Name:", 1)[0]
+
+    # Ealdormere: cut at the first ALL-CAPS section header.
+    if source == "Kingdom of Ealdormere":
+        m = _CAPS_HEADER_RE.search(s)
+        if m:
+            s = s[:m.start()]
+
+    # Per-source trailing-block markers.
+    for marker in _DESC_CUT_BEFORE.get(source, ()):
+        idx = s.find(marker)
+        if idx != -1:
+            s = s[:idx]
+
+    s = re.sub(r"\s+", " ", s).strip()
+    # Drop a dangling separator left by a cut ("… event |" / "… -"), but keep
+    # sentence-ending punctuation like a final period.
+    s = re.sub(r"[\s|–—-]+$", "", s)
+
+    # A bare "Hosted by <group>" stub (after stripping) is not real prose.
+    if _HOSTED_ONLY_RE.match(s):
+        return ""
+    return s
+
+
 def clean_description(desc: str) -> tuple:
     """
     Clean a description field. Returns (cleaned_text, urls_dict) where
@@ -1501,6 +1580,21 @@ def main():
         if changed:
             print(f"  stripped 'Additional Notes on …' boilerplate from "
                   f"{changed} AEthelmearc descriptions")
+
+    # General structured-bits cleanup: per-kingdom form/metadata blocks that
+    # leaked into descriptions (gate-fee tables, site-hours, steward labels,
+    # "Hosted by:" stubs, calendar-widget rows). Rules per source, from the
+    # description audit. Runs on every row; sources without a rule are only
+    # whitespace-normalised.
+    _orig_desc = df["description"].astype(str)
+    df["description"] = df.apply(
+        lambda r: strip_structured_bits(r["description"], r["source"]), axis=1)
+    _trimmed = int((df["description"].str.len() < _orig_desc.str.len() - 5).sum())
+    _blanked = int(((_orig_desc.str.strip() != "") & (df["description"] == "")).sum())
+    if _trimmed or _blanked:
+        print(f"  stripped structured form/metadata bits: {_trimmed} trimmed, "
+              f"{_blanked} blanked")
+
     # Promote virtual baronial business meetings from kingdom feeds into the
     # baronial type, so the "Baronial" map filter governs them instead of the
     # "Kingdom" one (mostly aggregated West/Ealdormere baronies).
