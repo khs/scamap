@@ -83,6 +83,51 @@ HTTP_HEADERS = {
 }
 HTTP_TIMEOUT = 30
 
+# Some kingdom WAFs (Cloudflare and similar) return 403 to our honest
+# aggregator UA when the request originates from a datacenter IP — e.g. the
+# GitHub Actions runner — while letting a request that looks like a real
+# desktop browser through. Calontir (calon-json) and the Middle (mec-rest)
+# both do this: they answer 200 from a residential IP but 403 in CI. We keep
+# the honest UA as the default and only fall back to this browser fingerprint
+# on a block, so nothing changes for feeds that already work.
+BROWSER_HEADERS = {
+    "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                   "AppleWebKit/537.36 (KHTML, like Gecko) "
+                   "Chrome/126.0.0.0 Safari/537.36"),
+    "Accept": ("text/html,application/xhtml+xml,application/xml;q=0.9,"
+               "image/avif,image/webp,image/apng,*/*;q=0.8"),
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Upgrade-Insecure-Requests": "1",
+    "Connection": "keep-alive",
+}
+# Status codes that signal "WAF turned us away" (vs. a genuine 404/500). 503 is
+# Cloudflare's "under attack" interstitial; 429 is rate-limit throttling.
+_WAF_BLOCK_CODES = (403, 429, 503)
+
+
+def _http_get(url, *, session=None, **kwargs):
+    """GET `url` with our honest headers, retrying ONCE with a browser header
+    set if the response looks like a WAF block (see _WAF_BLOCK_CODES).
+
+    `kwargs` pass through to requests (params=, etc.); a default timeout is
+    supplied. Pass session= to reuse a connection pool. On a network error the
+    exception propagates, exactly as a bare requests.get would, so existing
+    try/except blocks keep working unchanged.
+    """
+    kwargs.setdefault("timeout", HTTP_TIMEOUT)
+    getter = (session or requests).get
+    resp = getter(url, headers=HTTP_HEADERS, **kwargs)
+    if resp.status_code in _WAF_BLOCK_CODES:
+        print(f"  NOTE: {resp.status_code} on {url[:60]} with honest UA — "
+              f"retrying as a browser")
+        resp = getter(url, headers=BROWSER_HEADERS, **kwargs)
+    return resp
+
 
 # ---------------------------------------------------------------------------
 # ICS emission helpers
@@ -113,10 +158,27 @@ def _fold(line: str) -> str:
 
 
 def _fmt_utc(dt: datetime) -> str:
-    """Format a datetime as a UTC ICS DATE-TIME value."""
+    """Format a datetime as a UTC ICS DATE-TIME value.
+
+    Builds the YYYYMMDD field by hand rather than via strftime("%Y…") because
+    glibc's strftime does NOT zero-pad years < 1000 ("26" instead of "0026"),
+    producing a malformed 6-digit ICS date that crashes downstream icalendar
+    parsing. (CPython on Windows happens to pad, which is why bad source dates
+    slip through locally but kill the whole feed in Linux CI.) Callers should
+    still reject implausible years; this only guarantees a well-formed token.
+    """
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    dt = dt.astimezone(timezone.utc)
+    return (f"{dt.year:04d}{dt.month:02d}{dt.day:02d}"
+            f"T{dt.hour:02d}{dt.minute:02d}{dt.second:02d}Z")
+
+
+def _plausible_year(dt: datetime) -> bool:
+    """True if `dt`'s year is in a sane SCA-calendar range. Out-of-range years
+    are almost always source typos (e.g. 0026 for 2026) and, left unguarded,
+    crash icalendar expansion and zero out the entire feed."""
+    return 1900 <= dt.year <= 2100
 
 
 def _emit_calendar(name: str, events: list[dict]) -> str:
@@ -131,6 +193,13 @@ def _emit_calendar(name: str, events: list[dict]) -> str:
         f"X-WR-CALNAME:{_ics_escape(name)}",
     ]
     for ev in events:
+        # Defense in depth: never emit an event with an implausible year. One
+        # bad DATE-TIME (e.g. a 0026 typo) otherwise crashes the whole feed's
+        # icalendar expansion downstream — better to drop the one event.
+        if not (_plausible_year(ev["start"]) and _plausible_year(ev["end"])):
+            print(f"  WARNING: {name}: skipping '{ev.get('summary','?')}' "
+                  f"with implausible date {ev['start']}..{ev['end']}")
+            continue
         lines.extend([
             "BEGIN:VEVENT",
             f"UID:{ev['uid']}",
@@ -357,10 +426,9 @@ def scrape_mec_rest(site_url: str, name: str) -> Optional[str]:
     page = 1
     while True:
         try:
-            r = requests.get(
+            r = _http_get(
                 list_url,
                 params={"per_page": 100, "page": page, "orderby": "date", "order": "asc"},
-                timeout=HTTP_TIMEOUT, headers=HTTP_HEADERS,
             )
             if r.status_code == 400:
                 break
@@ -386,7 +454,7 @@ def scrape_mec_rest(site_url: str, name: str) -> Optional[str]:
         if not event_url:
             continue
         try:
-            ep = requests.get(event_url, timeout=HTTP_TIMEOUT, headers=HTTP_HEADERS)
+            ep = _http_get(event_url)
             ep.raise_for_status()
         except requests.RequestException as exc:
             print(f"  WARNING: MEC event page failed {event_url}: {exc}")
@@ -474,7 +542,7 @@ def _load_calon_cache() -> dict:
 def _fetch_calon_overview(event_url: str, session: requests.Session) -> str:
     """Fetch a calon per-event page and pull the Overview text from #event_tab."""
     try:
-        r = session.get(event_url, timeout=HTTP_TIMEOUT, headers=HTTP_HEADERS)
+        r = _http_get(event_url, session=session)
         r.raise_for_status()
     except requests.RequestException as exc:
         print(f"  WARNING: calon page fetch failed {event_url}: {exc}")
@@ -494,7 +562,7 @@ def scrape_calon_json(url: str, name: str) -> Optional[str]:
     per-event URLs and to fetch the Overview description text.
     """
     try:
-        r = requests.get(url, timeout=HTTP_TIMEOUT, headers=HTTP_HEADERS)
+        r = _http_get(url)
         r.raise_for_status()
         records = r.json()
     except (requests.RequestException, ValueError) as exc:
@@ -515,6 +583,17 @@ def scrape_calon_json(url: str, name: str) -> Optional[str]:
             end   = datetime.fromisoformat(rec.get("end_date") or rec["start_date"])
         except (KeyError, ValueError):
             continue
+        # Guard against typo'd source years (Northshield's "The Catfish Ball"
+        # shipped end_date "0026-11-21" for 2026). A year < 1000 makes
+        # strftime("%Y") emit a short ICS date on glibc, which crashes the
+        # downstream icalendar expansion and silently zeroes the whole feed.
+        # Drop the event if the START is bogus; clamp a bogus END to the start.
+        if not (2000 <= start.year <= 2100):
+            print(f"  WARNING: calon {name}: dropping '{rec.get('event_name','?')}'"
+                  f" — implausible start_date {rec.get('start_date')!r}")
+            continue
+        if not (2000 <= end.year <= 2100) or end < start:
+            end = start
 
         addr_parts = [
             rec.get("event_site_name", ""),

@@ -14,6 +14,7 @@ Run:
 from __future__ import annotations
 
 import unittest
+from datetime import datetime, timezone
 from urllib.parse import urlencode
 
 import scrapers
@@ -104,6 +105,94 @@ class TestDrachenwaldJson(unittest.TestCase):
     def test_mixed_batch_counts(self):
         evs = self.events(self.REAL, self.BID, self.CANCELLED, self.ONLINE)
         self.assertEqual(len(evs), 2)   # REAL + ONLINE only
+
+
+class TestDateRobustness(unittest.TestCase):
+    """A single typo'd source year (e.g. Northshield's 'The Catfish Ball'
+    shipping end_date '0026-11-21') used to crash the whole feed: glibc's
+    strftime('%Y') doesn't zero-pad year 26, emitting a 6-digit ICS date that
+    icalendar refuses to parse. Lock in that we never emit such a date."""
+
+    def test_fmt_utc_zero_pads_short_years(self):
+        got = scrapers._fmt_utc(datetime(26, 11, 21, tzinfo=timezone.utc))
+        self.assertEqual(got, "00261121T000000Z")     # 8-digit year, well-formed
+        self.assertFalse(got.startswith("26"))         # NOT the 6-digit form
+
+    def test_fmt_utc_normal_year(self):
+        self.assertEqual(
+            scrapers._fmt_utc(datetime(2026, 7, 1, 9, 30, 0, tzinfo=timezone.utc)),
+            "20260701T093000Z")
+
+    def test_plausible_year_bounds(self):
+        self.assertTrue(scrapers._plausible_year(datetime(2026, 1, 1)))
+        self.assertFalse(scrapers._plausible_year(datetime(26, 1, 1)))
+        self.assertFalse(scrapers._plausible_year(datetime(3000, 1, 1)))
+
+    def test_emit_calendar_skips_implausible_event(self):
+        evs = [
+            {"uid": "a", "start": datetime(2026, 7, 1), "end": datetime(2026, 7, 2),
+             "summary": "Good", "location": "", "description": "", "url": ""},
+            {"uid": "b", "start": datetime(2026, 11, 21), "end": datetime(26, 11, 21),
+             "summary": "BadEnd", "location": "", "description": "", "url": ""},
+        ]
+        ics = scrapers._emit_calendar("Test", evs)
+        self.assertEqual(ics.count("BEGIN:VEVENT"), 1)   # bad event dropped
+        self.assertNotIn("261121T", ics)                 # no malformed date emitted
+        self.assertIn("Good", ics)
+        self.assertNotIn("BadEnd", ics)
+
+
+class _FakeResp:
+    def __init__(self, status_code):
+        self.status_code = status_code
+
+
+class _FakeGetter:
+    """Records each .get() call's headers and returns a scripted status code."""
+    def __init__(self, status_sequence):
+        self.statuses = list(status_sequence)
+        self.calls = []          # list of (url, headers)
+
+    def get(self, url, headers=None, **kwargs):
+        self.calls.append((url, headers))
+        return _FakeResp(self.statuses[len(self.calls) - 1])
+
+
+class TestWafFallback(unittest.TestCase):
+    """_http_get must keep our honest UA by default and only escalate to a
+    browser fingerprint when the WAF turns us away — the Calontir/Middle case
+    where a datacenter IP gets 403 but a browser-looking request gets through."""
+
+    def test_no_block_uses_honest_ua_once(self):
+        g = _FakeGetter([200])
+        scrapers._http_get("https://x.test/a", session=g)
+        self.assertEqual(len(g.calls), 1)
+        self.assertEqual(g.calls[0][1], scrapers.HTTP_HEADERS)
+
+    def test_403_retries_with_browser_headers(self):
+        g = _FakeGetter([403, 200])
+        resp = scrapers._http_get("https://x.test/a", session=g)
+        self.assertEqual(len(g.calls), 2)
+        self.assertEqual(g.calls[0][1], scrapers.HTTP_HEADERS)     # honest first
+        self.assertEqual(g.calls[1][1], scrapers.BROWSER_HEADERS)  # then browser
+        self.assertEqual(resp.status_code, 200)
+
+    def test_503_and_429_also_retry(self):
+        for code in (503, 429):
+            g = _FakeGetter([code, 200])
+            scrapers._http_get("https://x.test/a", session=g)
+            self.assertEqual(len(g.calls), 2, f"{code} should trigger one retry")
+
+    def test_does_not_retry_on_404(self):
+        g = _FakeGetter([404])
+        scrapers._http_get("https://x.test/a", session=g)
+        self.assertEqual(len(g.calls), 1)        # a real 404 isn't a WAF block
+
+    def test_passes_params_through(self):
+        g = _FakeGetter([200])
+        scrapers._http_get("https://x.test/a", session=g, params={"page": 2})
+        # params reach the getter (kwargs forwarded); call recorded once
+        self.assertEqual(len(g.calls), 1)
 
 
 if __name__ == "__main__":
