@@ -113,6 +113,22 @@ in the pipeline second-guesses a human correction.
 
 ---
 
+## What the pipeline checks for you
+
+You don't have to be perfect — bad input is caught, not silently mis-applied:
+
+- **Bad coordinates are ignored.** A `new_lat`/`new_lng` that isn't a number,
+  is out of range (lat must be −90…90, lng −180…180), or is only half filled
+  in (lat without lng) is rejected with a `WARNING` instead of dropping a pin
+  in the wrong place. If you also gave a `new_location`, that still applies.
+- **A row that changes nothing is skipped** with a warning (e.g. you filled in
+  the match fields but forgot the `new_*` fields).
+- **A row that matches no event** prints `Override matched nothing` — re-check
+  the URL or title.
+- **One broken row can't break the run** — it's logged and the rest still apply.
+
+Watch the run log for these `WARNING` lines after you push a change.
+
 ## Verifying & maintaining
 
 - **Check it applied:** after a refresh, the run log prints a line per override,

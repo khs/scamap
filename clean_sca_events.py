@@ -1229,6 +1229,21 @@ def _load_overrides() -> list[dict]:
     return out
 
 
+def _valid_override_coords(lat_s: str, lng_s: str):
+    """Return (lat_str, lng_str) if BOTH are present, numeric, and in valid
+    ranges (lat -90..90, lng -180..180); else None. A typo'd or half-filled
+    pin is rejected here rather than placed somewhere wrong on the map."""
+    if not (lat_s and lng_s):
+        return None
+    try:
+        lat, lng = float(lat_s), float(lng_s)
+    except ValueError:
+        return None
+    if not (-90.0 <= lat <= 90.0 and -180.0 <= lng <= 180.0):
+        return None
+    return (lat_s, lng_s)
+
+
 def _override_matches(ov: dict, row) -> bool:
     """True if override `ov` applies to event `row`. URL match wins outright;
     otherwise ALL of the provided source/title/date fields must match."""
@@ -1260,32 +1275,48 @@ def apply_event_overrides(df: pd.DataFrame) -> pd.DataFrame:
         return df
     applied = 0
     for ov in overrides:
-        mask = df.apply(lambda r: _override_matches(ov, r), axis=1)
-        n = int(mask.sum())
         label = (ov["note"] or ov["match_title"] or ov["match_event_url"]
                  or ov["match_source"])
-        if n == 0:
-            print(f"  Override matched nothing (check the match fields): {label}")
-            continue
-        new_loc, new_lat, new_lng = ov["new_location"], ov["new_lat"], ov["new_lng"]
-        for idx in df[mask].index:
-            if new_loc:
-                df.at[idx, "location"]           = new_loc
-                df.at[idx, "clean_location"]     = new_loc
-                df.at[idx, "address_confidence"] = "high"
-                if not (new_lat and new_lng):     # corrected address -> re-geocode
-                    df.at[idx, "lat"] = ""
-                    df.at[idx, "lng"] = ""
-                    df.at[idx, "geocode_status"] = ""
-            if new_lat and new_lng:               # exact pin -> skip the geocoder
-                df.at[idx, "lat"]            = new_lat
-                df.at[idx, "lng"]            = new_lng
-                df.at[idx, "geocode_status"] = "override"
-        applied += n
-        print(f"  Override applied to {n} event(s): {label}")
+        try:
+            new_loc = ov["new_location"]
+            lat_s, lng_s = ov["new_lat"], ov["new_lng"]
+            coords = _valid_override_coords(lat_s, lng_s)
+
+            # Sanity checks BEFORE matching, so the warning fires even if the
+            # match is wrong too.
+            if (lat_s or lng_s) and coords is None:
+                print(f"  WARNING: override '{label}' has invalid or incomplete "
+                      f"coordinates (lat={lat_s!r}, lng={lng_s!r}) — ignoring the pin")
+            if not new_loc and coords is None:
+                print(f"  WARNING: override '{label}' changes nothing "
+                      f"(no new_location, no valid pin) — skipping")
+                continue
+
+            mask = df.apply(lambda r: _override_matches(ov, r), axis=1)
+            n = int(mask.sum())
+            if n == 0:
+                print(f"  Override matched nothing (check the match fields): {label}")
+                continue
+
+            for idx in df[mask].index:
+                if new_loc:
+                    df.at[idx, "location"]           = new_loc
+                    df.at[idx, "clean_location"]     = new_loc
+                    df.at[idx, "address_confidence"] = "high"
+                    if coords is None:            # corrected address -> re-geocode
+                        df.at[idx, "lat"] = ""
+                        df.at[idx, "lng"] = ""
+                        df.at[idx, "geocode_status"] = ""
+                if coords is not None:            # exact pin -> skip the geocoder
+                    df.at[idx, "lat"]            = coords[0]
+                    df.at[idx, "lng"]            = coords[1]
+                    df.at[idx, "geocode_status"] = "override"
+            applied += n
+            print(f"  Override applied to {n} event(s): {label}")
+        except Exception as e:                    # one bad row can't break cleaning
+            print(f"  WARNING: override '{label}' failed to apply: {e}")
     if applied:
-        print(f"  Applied {len(overrides)} override row(s), {applied} event(s) "
-              f"changed.")
+        print(f"  Applied {applied} event change(s) from {OVERRIDES_FILE.name}.")
     return df
 
 

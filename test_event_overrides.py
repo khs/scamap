@@ -140,6 +140,66 @@ class TestApplyOverrides(unittest.TestCase):
         self.assertEqual(len(out), 1)
         self.assertEqual(out.iloc[0]["title"], "X")
 
+    # -- sanity / safety of bad input ------------------------------------
+    def _target(self):
+        return pd.DataFrame([_row(event_url="https://x.org/e/1",
+                                  clean_location="vague", lat="5.5", lng="6.6",
+                                  geocode_status="ok")])
+
+    def test_non_numeric_coords_ignored(self):
+        self._write("https://x.org/e/1,,,,,not-a-number,also-bad,typo\n")
+        r = clean.apply_event_overrides(self._target()).iloc[0]
+        self.assertEqual((r["lat"], r["lng"], r["geocode_status"]),
+                         ("5.5", "6.6", "ok"))            # garbage pin not placed
+
+    def test_out_of_range_coords_ignored(self):
+        self._write("https://x.org/e/1,,,,,418.8,-87.63,lat out of range\n")
+        r = clean.apply_event_overrides(self._target()).iloc[0]
+        self.assertEqual((r["lat"], r["lng"]), ("5.5", "6.6"))
+
+    def test_half_filled_coords_ignored(self):
+        self._write("https://x.org/e/1,,,,,41.88,,lat only no lng\n")
+        r = clean.apply_event_overrides(self._target()).iloc[0]
+        self.assertEqual((r["lat"], r["lng"], r["geocode_status"]),
+                         ("5.5", "6.6", "ok"))
+
+    def test_override_with_no_change_is_skipped(self):
+        self._write("https://x.org/e/1,,,,,,,just a note, no change\n")
+        r = clean.apply_event_overrides(self._target()).iloc[0]
+        self.assertEqual((r["lat"], r["lng"], r["geocode_status"]),
+                         ("5.5", "6.6", "ok"))
+
+    def test_bad_pin_but_location_still_applies(self):
+        # A bad pin must not block a valid location correction; the location is
+        # taken and the event is re-geocoded (coords cleared).
+        self._write('https://x.org/e/1,,,,"Real City, PA",badlat,badlng,loc good pin bad\n')
+        r = clean.apply_event_overrides(self._target()).iloc[0]
+        self.assertEqual(r["clean_location"], "Real City, PA")
+        self.assertEqual((r["lat"], r["lng"], r["geocode_status"]), ("", "", ""))
+
+    def test_valid_coord_bounds_helper(self):
+        self.assertIsNotNone(clean._valid_override_coords("89.9", "-179.9"))
+        self.assertIsNone(clean._valid_override_coords("90.1", "0"))     # lat too big
+        self.assertIsNone(clean._valid_override_coords("0", "181"))      # lng too big
+        self.assertIsNone(clean._valid_override_coords("x", "y"))        # non-numeric
+        self.assertIsNone(clean._valid_override_coords("12.3", ""))      # incomplete
+
+
+class TestCommittedOverridesFile(unittest.TestCase):
+    """Guards on the real, committed event_overrides.csv so it can't drift from
+    the code or ship an accidentally-live override."""
+
+    def test_header_matches_code_columns(self):
+        import csv as _csv
+        with open(clean.OVERRIDES_FILE, encoding="utf-8", newline="") as f:
+            header = next(_csv.reader(f))
+        self.assertEqual(header, clean.OVERRIDE_COLUMNS)
+
+    def test_no_active_overrides_committed(self):
+        # Every example in the shipped file must stay commented out, so a fresh
+        # checkout applies zero corrections until a human adds a real one.
+        self.assertEqual(clean._load_overrides(), [])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
