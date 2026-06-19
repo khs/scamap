@@ -183,17 +183,38 @@ class _FakeGetter:
 
 
 class TestWafFallback(unittest.TestCase):
-    """_http_get must keep our honest UA by default and only escalate to a
-    browser fingerprint when the WAF turns us away — the Calontir/Middle case
-    where a datacenter IP gets 403 but a browser-looking request gets through."""
+    """_http_get keeps our honest UA by default and escalates on a WAF block:
+    first a Chrome TLS fingerprint via curl_cffi, then plain browser headers if
+    curl_cffi is unavailable. The Calontir/Middle case. We stub _curl_cffi_get
+    so these stay offline."""
+
+    def setUp(self):
+        self._real_cffi = scrapers._curl_cffi_get
+
+    def tearDown(self):
+        scrapers._curl_cffi_get = self._real_cffi
+
+    def _stub_cffi(self, return_value):
+        scrapers._curl_cffi_get = lambda url, **kw: return_value
 
     def test_no_block_uses_honest_ua_once(self):
+        self._stub_cffi(None)
         g = _FakeGetter([200])
         scrapers._http_get("https://x.test/a", session=g)
         self.assertEqual(len(g.calls), 1)
         self.assertEqual(g.calls[0][1], scrapers.HTTP_HEADERS)
 
-    def test_403_retries_with_browser_headers(self):
+    def test_403_uses_curl_cffi_when_it_succeeds(self):
+        # curl_cffi defeats the WAF -> its response is returned, no 2nd getter call.
+        self._stub_cffi(_FakeResp(200))
+        g = _FakeGetter([403])
+        resp = scrapers._http_get("https://x.test/a", session=g)
+        self.assertEqual(len(g.calls), 1)                 # only the honest attempt
+        self.assertEqual(g.calls[0][1], scrapers.HTTP_HEADERS)
+        self.assertEqual(resp.status_code, 200)           # the curl_cffi response
+
+    def test_403_falls_back_to_browser_headers_without_curl_cffi(self):
+        self._stub_cffi(None)                             # curl_cffi unavailable
         g = _FakeGetter([403, 200])
         resp = scrapers._http_get("https://x.test/a", session=g)
         self.assertEqual(len(g.calls), 2)
@@ -201,21 +222,23 @@ class TestWafFallback(unittest.TestCase):
         self.assertEqual(g.calls[1][1], scrapers.BROWSER_HEADERS)  # then browser
         self.assertEqual(resp.status_code, 200)
 
-    def test_503_and_429_also_retry(self):
+    def test_503_and_429_also_escalate(self):
+        self._stub_cffi(None)
         for code in (503, 429):
             g = _FakeGetter([code, 200])
             scrapers._http_get("https://x.test/a", session=g)
             self.assertEqual(len(g.calls), 2, f"{code} should trigger one retry")
 
     def test_does_not_retry_on_404(self):
+        self._stub_cffi(_FakeResp(200))
         g = _FakeGetter([404])
         scrapers._http_get("https://x.test/a", session=g)
         self.assertEqual(len(g.calls), 1)        # a real 404 isn't a WAF block
 
     def test_passes_params_through(self):
+        self._stub_cffi(None)
         g = _FakeGetter([200])
         scrapers._http_get("https://x.test/a", session=g, params={"page": 2})
-        # params reach the getter (kwargs forwarded); call recorded once
         self.assertEqual(len(g.calls), 1)
 
 

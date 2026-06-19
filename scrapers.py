@@ -110,22 +110,48 @@ BROWSER_HEADERS = {
 _WAF_BLOCK_CODES = (403, 429, 503)
 
 
-def _http_get(url, *, session=None, **kwargs):
-    """GET `url` with our honest headers, retrying ONCE with a browser header
-    set if the response looks like a WAF block (see _WAF_BLOCK_CODES).
+def _curl_cffi_get(url, **kwargs):
+    """Fetch with a real Chrome TLS/JA3 fingerprint via curl_cffi.
 
-    `kwargs` pass through to requests (params=, etc.); a default timeout is
-    supplied. Pass session= to reuse a connection pool. On a network error the
-    exception propagates, exactly as a bare requests.get would, so existing
-    try/except blocks keep working unchanged.
+    Some kingdom WAFs (Calontir, the Middle) 403 us even with a full browser
+    header set, because they fingerprint the TLS handshake and recognise
+    python-requests/urllib3 from a datacenter IP. curl_cffi mimics Chrome's
+    actual TLS signature, which plain headers can't. Returns None if curl_cffi
+    isn't installed (so the caller falls back to a header-only retry) or if the
+    impersonated fetch itself errors.
+    """
+    try:
+        from curl_cffi import requests as cffi
+    except ImportError:
+        return None
+    kwargs.pop("headers", None)        # impersonate sets browser-consistent headers
+    try:
+        return cffi.get(url, impersonate="chrome", **kwargs)
+    except Exception as exc:           # noqa: BLE001 — best-effort fallback
+        print(f"  WARNING: curl_cffi fetch failed for {url[:60]}: {exc}")
+        return None
+
+
+def _http_get(url, *, session=None, **kwargs):
+    """GET `url` with our honest headers, escalating on a WAF block.
+
+    Order: honest aggregator UA → (on 403/429/503) a Chrome TLS fingerprint via
+    curl_cffi → if curl_cffi is unavailable, a plain browser header set as a
+    last resort. `kwargs` pass through (params=, etc.); a default timeout is
+    supplied. Pass session= to reuse a connection pool on the first attempt. On
+    a network error the exception propagates, exactly as a bare requests.get
+    would, so existing try/except blocks keep working unchanged.
     """
     kwargs.setdefault("timeout", HTTP_TIMEOUT)
     getter = (session or requests).get
     resp = getter(url, headers=HTTP_HEADERS, **kwargs)
     if resp.status_code in _WAF_BLOCK_CODES:
-        print(f"  NOTE: {resp.status_code} on {url[:60]} with honest UA — "
-              f"retrying as a browser")
-        resp = getter(url, headers=BROWSER_HEADERS, **kwargs)
+        print(f"  NOTE: {resp.status_code} on {url[:60]} — retrying with a "
+              f"browser TLS fingerprint")
+        cffi_resp = _curl_cffi_get(url, **kwargs)
+        if cffi_resp is not None:
+            return cffi_resp
+        resp = getter(url, headers=BROWSER_HEADERS, **kwargs)   # last resort
     return resp
 
 
