@@ -9,26 +9,24 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 
-  <!-- Fonts: MedievalSharp for headers, EB Garamond for body -->
+  <!-- Fonts: Cormorant Unicase for headers/nav, EB Garamond for body -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=CormorantUnicase&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=CormorantUnicase:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Unicase:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
 
   <style>
     /* ── Design tokens ─────────────────────────────────────────── */
-    /* Ignore names that suggest crimson and gold; they're from a previous colour scheme*/
     :root {
-      --crimson:     #1b485e;   /* royal blue — primary */
-      --crimson-dk:  #1b485e;   /* deep navy   — primary darker */
-      --gold:        #609cb9;   /* sky blue   — accent */
-      --gold-lt:     #bfdbfe;   /* very light blue — accent on dark bg */
-      --parchment:   #eee4d3;   /* off-white  — page background */
-      --parchment-dk:#e2e8f0;   /* light blue-grey — borders, hover bg */
-      --ink:         #0f172a;   /* near-black slate — body text */
-      --ink-lt:      #334155;   /* mid slate — secondary text */
-      --shadow:      rgba(15, 23, 42, 0.28);
-      --nav-h:       52px;
-      --sidebar-w:   300px;
+      --blue:          #1b485e;   /* primary blue */
+      --blue-dark:     #1b485e;   /* primary blue, darker shade */
+      --sky-blue:      #609cb9;   /* accent */
+      --light-blue:    #bfdbfe;   /* very light blue — accent on dark bg */
+      --parchment:     #eee4d3;   /* off-white — page background */
+      --border-grey:   #e2e8f0;   /* light blue-grey — borders, hover bg */
+      --ink:           #0f172a;   /* near-black slate — body text */
+      --ink-lt:        #334155;   /* mid slate — secondary text */
+      --nav-h:         52px;
+      --sidebar-w:     300px;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -39,8 +37,7 @@
       color: var(--ink);
       min-height: 100vh;
       background-image:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E"),
-        ;
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
     }
 
     /* ── Header ────────────────────────────────────────────────── */
@@ -48,26 +45,18 @@
       text-align: center;
       padding: 1rem 1rem 0.8rem;
     }
-    header::after {
-      content: '';
-      display: block;
-      height: 3px;
-      background: var(--crimson);
-      margin: 0.6rem auto 0;
-      max-width: 700px;
-    }
 
     .site-title {
-      font-family: 'MedievalSharp', 'EB Garamond', serif;
+      font-family: 'Cormorant Unicase', serif;
       font-size: clamp(2rem, 5.5vw, 3.8rem);
-      color: var(--crimson-dk);
+      color: var(--blue-dark);
       letter-spacing: 0.03em;
-      line-height: 1.15;;
+      line-height: 1.15;
     }
 
     /* ── Navigation ────────────────────────────────────────────── */
     nav {
-      background: var(--crimson);
+      background: var(--blue);
       position: sticky;
       top: 0;
       z-index: 1000;
@@ -85,7 +74,7 @@
       font-family: 'Cormorant Unicase', serif;
       font-size: 0.78rem;
       letter-spacing: 0.12em;
-      color: var(--gold-lt);
+      color: var(--light-blue);
       text-decoration: none;
       padding: 0 1.6rem;
       display: flex;
@@ -113,15 +102,15 @@
       font-family: 'EB Garamond', Georgia, serif;
       font-size: 1.05rem;
       padding: 0.5rem 1rem;
-      border: 2px solid var(--gold);
+      border: 2px solid var(--sky-blue);
       border-radius: 3px;
       background: #ffffff;
       color: var(--ink);
       outline: none;
-      transition: border-color 0.2s;;
+      transition: border-color 0.2s;
     }
     .search-input:focus {
-      border-color: var(--crimson);
+      border-color: var(--blue);
     }
     .search-input::placeholder { color: #94a3b8; font-style: italic; }
 
@@ -156,13 +145,13 @@
       font-family: 'EB Garamond', Georgia, serif;
       font-size: 0.9rem;
       padding: 0.3rem 0.5rem;
-      border: 1.5px solid var(--gold);
+      border: 1.5px solid var(--sky-blue);
       border-radius: 6px;
       background: rgba(255,253,247,0.85);
       color: var(--ink);
     }
     .date-label input[type="date"]:focus {
-      border-color: var(--crimson);
+      border-color: var(--blue);
       outline: none;
     }
     .date-reset {
@@ -176,7 +165,7 @@
       padding: 0.28rem 0.65rem;
       cursor: pointer;
     }
-    .date-reset:hover { color: var(--crimson); border-color: var(--crimson); }
+    .date-reset:hover { color: var(--blue); border-color: var(--blue); }
     .check-label {
       display: flex;
       align-items: center;
@@ -190,7 +179,7 @@
     }
     .check-label input[type="checkbox"] {
       width: 15px; height: 15px;
-      accent-color: var(--crimson);
+      accent-color: var(--blue);
       cursor: pointer;
     }
     .dot {
@@ -205,7 +194,7 @@
     .map-area {
       display: flex;
       gap: 0;
-      border: 3px solid var(--gold);
+      border: 3px solid var(--sky-blue);
       border-radius: 4px;
       overflow: hidden;
       margin-bottom: 2rem;
@@ -222,15 +211,15 @@
       width: var(--sidebar-w);
       flex-shrink: 0;
       background: #ffffff;
-      border-left: 2px solid var(--gold);
+      border-left: 2px solid var(--sky-blue);
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
 
     .sidebar-header {
-      background: var(--crimson);
-      color: var(--gold-lt);
+      background: var(--blue);
+      color: var(--light-blue);
       font-family: 'Cormorant Unicase', serif;
       font-size: 0.72rem;
       letter-spacing: 0.15em;
@@ -251,7 +240,7 @@
       align-items: center;
       gap: 0.4rem;
       padding: 0.45rem 0.9rem;
-      border-bottom: 1px solid var(--parchment-dk);
+      border-bottom: 1px solid var(--border-grey);
       font-family: 'Cormorant Unicase', serif;
       font-size: 0.67rem;
       letter-spacing: 0.08em;
@@ -260,12 +249,12 @@
       flex-shrink: 0;
       cursor: pointer;
     }
-    .virtual-toggle input { accent-color: var(--crimson); cursor: pointer; }
+    .virtual-toggle input { accent-color: var(--blue); cursor: pointer; }
 
     /* Sidebar mode tabs: "Map Events" (default) vs "Online Only" */
     .sidebar-tabs {
       display: flex;
-      border-bottom: 1px solid var(--parchment-dk);
+      border-bottom: 1px solid var(--border-grey);
       background: #eff6ff;
       flex-shrink: 0;
     }
@@ -273,7 +262,7 @@
       flex: 1;
       background: transparent;
       border: none;
-      border-right: 1px solid var(--parchment-dk);
+      border-right: 1px solid var(--border-grey);
       padding: 0.55rem 0.4rem;
       font-family: 'Cormorant Unicase', serif;
       font-size: 0.68rem;
@@ -285,8 +274,8 @@
     .sidebar-tab:last-child { border-right: none; }
     .sidebar-tab:hover { background: rgba(59,130,246,0.10); }
     .sidebar-tab.active {
-      background: var(--crimson);
-      color: var(--gold-lt);
+      background: var(--blue);
+      color: var(--light-blue);
     }
     /* The virtual-show toggle only makes sense in "map" mode */
     .sidebar.mode-online .virtual-toggle { display: none; }
@@ -298,11 +287,11 @@
     }
 
     .sidebar-list::-webkit-scrollbar { width: 6px; }
-    .sidebar-list::-webkit-scrollbar-thumb { background: var(--parchment-dk); border-radius: 3px; }
+    .sidebar-list::-webkit-scrollbar-thumb { background: var(--border-grey); border-radius: 3px; }
 
     .event-item {
       padding: 0.65rem 0.9rem;
-      border-bottom: 1px solid var(--parchment-dk);
+      border-bottom: 1px solid var(--border-grey);
       cursor: pointer;
       transition: background 0.15s;
       position: relative;
@@ -310,7 +299,7 @@
     .event-item:hover { background: #dbeafe; }
     .event-item:focus-visible { background: #dbeafe; outline: 2px solid var(--ink); outline-offset: -2px; }
     /* Inline detail for Online-list items: hidden until the item is clicked. */
-    .event-item-detail { display: none; margin-top: 0.55rem; padding-top: 0.5rem; border-top: 1px dashed var(--parchment-dk); }
+    .event-item-detail { display: none; margin-top: 0.55rem; padding-top: 0.5rem; border-top: 1px dashed var(--border-grey); }
     .event-item.expanded .event-item-detail { display: block; }
     .event-item-detail .ei-when { font-weight: 600; color: var(--ink); font-size: 0.82rem; margin-bottom: 0.35rem; }
     .event-item-detail .ei-desc { font-size: 0.8rem; color: #555; line-height: 1.35; margin-bottom: 0.5rem; }
@@ -329,7 +318,7 @@
 
     .event-item-date {
       font-size: 0.75rem;
-      color: var(--crimson);
+      color: var(--blue);
       font-family: 'Cormorant Unicase', serif;
       letter-spacing: 0.04em;
       margin-bottom: 0.15rem;
@@ -346,8 +335,8 @@
       border-bottom: 1px dotted currentColor;
     }
     .event-item-source-link:hover {
-      color: var(--crimson);
-      border-bottom-color: var(--crimson);
+      color: var(--blue);
+      border-bottom-color: var(--blue);
     }
 
     .event-item-dot {
@@ -409,7 +398,7 @@
     }
     .kingdom-overlay-toggle input[type="checkbox"] {
       width: 15px; height: 15px;
-      accent-color: var(--crimson);
+      accent-color: var(--blue);
       cursor: pointer;
     }
 
@@ -418,7 +407,7 @@
     .event-popup h3 {
       font-family: 'Cormorant Unicase', serif;
       font-size: 0.9rem;
-      color: var(--crimson-dk);
+      color: var(--blue-dark);
       margin-bottom: 0.35rem;
       line-height: 1.3;
     }
@@ -432,14 +421,14 @@
       border-radius: 2px;
       margin-bottom: 0.45rem;
       background: #dbeafe;
-      color: var(--crimson-dk);
-      border: 1px solid var(--crimson);
+      color: var(--blue-dark);
+      border: 1px solid var(--blue);
       text-decoration: none;
     }
     a.event-popup .source-pill,
     .event-popup a.source-pill { cursor: pointer; }
     .event-popup a.source-pill:hover {
-      background: var(--crimson);
+      background: var(--blue);
       color: #fff;
     }
     .event-popup .desc {
@@ -450,7 +439,7 @@
       overflow-y: auto;
     }
     .event-popup .desc a {
-      color: var(--crimson-dk);
+      color: var(--blue-dark);
       text-decoration: underline;
     }
     .event-popup .links {
@@ -466,13 +455,13 @@
       letter-spacing: 0.06em;
       padding: 0.2rem 0.5rem;
       border-radius: 2px;
-      background: var(--gold-lt);
+      background: var(--light-blue);
       color: var(--ink);
-      border: 1px solid var(--gold);
+      border: 1px solid var(--sky-blue);
       text-decoration: none;
     }
     .event-popup .links a:hover {
-      background: var(--gold);
+      background: var(--sky-blue);
       color: #fff;
     }
     .event-popup .loc {
@@ -487,7 +476,7 @@
     .prose-section h2 {
       font-family: 'Cormorant Unicase', serif;
       font-size: 1.2rem;
-      color: var(--crimson-dk);
+      color: var(--blue-dark);
       letter-spacing: 0.08em;
       margin-bottom: 0.9rem;
       padding-bottom: 0.4rem;
@@ -504,7 +493,7 @@
     @media (max-width: 700px) {
       .map-area { flex-direction: column; height: auto; }
       #map { height: 380px; }
-      .sidebar { width: 100%; border-left: none; border-top: 2px solid var(--gold); height: 260px; }
+      .sidebar { width: 100%; border-left: none; border-top: 2px solid var(--sky-blue); height: 260px; }
       nav a { padding: 0 0.8rem; font-size: 0.68rem; }
     }
   </style>
@@ -578,8 +567,6 @@
       </div>
     </aside>
   </div>
-
-  <div class="ornament" aria-hidden="true">✦ ✦ ✦</div>
 
   <section class="prose-section">
     <h2>About This Map</h2>
@@ -1788,3 +1775,4 @@ document.getElementById('chk-overlay').addEventListener('change', async (e) => {
 </script>
 </body>
 </html>
+
