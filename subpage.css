@@ -116,6 +116,15 @@ article h2 {
   margin-bottom: 0.6rem;
 }
 
+article h3 {
+  font-family: 'Cinzel', serif;
+  font-size: 1.02rem;
+  letter-spacing: 0.03em;
+  color: var(--ink);
+  margin-top: 1.4rem;
+  margin-bottom: 0.4rem;
+}
+
 article p {
   font-size: 1.05rem;
   line-height: 1.65;
