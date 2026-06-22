@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Find an SCA Event</title>
+  <title>SCA EventScout</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
@@ -16,14 +16,13 @@
 
   <style>
     /* ── Design tokens ─────────────────────────────────────────── */
-    /* Blue + white palette. Variable names kept (--crimson, --gold,
-       --parchment) for diff-friendliness; values are now blue/white. */
+    /* Ignore names that suggest crimson and gold; they're from a previous colour scheme*/
     :root {
-      --crimson:     #1e3a8a;   /* royal blue — primary */
-      --crimson-dk:  #0c1e5c;   /* deep navy   — primary darker */
+      --crimson:     #1b485e;   /* royal blue — primary */
+      --crimson-dk:  #1b485e;   /* deep navy   — primary darker */
       --gold:        #3b82f6;   /* sky blue   — accent */
       --gold-lt:     #bfdbfe;   /* very light blue — accent on dark bg */
-      --parchment:   #f8fafc;   /* off-white  — page background */
+      --parchment:   #eee4d3;   /* off-white  — page background */
       --parchment-dk:#e2e8f0;   /* light blue-grey — borders, hover bg */
       --ink:         #0f172a;   /* near-black slate — body text */
       --ink-lt:      #334155;   /* mid slate — secondary text */
@@ -41,19 +40,19 @@
       min-height: 100vh;
       background-image:
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E"),
-        linear-gradient(160deg, #ffffff 0%, #dbeafe 50%, #f8fafc 100%);
+        ;
     }
 
     /* ── Header ────────────────────────────────────────────────── */
     header {
       text-align: center;
-      padding: 2rem 1rem 0.8rem;
+      padding: 1rem 1rem 0.8rem;
     }
     header::after {
       content: '';
       display: block;
       height: 3px;
-      background: linear-gradient(90deg, transparent, var(--gold), var(--crimson), var(--gold), transparent);
+      background: var(--crimson);
       margin: 0.6rem auto 0;
       max-width: 700px;
     }
