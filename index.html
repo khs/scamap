@@ -1323,10 +1323,12 @@ function buildOnlineByGroup() {
     if (!best) return;
     if (!grouped.has(best.group)) grouped.set(best.group, new Map());
     const byMeeting = grouped.get(best.group);
-    // Collapse the same recurring meeting listed under varied title spellings
-    // (e.g. three "Silver Desert Business Meeting" wordings): its Zoom link is
-    // the stable identity; fall back to a normalized title when there's no link.
-    const mkey = ev.event_url || normName(ev.title);
+    // Collapse a recurring meeting's many occurrences into a single row. The
+    // calendar gives each occurrence its own event_url (…-13, …-14, …), so the
+    // URL is NOT a stable identity — the title is. Key on the normalised title,
+    // falling back to the URL only if a title is somehow missing. (Keying on
+    // event_url left Winter's Gate showing 48 rows = one 3000px-tall popup.)
+    const mkey = normName(ev.title) || ev.event_url;
     if (!byMeeting.has(mkey)) byMeeting.set(mkey, []);
     byMeeting.get(mkey).push(ev);
   });
@@ -1498,7 +1500,7 @@ function applyFilters() {
     const [plotLat, plotLng] = spiralOffset(lat, lng);
     const color = eventColor(ev);
     const marker = L.marker([plotLat, plotLng], { icon: makeIcon(color) });
-    marker.bindPopup(buildPopup(ev), { maxWidth: 320 });
+    marker.bindPopup(buildPopup(ev), { maxWidth: 320, maxHeight: 280 });
     markerLayer.addLayer(marker);
     markerMap[ev._idx] = marker;
   });
@@ -1577,7 +1579,7 @@ function applyFilters() {
         icon: placeholderIconWithBadge(online.length),
         opacity: online.length ? 1 : 0.9,
       });
-      marker.bindPopup(buildPlaceholderPopup(pin, online), { maxWidth: 320 });
+      marker.bindPopup(buildPlaceholderPopup(pin, online), { maxWidth: 320, maxHeight: 280 });
       placeholderLayer.addLayer(marker);
     });
   }
