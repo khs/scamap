@@ -531,6 +531,10 @@
       <span class="dot" style="background:#2255aa"></span>
       Baronial (Practices)
     </label>
+    <label class="check-label">
+      <input type="checkbox" id="chk-aggregate" />
+      Aggregate events
+    </label>
     <label class="check-label kingdom-overlay-toggle">
       <input type="checkbox" id="chk-overlay" />
       Color states by kingdom
@@ -1150,7 +1154,7 @@ function buildPopup(ev) {
 
 // ── State ─────────────────────────────────────────────────────────
 let allEvents   = [];
-let groupPins   = [];   // placeholder pins from group_pins.csv (set after load)
+let groupPins   = [];   // placeholder pins from locals.csv (set after load)
 let sourceWebsite = {}; // { "Barony of Carolingia": "https://carolingia.eastkingdom.org" }
 let markerMap   = {};   // index → Leaflet marker
 // Cluster markers ONLY when they're at essentially the same location — the
@@ -1166,7 +1170,15 @@ function clusterRadiusPx(zoom) {
 }
 const CLUSTER_OPTS = { chunkedLoading: true, showCoverageOnHover: false,
                        maxClusterRadius: clusterRadiusPx };
-const markerLayer = L.markerClusterGroup(CLUSTER_OPTS).addTo(map);
+// Events: clustering is user-toggleable via the "Aggregate events" checkbox.
+// When it's off (the default), maxClusterRadius is 0 so every event renders as
+// its own pin (the spiral-offset below keeps co-located ones individually
+// clickable); when on, events collapse into the usual numbered cluster bubbles.
+function eventClusterRadius(zoom) {
+  return document.getElementById('chk-aggregate').checked ? clusterRadiusPx(zoom) : 0;
+}
+const markerLayer = L.markerClusterGroup(
+  { ...CLUSTER_OPTS, maxClusterRadius: eventClusterRadius }).addTo(map);
 const placeholderLayer = L.markerClusterGroup(CLUSTER_OPTS).addTo(map);
 
 // Some calendar feeds annotate the source name with a parenthesised tag,
@@ -1444,12 +1456,17 @@ function applyFilters() {
     ];
   }
 
-  filtered.forEach(ev => {
+  filtered.forEach((ev, i) => {
     const lat = parseFloat(ev.lat), lng = parseFloat(ev.lng);
     if (isNaN(lat) || isNaN(lng)) return;
     const [plotLat, plotLng] = spiralOffset(lat, lng);
     const color = eventColor(ev);
-    const marker = L.marker([plotLat, plotLng], { icon: makeIcon(color) });
+    const marker = L.marker([plotLat, plotLng], {
+      icon: makeIcon(color),
+      // filtered is sorted soonest-first, so give the soonest event the highest
+      // z-index — it stays on top when pins overlap (esp. with aggregation off).
+      zIndexOffset: filtered.length - i,
+    });
     marker.bindPopup(buildPopup(ev), { maxWidth: 320, maxHeight: 280 });
     markerLayer.addLayer(marker);
     markerMap[ev._idx] = marker;
@@ -1684,7 +1701,9 @@ fetch('sca_events_clean.csv')
   .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
   .then(text => {
     allEvents = parseCSV(text);
-    return fetch('group_pins.csv').then(
+    // Placeholder "?" pins + the source→website lookup come from locals.csv
+    // (the local-group registry; lat/lng are hand-maintained there now).
+    return fetch('locals.csv').then(
       r => r.ok ? r.text() : '',
       () => '',   // network error: treat as missing file
     );
@@ -1736,6 +1755,7 @@ document.getElementById('date-reset').addEventListener('click', () => {
 
 document.getElementById('chk-kingdom').addEventListener('change', applyFilters);
 document.getElementById('chk-baronial').addEventListener('change', applyFilters);
+document.getElementById('chk-aggregate').addEventListener('change', applyFilters);
 document.getElementById('chk-virtual').addEventListener('change', applyFilters);
 
 // Sidebar mode tabs: clicking "Online Only" filters to virtual events only,

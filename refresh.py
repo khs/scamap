@@ -29,10 +29,9 @@ STEPS = [
     # only new events fetch. Runs before geocoding, which preserves the column.
     ("Enriching placeholder event descriptions",         "enrich_descriptions.py"),
     ("Geocoding new addresses",                          "geocode_sca_events.py"),
-    # Group-level placeholder pins (so baronies without events still show on
-    # the map with a "visit their website" link). Cached; only geocodes new
-    # or relocated groups. Safe to skip if group_locations.csv is missing.
-    ("Building group placeholder pins",                  "build_group_pins.py"),
+    # NOTE: group placeholder-pin locations now live in locals.csv (the lat/lng
+    # columns), hand-maintained rather than geocoded, so build_group_pins.py is
+    # no longer part of the pipeline.
 ]
 
 
