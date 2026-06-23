@@ -1041,8 +1041,11 @@ def preferred_source(group: pd.DataFrame) -> pd.Series:
 
 def deduplicate(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Remove duplicate events (same start date + same clean_location).
-    Keeps the most geographically appropriate, non-OOK source.
+    Remove duplicate events (same start date + same clean_location + same
+    calendar_type). Keeping calendar_type in the key means a baronial practice
+    is never deduplicated away by a kingdom event that happens to share its
+    date and venue — the two are kept as separate markers. Within one type,
+    keeps the most geographically appropriate, non-OOK source.
     """
     # format="mixed" is required: the column mixes "YYYY-MM-DD" and
     # "YYYY-MM-DD HH:MM:SS" values, and pandas 2.x silently returns NaT
@@ -1056,7 +1059,7 @@ def deduplicate(df: pd.DataFrame) -> pd.DataFrame:
     df_no_loc   = df[~has_loc].copy()
 
     kept_rows = []
-    for _, group in df_with_loc.groupby(["_start_date", "_loc_key"]):
+    for _, group in df_with_loc.groupby(["_start_date", "_loc_key", "calendar_type"]):
         kept_rows.append(preferred_source(group))
 
     if kept_rows:

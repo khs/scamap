@@ -608,7 +608,7 @@ const KINGDOM_COLORS = {
   "Kingdom of An Tir":          "#e8e0b0",   // pale yellow
   "Kingdom of Ealdormere":      "#f0a6c6",   // pale pink
   "Kingdom of Caid":            "#2e2d7a",   // dark purplish blue
-  "Kingdom of Lochac":          "#d8d8d8",   // white/silver
+  "Kingdom of Lochac":          "#b57edc",   // lavender
   "Kingdom of Drachenwald":     "#c87070",   // pale red
   // Sub-principalities — given their own tints so the overlay shows them
   // distinctly inside their parent kingdom's territory.
@@ -645,10 +645,18 @@ function desaturate(hex) {
 // barony/shire/… → kingdom, built from locals.csv after it loads (see below).
 let groupKingdom = {};
 
+// Kingdoms whose marker colour is black/grey don't desaturate usefully, so
+// their baronies get an explicit shade instead of desaturate().
+const BARONY_COLOR_OVERRIDE = {
+  "Kingdom of Northshield": "#595959",   // dark grey (kingdom events are black)
+  "Kingdom of Meridies":    "#c2c2c2",   // paler grey (kingdom events are mid grey)
+};
+
 function eventColor(ev) {
   if (ev.is_virtual === 'True') return VIRTUAL_COLOR;
   if (ev.calendar_type === 'baronial') {
     const kingdom = groupKingdom[ev.source];
+    if (kingdom && BARONY_COLOR_OVERRIDE[kingdom]) return BARONY_COLOR_OVERRIDE[kingdom];
     const base = kingdom && KINGDOM_COLORS[kingdom];
     return base ? desaturate(base) : BARONIAL_COLOR;
   }
@@ -673,60 +681,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 // explicit county lists for the split states.
 
 // Default kingdom by state-FIPS (the first 2 digits of a 5-digit county FIPS).
-const STATE_FIPS_TO_KINGDOM = {
-  "01":"Kingdom of Meridies",    // AL
-  "02":"Principality of Oertha", // AK (under Kingdom of the West)
-  "04":"Kingdom of Atenveldt",   // AZ
-  "05":"Kingdom of Gleann Abhann",// AR
-  "06":"Kingdom of the West",    // CA (northern is West; southern Caid counties overridden below)
-  "08":"Kingdom of the Outlands",// CO
-  "09":"Kingdom of the East",    // CT
-  "10":"Kingdom of the East",    // DE
-  "11":"Kingdom of Atlantia",    // DC
-  "12":"Kingdom of Trimaris",    // FL (panhandle is Meridies, overridden below)
-  "13":"Kingdom of Meridies",    // GA
-  "15":"Kingdom of Caid",        // HI
-  "16":"Kingdom of Artemisia",   // ID (northern panhandle is An Tir, overridden below)
-  "17":"Kingdom of the Middle",  // IL
-  "18":"Kingdom of the Middle",  // IN
-  "19":"Kingdom of Calontir",    // IA
-  "20":"Kingdom of Calontir",    // KS
-  "21":"Kingdom of Meridies",    // KY
-  "22":"Kingdom of Gleann Abhann",// LA
-  "23":"Kingdom of the East",    // ME
-  "24":"Kingdom of Atlantia",    // MD
-  "25":"Kingdom of the East",    // MA
-  "26":"Kingdom of the Middle",  // MI
-  "27":"Kingdom of Northshield", // MN
-  "28":"Kingdom of Gleann Abhann",// MS
-  "29":"Kingdom of Calontir",    // MO
-  "30":"Kingdom of Artemisia",   // MT
-  "31":"Kingdom of Calontir",    // NE
-  "32":"Kingdom of the West",    // NV (most of it; Clark/southern overridden to Caid)
-  "33":"Kingdom of the East",    // NH
-  "34":"Kingdom of the East",    // NJ
-  "35":"Kingdom of the Outlands",// NM (all of it — Atenveldt is AZ only)
-  "36":"Kingdom of the East",    // NY (western NY is AEthelmearc, overridden below)
-  "37":"Kingdom of Atlantia",    // NC
-  "38":"Kingdom of Northshield", // ND
-  "39":"Kingdom of the Middle",  // OH
-  "40":"Kingdom of Ansteorra",   // OK
-  "41":"Kingdom of An Tir",      // OR
-  "42":"Kingdom of AEthelmearc", // PA (eastern PA is East, overridden below)
-  "44":"Kingdom of the East",    // RI
-  "45":"Kingdom of Atlantia",    // SC
-  "46":"Kingdom of Northshield", // SD
-  "47":"Kingdom of Meridies",    // TN (extreme western TN is Gleann Abhann, overridden below)
-  "48":"Kingdom of Ansteorra",   // TX
-  "49":"Kingdom of Artemisia",   // UT
-  "50":"Kingdom of the East",    // VT
-  "51":"Kingdom of Atlantia",    // VA
-  "53":"Kingdom of An Tir",      // WA
-  "54":"Kingdom of AEthelmearc", // WV
-  "55":"Kingdom of Northshield", // WI
-  "56":"Kingdom of the Outlands",// WY
-  "72":"Kingdom of Trimaris",    // PR
-};
+let STATE_FIPS_TO_KINGDOM = {};   // filled from territory_kingdoms.csv (loadKingdomOverlay)
 
 // County-FIPS overrides for split states. Each entry says "this 5-digit FIPS
 // belongs to <kingdom>, not the state default". The remaining counties in
@@ -734,152 +689,7 @@ const STATE_FIPS_TO_KINGDOM = {
 //
 // FIPS sources: census.gov. SCA territorial assignments here follow common
 // references (Caid Boundary, current Atlantia/AEthelmearc split, etc.).
-const COUNTY_OVERRIDES = {
-  // California — Caid is the southern slice. The northern boundary follows
-  // baronial extents: Nordwache covers Madera/Fresno/Kings/Tulare; Naevehjem
-  // covers Inyo (Owens Valley). Anything north of the Madera/Mariposa line
-  // is the Kingdom of the West.
-  "06019":"Kingdom of Caid",  // Fresno   (Barony of Nordwache)
-  "06025":"Kingdom of Caid",  // Imperial (Barony of Calafia)
-  "06027":"Kingdom of Caid",  // Inyo     (Barony of Naevehjem)
-  "06029":"Kingdom of Caid",  // Kern     (Barony of Wintermist)
-  "06031":"Kingdom of Caid",  // Kings    (Barony of Nordwache)
-  "06037":"Kingdom of Caid",  // Los Angeles (Baronies of Altavia/the Angels/Lyondemere)
-  "06039":"Kingdom of Caid",  // Madera   (Barony of Nordwache)
-  "06043":"Kingdom of Caid",  // Mariposa
-  "06059":"Kingdom of Caid",  // Orange   (Barony of Gyldenholt)
-  "06065":"Kingdom of Caid",  // Riverside (Barony of Dreiburgen)
-  "06071":"Kingdom of Caid",  // San Bernardino (Barony of Dreiburgen)
-  "06073":"Kingdom of Caid",  // San Diego (Barony of Calafia)
-  "06079":"Kingdom of Caid",  // San Luis Obispo
-  "06083":"Kingdom of Caid",  // Santa Barbara (Shire of the Isles)
-  "06107":"Kingdom of Caid",  // Tulare   (Barony of Nordwache)
-  "06111":"Kingdom of Caid",  // Ventura  (Shire of Darach)
-  // Idaho's northern panhandle is An Tir
-  "16009":"Kingdom of An Tir","16017":"Kingdom of An Tir","16021":"Kingdom of An Tir",
-  "16035":"Kingdom of An Tir","16049":"Kingdom of An Tir","16055":"Kingdom of An Tir",
-  "16057":"Kingdom of An Tir","16061":"Kingdom of An Tir","16069":"Kingdom of An Tir",
-  "16079":"Kingdom of An Tir",
-  // Florida — the panhandle west of the Aucilla River is Meridies
-  "12013":"Kingdom of Meridies","12039":"Kingdom of Meridies","12045":"Kingdom of Meridies",
-  "12059":"Kingdom of Meridies","12063":"Kingdom of Meridies","12065":"Kingdom of Meridies",
-  "12073":"Kingdom of Meridies","12091":"Kingdom of Meridies","12113":"Kingdom of Meridies",
-  "12129":"Kingdom of Meridies","12131":"Kingdom of Meridies","12133":"Kingdom of Meridies",
-  // Tennessee — extreme western TN is Gleann Abhann
-  "47045":"Kingdom of Gleann Abhann","47047":"Kingdom of Gleann Abhann",
-  "47075":"Kingdom of Gleann Abhann","47077":"Kingdom of Gleann Abhann",
-  "47097":"Kingdom of Gleann Abhann","47109":"Kingdom of Gleann Abhann",
-  "47113":"Kingdom of Gleann Abhann","47131":"Kingdom of Gleann Abhann",
-  "47157":"Kingdom of Gleann Abhann","47167":"Kingdom of Gleann Abhann",
-  "47183":"Kingdom of Gleann Abhann",
-  // New York — western NY is AEthelmearc (Niagara Frontier, Rochester area)
-  "36003":"Kingdom of AEthelmearc","36009":"Kingdom of AEthelmearc",
-  "36013":"Kingdom of AEthelmearc","36029":"Kingdom of AEthelmearc",
-  "36037":"Kingdom of AEthelmearc","36051":"Kingdom of AEthelmearc",
-  "36055":"Kingdom of AEthelmearc","36063":"Kingdom of AEthelmearc",
-  "36069":"Kingdom of AEthelmearc","36073":"Kingdom of AEthelmearc",
-  "36101":"Kingdom of AEthelmearc","36117":"Kingdom of AEthelmearc",
-  "36121":"Kingdom of AEthelmearc","36123":"Kingdom of AEthelmearc",
-  // Pennsylvania — eastern PA is East Kingdom; the AEthelmearc/East split runs
-  // roughly down a Bradford-to-Bedford line. Lehigh Valley + Philadelphia metro
-  // are East.
-  "42011":"Kingdom of the East", // Berks
-  "42017":"Kingdom of the East", // Bucks
-  "42025":"Kingdom of the East", // Carbon
-  "42029":"Kingdom of the East", // Chester
-  "42041":"Kingdom of the East", // Cumberland
-  "42043":"Kingdom of the East", // Dauphin
-  "42045":"Kingdom of the East", // Delaware
-  "42069":"Kingdom of the East", // Lackawanna
-  "42071":"Kingdom of the East", // Lancaster
-  "42077":"Kingdom of the East", // Lehigh
-  "42079":"Kingdom of the East", // Luzerne
-  "42089":"Kingdom of the East", // Monroe
-  "42091":"Kingdom of the East", // Montgomery
-  "42093":"Kingdom of the East", // Montour
-  "42095":"Kingdom of the East", // Northampton
-  "42097":"Kingdom of the East", // Northumberland
-  "42099":"Kingdom of the East", // Perry
-  "42101":"Kingdom of the East", // Philadelphia
-  "42103":"Kingdom of the East", // Pike
-  "42107":"Kingdom of the East", // Schuylkill
-  "42109":"Kingdom of the East", // Snyder
-  "42115":"Kingdom of the East", // Susquehanna
-  "42119":"Kingdom of the East", // Union
-  "42127":"Kingdom of the East", // Wayne
-  "42131":"Kingdom of the East", // Wyoming
-  "42133":"Kingdom of the East", // York
-
-  // Texas — El Paso and its neighbouring Hudspeth County belong to the
-  // Kingdom of the Outlands, not Ansteorra (the rest of TX).
-  "48141":"Kingdom of the Outlands", // El Paso
-  "48229":"Kingdom of the Outlands", // Hudspeth
-
-  // Wyoming — most of the state is Outlands, but the western mountain
-  // counties (Yellowstone / Tetons / Wind River basin) are Artemisia.
-  "56003":"Kingdom of Artemisia", // Big Horn
-  "56013":"Kingdom of Artemisia", // Fremont
-  "56017":"Kingdom of Artemisia", // Hot Springs
-  "56023":"Kingdom of Artemisia", // Lincoln
-  "56029":"Kingdom of Artemisia", // Park (Yellowstone)
-  "56035":"Kingdom of Artemisia", // Sublette
-  "56037":"Kingdom of Artemisia", // Sweetwater
-  "56039":"Kingdom of Artemisia", // Teton (Jackson Hole)
-  "56041":"Kingdom of Artemisia", // Uinta
-
-  // Nevada — Caid's own site describes its reach as "Southern California,
-  // the greater Las Vegas area, and Hawaii". That's Clark + Pahrump (Nye).
-  // The rest of NV defaults to the Kingdom of the West.
-  "32003":"Kingdom of Caid",     // Clark (Las Vegas — Barony of Starkhafn)
-  "32023":"Kingdom of Caid",     // Nye (Pahrump — part of greater Vegas)
-
-  // ── Sub-principalities (rendered with their own colors over the parent
-  // kingdom's territory) ──
-  // Principality of the Mists — SF Bay Area (parent: West)
-  "06001":"Principality of the Mists", // Alameda
-  "06013":"Principality of the Mists", // Contra Costa
-  "06041":"Principality of the Mists", // Marin
-  "06055":"Principality of the Mists", // Napa
-  "06075":"Principality of the Mists", // San Francisco
-  "06081":"Principality of the Mists", // San Mateo
-  "06085":"Principality of the Mists", // Santa Clara
-  "06087":"Principality of the Mists", // Santa Cruz
-  "06095":"Principality of the Mists", // Solano
-  "06097":"Principality of the Mists", // Sonoma
-  // Principality of Cynagua — Sacramento Valley + Northern Central Valley
-  // (parent: West). Note: counties south of the Madera line went to Caid above.
-  "06005":"Principality of Cynagua",   // Amador
-  "06009":"Principality of Cynagua",   // Calaveras
-  "06017":"Principality of Cynagua",   // El Dorado
-  "06047":"Principality of Cynagua",   // Merced
-  "06061":"Principality of Cynagua",   // Placer
-  "06067":"Principality of Cynagua",   // Sacramento
-  "06077":"Principality of Cynagua",   // San Joaquin
-  "06099":"Principality of Cynagua",   // Stanislaus
-  "06101":"Principality of Cynagua",   // Sutter
-  "06109":"Principality of Cynagua",   // Tuolumne
-  "06113":"Principality of Cynagua",   // Yolo
-  "06115":"Principality of Cynagua",   // Yuba
-  // Principality of Tir Righ — far-northern WA + AK panhandle counties (parent: An Tir)
-  // (Most of Tir Righ is in BC, handled by world-kingdoms.geojson)
-  "53029":"Principality of Tir Righ",  // Island, WA
-  "53055":"Principality of Tir Righ",  // San Juan, WA
-  "53057":"Principality of Tir Righ",  // Skagit, WA
-  "53073":"Principality of Tir Righ",  // Whatcom, WA
-  // Principality of the Summits — southern Oregon (parent: An Tir)
-  "41003":"Principality of the Summits", // Benton, OR
-  "41011":"Principality of the Summits", // Coos, OR
-  "41015":"Principality of the Summits", // Curry, OR
-  "41019":"Principality of the Summits", // Douglas, OR
-  "41029":"Principality of the Summits", // Jackson, OR
-  "41033":"Principality of the Summits", // Josephine, OR
-  "41035":"Principality of the Summits", // Klamath, OR
-  "41037":"Principality of the Summits", // Lake, OR
-  "41039":"Principality of the Summits", // Lane, OR
-  "41041":"Principality of the Summits", // Lincoln, OR
-  "41043":"Principality of the Summits", // Linn, OR
-  "41047":"Principality of the Summits", // Marion (Salem - Terra Pomaria), OR
-};
+let COUNTY_OVERRIDES = {};   // filled from territory_kingdoms.csv (loadKingdomOverlay)
 
 // Principalities — separate optional layer drawn from a subset of counties.
 // Each principality is a sub-region of a kingdom; we render them as labeled
@@ -957,6 +767,16 @@ function loadKingdomOverlay() {
         overlayTooltip.setLatLng(e.latlng).setContent(kingdom);
       }
     };
+
+    // US state/county -> kingdom lives in territory_kingdoms.csv so it can be
+    // edited without touching code; populate the maps before colouring.
+    try {
+      const terrResp = await fetch('territory_kingdoms.csv');
+      if (terrResp.ok) parseCSV(await terrResp.text()).forEach(r => {
+        if (r.type === 'state') STATE_FIPS_TO_KINGDOM[r.id] = r.kingdom;
+        else if (r.type === 'county') COUNTY_OVERRIDES[r.id] = r.kingdom;
+      });
+    } catch (e) { /* no CSV -> US counties render uncoloured */ }
 
     const countiesLayer = L.geoJSON(counties, {
       style: feature => {
@@ -1547,7 +1367,11 @@ function applyFilters() {
     const sortedPins = [...groupPins].sort(
       (a, b) => pinTypePriority(a.group) - pinTypePriority(b.group)
     );
+    const seenGroups = new Set();   // at most one "?" pin per group
     sortedPins.forEach(pin => {
+      // "No location" rows are secondary calendars (a barony's extra feed) that
+      // should contribute events but never a placeholder pin.
+      if ((pin.location || '').trim().toLowerCase() === 'no location') return;
       const lat = parseFloat(pin.lat), lng = parseFloat(pin.lng);
       if (isNaN(lat) || isNaN(lng)) return;
       const online = onlineEventsForGroup(pin.group);
@@ -1555,14 +1379,20 @@ function applyFilters() {
       if (!pin.website && !online.length) return;
       if (sourcesWithMappedEvents.has(pin.group)) return;
       // Suppress when ANY mapped event's title contains the group's short name
-      // (e.g. "Calafia Anniversary" → suppress Calafia placeholder)
+      // (e.g. "Calafia Anniversary" → suppress Calafia placeholder) — but ONLY
+      // for groups that actually have a calendar feed. A "no calendar" row is
+      // one we deliberately want visible as a "?", so a kingdom event merely
+      // held there (e.g. a Crown Tourney) shouldn't hide it.
+      const hasCalendar = pin.calendar_id && !/^\s*no calendar/i.test(pin.calendar_id);
       const short = shortName(pin.group);
-      if (short.length >= 4 && mappedTitlesLowercase.some(t => t.includes(short))) return;
+      if (hasCalendar && short.length >= 4 && mappedTitlesLowercase.some(t => t.includes(short))) return;
       // Respect the search filter — only show placeholders matching the query
       if (query) {
         const hay = [pin.group, pin.location, pin.kingdom].join(' ').toLowerCase();
         if (!hay.includes(query)) return;
       }
+      if (seenGroups.has(pin.group)) return;   // multiple calendars → one pin
+      seenGroups.add(pin.group);
       // Use the same spiral so a barony pin lands beside any event already
       // pinned at that exact coord (Delftwood + its own Syracuse event etc.).
       const [plotLat, plotLng] = spiralOffset(lat, lng);
