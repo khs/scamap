@@ -11,7 +11,7 @@ Strategy per site:
      URLs (the universal pattern for Google-Calendar-backed sites).
   3. Fetch a /calendar/ or /events/ page, same checks.
 
-Output: prints findings; appends new entries to calendars.csv. Run with
+Output: prints findings; appends new entries to locals.csv. Run with
    python probe_baronial_calendars.py [kingdom_substring …]
 
 Examples:
@@ -25,14 +25,16 @@ import base64
 import csv
 import re
 import sys
+from datetime import date
 from pathlib import Path
 from urllib.parse import quote, urljoin, urlparse
 
 import requests
 
-SCRIPT_DIR = Path(__file__).parent
-LOC_FILE = SCRIPT_DIR / "group_locations.csv"
-CAL_FILE = SCRIPT_DIR / "calendars.csv"
+# Data CSVs live in the repo root, one level up from this reference/ script.
+ROOT = Path(__file__).parent.parent
+LOC_FILE = ROOT / "group_locations.csv"
+LOCALS_FILE = ROOT / "locals.csv"
 
 TARGETS = (
     "Kingdom of the East",
@@ -163,12 +165,12 @@ def main():
             and any(f.lower() in r["kingdom"].lower() for f in kingdom_filters)]
     print(f"Probing {len(rows)} barony websites...")
 
-    # Load existing calendars.csv to avoid duplicates
+    # Load existing locals.csv to avoid duplicates
     existing_sources = set()
-    if CAL_FILE.exists():
-        with open(CAL_FILE, encoding="utf-8") as f:
+    if LOCALS_FILE.exists():
+        with open(LOCALS_FILE, encoding="utf-8") as f:
             for row in csv.DictReader(f):
-                existing_sources.add(row.get("source", "").strip())
+                existing_sources.add(row.get("group", "").strip())
 
     new_calendars: list[dict] = []
     for i, r in enumerate(rows, start=1):
@@ -183,19 +185,26 @@ def main():
             continue
         ics_url, events = result
         print(f"    -> {events} events at {ics_url[:80]}")
-        new_calendars.append({"id": ics_url, "source": group, "type": "baronial"})
+        gtype = (group.split(" of ", 1)[0] if " of " in group
+                 else group.split(" ", 1)[0]).strip().lower()
+        new_calendars.append({"kingdom": r.get("kingdom", ""), "group": group, "type": gtype,
+                              "calendar_id": ics_url, "website": site, "social": "",
+                              "date_last_checked": date.today().isoformat()})
 
     if not new_calendars:
         print("\nNo new calendars discovered.")
         return
 
-    # Append to calendars.csv
-    with open(CAL_FILE, "a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["id", "source", "type"])
-        # Don't re-write header — assume calendars.csv already exists
+    # Append to locals.csv (write a header if the file is new)
+    fieldnames = ["kingdom", "group", "type", "calendar_id", "website", "social", "date_last_checked"]
+    write_header = not LOCALS_FILE.exists()
+    with open(LOCALS_FILE, "a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        if write_header:
+            writer.writeheader()
         for entry in new_calendars:
             writer.writerow(entry)
-    print(f"\nAppended {len(new_calendars)} new calendar feeds to {CAL_FILE.name}")
+    print(f"\nAppended {len(new_calendars)} new calendar feeds to {LOCALS_FILE.name}")
 
 
 if __name__ == "__main__":

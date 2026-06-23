@@ -9,9 +9,13 @@ Calendar types:
   - BARONIAL: Recurring local events (fighter practice, A&S nights etc). Fetched 2 months
               forward. Virtual events are skipped entirely.
 
-Calendars are defined in calendars.csv (same directory as this script), with columns:
-  id, source, type
-To add a new calendar, just add a row to calendars.csv — no code changes needed.
+Calendars are defined in two CSVs (same directory as this script):
+  - calendars.csv — kingdom feeds; columns: id, source, type
+  - locals.csv    — local groups (baronies, shires, cantons, colleges, …) plus
+                    maintainer reference info; columns: kingdom, group, type,
+                    calendar_id, website, social, date_last_checked
+To add a kingdom, add a row to calendars.csv; to add a local group, add a row
+to locals.csv — no code changes needed.
 
 Output columns:
   title, start, end, location, description, source, calendar_type, is_virtual
@@ -50,6 +54,7 @@ NEAR_END   = TODAY + timedelta(days=60)    # ~2 months — Baronial calendars
 # Paths relative to this script's location
 SCRIPT_DIR      = Path(__file__).parent
 CALENDARS_FILE  = SCRIPT_DIR / "calendars.csv"
+LOCALS_FILE     = SCRIPT_DIR / "locals.csv"
 OUTPUT_FILE     = SCRIPT_DIR / "sca_events.csv"
 # Run-local (gitignored) handoff: which sources failed to fetch THIS run, so
 # clean_sca_events can carry forward their last-good events instead of letting
@@ -93,6 +98,31 @@ def load_calendars(filepath: Path) -> list[dict]:
     print(f"Loaded {len(calendars)} calendars from {filepath.name}")
     print(f"  {sum(1 for c in calendars if c['type'] == 'kingdom')} kingdom, "
           f"{sum(1 for c in calendars if c['type'] == 'baronial')} baronial\n")
+    return calendars
+
+
+def load_local_calendars(filepath: Path) -> list[dict]:
+    """Load local-group feeds from locals.csv — the single registry of local SCA
+    groups (baronies, shires, cantons, colleges, …). Columns: kingdom, group,
+    type, calendar_id, website, social, date_last_checked. Most rows are
+    registry-only: a group we know exists but that has no feed yet carries
+    calendar_id "No Calendar Listed" and is skipped for import. Rows with a real
+    calendar_id become {id, source, type='baronial'} dicts — the same shape as
+    load_calendars (all local groups fetch on the baronial cadence), so the two
+    lists concatenate."""
+    NO_CALENDAR = {"", "no calendar listed", "none", "n/a", "tbd", "-"}
+    if not filepath.exists():
+        print(f"  (no {filepath.name} — skipping local-group feeds)\n")
+        return []
+    calendars = []
+    with open(filepath, newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            cal_id = (row.get("calendar_id") or "").strip()
+            source = (row.get("group") or "").strip()
+            if not source or cal_id.lower() in NO_CALENDAR:
+                continue
+            calendars.append({"id": cal_id, "source": source, "type": "baronial"})
+    print(f"Loaded {len(calendars)} local-group calendars from {filepath.name}\n")
     return calendars
 
 
@@ -446,7 +476,7 @@ if __name__ == "__main__":
     print(f"  Kingdom calendars:  up to {FAR_END}")
     print(f"  Baronial calendars: up to {NEAR_END}\n")
 
-    calendars = load_calendars(CALENDARS_FILE)
+    calendars = load_calendars(CALENDARS_FILE) + load_local_calendars(LOCALS_FILE)
     events = fetch_all_events(calendars)
     print(f"\nTotal events collected: {len(events)}")
     save_to_csv(events, OUTPUT_FILE)

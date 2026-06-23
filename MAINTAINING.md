@@ -115,12 +115,27 @@ cookie you copy from your browser's DevTools to pull `antir.org/events.ics` via
 
 ## Adding or removing a group
 
-Edit **`calendars.csv`** — one row per feed, columns `id,source,type`
-(`type` is `kingdom` or `baronial`). Add a row to add a group; delete the row to
-remove it. No code change is needed for a normal Google-Calendar or ICS feed.
-Source names must match the kingdom names used elsewhere (the colour map in
-`index.html`, the home-state tables in `kingdoms.py`). After adding, run the
-workflow once and check the new group's events appear.
+Two files, one row per feed; no code change is needed for a normal
+Google-Calendar or ICS feed:
+
+- **Kingdoms → `calendars.csv`** — columns `id,source,type` (`type` is
+  `kingdom`). Add or delete a row.
+- **Local groups → `locals.csv`** — a registry of every local group we know of
+  (baronies, shires, cantons, colleges, …), columns
+  `kingdom,group,type,calendar_id,website,social,date_last_checked`. One row per
+  group; `calendar_id` is its feed, or the literal `No Calendar Listed` if it
+  has none (those rows are skipped for import but kept so you can track them).
+  Only `group` + a real `calendar_id` drive the import; `type`/`website`/`social`
+  are reference info. Bump `date_last_checked` (YYYY-MM-DD) whenever you
+  re-verify a row, so stale ones are easy to spot. This is the one place to
+  manage local groups.
+
+For either file, the `id`/`calendar_id` is the Google-Calendar ICS id/URL; a
+WordPress site may need a scraper prefix (`scrapers.py` lists them, and
+`reference/probe_baronial_calendars.py` can hunt for a feed). Source/group
+names must match the names used elsewhere (the colour map in `index.html`, the
+home-state tables in `kingdoms.py`). After adding, run the workflow once and
+check the new group's events appear.
 
 ---
 

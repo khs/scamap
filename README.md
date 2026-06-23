@@ -27,7 +27,7 @@ run on its own):
 
 | Step | Script | What it does |
 | --- | --- | --- |
-| 1 | `ImportMaps.py` | Fetch every calendar in `calendars.csv` (direct ICS feeds + the scraper adapters in `scrapers.py`), expand recurring events, write `sca_events.csv`. Records any feeds that failed to fetch in `fetch_failures.json`. |
+| 1 | `ImportMaps.py` | Fetch every calendar in `calendars.csv` (kingdoms) and `locals.csv` (local groups) — direct ICS feeds + the scraper adapters in `scrapers.py` — expand recurring events, write `sca_events.csv`. Records any feeds that failed to fetch in `fetch_failures.json`. |
 | 2 | `clean_sca_events.py` | Clean text, de-duplicate, merge recurring series, carry forward last-good events for failed feeds, **apply `event_overrides.csv`**, backfill per-event URLs → `sca_events_clean.csv`. |
 | 3 | `enrich_descriptions.py` | Replace placeholder feed descriptions (Atlantia, East, Artemisia PDFs) with the real write-up from the linked event page. |
 | 4 | `geocode_sca_events.py` | Geocode addresses via Nominatim (+ Photon fallback), caching results in `geocode_cache.json`. Skips events a human pinned (`geocode_status = override`). |
@@ -54,7 +54,8 @@ annotations in the Actions run summary.
 
 | File | Role |
 | --- | --- |
-| `calendars.csv` | The source list: one row per kingdom/barony feed. Add a feed here, no code change needed. |
+| `calendars.csv` | Kingdom feed list — one row per kingdom (`id,source,type`). |
+| `locals.csv` | Local-group registry — one row per known local group (barony/shire/canton/college/…): its calendar feed (or `No Calendar Listed`), plus type/website/social/`date_last_checked`. Add a group here, no code change needed. |
 | `event_overrides.csv` | Hand-maintained event corrections (see EDITING_EVENTS.md). |
 | `sca_events_clean.csv` | The cleaned, geocoded events the map serves. **Generated — don't hand-edit.** |
 | `group_pins.csv`, `*.topojson` | Group placeholder pins and the kingdom-boundary overlay. |

@@ -185,8 +185,8 @@ BARONY_HOME_STATES = {
     "Barony of Hawkwood": {"NC"}, "Barony of Sacred Stone": {"NC"},
     # Atlantia — South Carolina
     "Barony of Nottinghill Coill": {"SC"}, "Barony of Hidden Mountain": {"SC"},
-    # Atlantia — shires under Hawkwood
-    "Shire of Aukesgate": {"NC"}, "Shire of Stormwall": {"NC"},
+    # Atlantia — cantons under Hawkwood
+    "Canton of Haukesgate": {"NC"}, "Canton of Stormwall": {"NC"},
 }
 
 # Coarse continent/sub-continent filter to keep Photon from placing e.g. a

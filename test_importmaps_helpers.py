@@ -203,5 +203,58 @@ class TestFileSource(unittest.TestCase):
         self.assertIsNone(m.fetch_ics(self._cal()))
 
 
+class TestLoadLocalCalendars(unittest.TestCase):
+    """locals.csv (kingdom,group,type,calendar_id,website,social,
+    date_last_checked) -> the same {id, source, type='baronial'} dicts that
+    load_calendars yields, so the two lists concatenate in main()."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _write(self, text):
+        p = self.tmp / "locals.csv"
+        p.write_text(text, encoding="utf-8")
+        return p
+
+    def test_maps_columns_to_id_source_type(self):
+        p = self._write(
+            "kingdom,group,type,calendar_id,website,social,date_last_checked\n"
+            "Kingdom of Atlantia,Barony of Storvik,barony,abc@group.calendar.google.com,https://storvik.example/,,2026-06-22\n"
+        )
+        self.assertEqual(m.load_local_calendars(p), [
+            {"id": "abc@group.calendar.google.com",
+             "source": "Barony of Storvik", "type": "baronial"},
+        ])
+
+    def test_skips_rows_missing_id_or_group(self):
+        p = self._write(
+            "kingdom,group,type,calendar_id,website,social,date_last_checked\n"
+            "K,Barony A,barony,,site,,\n"               # no calendar_id -> skip
+            ",,,id-only-no-group,site,,\n"             # no group       -> skip
+            "K,Canton B,canton,goodid,site,,\n"        # valid
+        )
+        cals = m.load_local_calendars(p)
+        self.assertEqual([c["source"] for c in cals], ["Canton B"])
+        self.assertTrue(all(c["type"] == "baronial" for c in cals))
+
+    def test_skips_no_calendar_listed(self):
+        # Registry rows for groups with no feed carry "No Calendar Listed"
+        # (any case) and must not be handed to the fetcher.
+        p = self._write(
+            "kingdom,group,type,calendar_id,website,social,date_last_checked\n"
+            "K,Barony Real,barony,realid@group.calendar.google.com,site,,2026-06-22\n"
+            "K,Shire None,shire,No Calendar Listed,site,,2026-06-22\n"
+            "K,Canton Lower,canton,no calendar listed,site,,2026-06-22\n"
+        )
+        self.assertEqual([c["source"] for c in m.load_local_calendars(p)],
+                         ["Barony Real"])
+
+    def test_missing_file_returns_empty(self):
+        self.assertEqual(m.load_local_calendars(self.tmp / "nope.csv"), [])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

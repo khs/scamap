@@ -50,7 +50,7 @@ Baronies investigated but NOT added — what we found and why we skipped:
     tribe-rest: prefix so they pick up automatically once events
     get posted upstream — no follow-up work needed.
 
-  Stormwall & Aukesgate (Hawkwood's shires)
+  Stormwall & Haukesgate (Hawkwood's cantons)
     Google Calendar IDs known, but the calendars have no events in the
     next 60 days. Already configured; we'll see events when they're
     scheduled upstream.
