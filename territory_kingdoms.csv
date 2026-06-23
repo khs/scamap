@@ -1,11 +1,11 @@
 type,id,name,kingdom
-state,01,Alabama,Kingdom of Meridies
-state,02,Alaska,Principality of Oertha
-state,04,Arizona,Kingdom of Atenveldt
-state,05,Arkansas,Kingdom of Gleann Abhann
-state,06,California,Kingdom of the West
-state,08,Colorado,Kingdom of the Outlands
-state,09,Connecticut,Kingdom of the East
+state,1,Alabama,Kingdom of Meridies
+state,2,Alaska,Principality of Oertha
+state,4,Arizona,Kingdom of Atenveldt
+state,5,Arkansas,Kingdom of Gleann Abhann
+state,6,California,Kingdom of the West
+state,8,Colorado,Kingdom of the Outlands
+state,9,Connecticut,Kingdom of the East
 state,10,Delaware,Kingdom of the East
 state,11,District of Columbia,Kingdom of Atlantia
 state,12,Florida,Kingdom of Trimaris
@@ -16,7 +16,7 @@ state,17,Illinois,Kingdom of the Middle
 state,18,Indiana,Kingdom of the Middle
 state,19,Iowa,Kingdom of Calontir
 state,20,Kansas,Kingdom of Calontir
-state,21,Kentucky,Kingdom of Meridies
+state,21,Kentucky,Kingdom of the Middle
 state,22,Louisiana,Kingdom of Gleann Abhann
 state,23,Maine,Kingdom of the East
 state,24,Maryland,Kingdom of Atlantia
@@ -51,56 +51,56 @@ state,54,West Virginia,Kingdom of AEthelmearc
 state,55,Wisconsin,Kingdom of Northshield
 state,56,Wyoming,Kingdom of the Outlands
 state,72,Puerto Rico,Kingdom of Trimaris
-county,06001,Alameda,Principality of the Mists
-county,06005,Amador,Principality of Cynagua
-county,06009,Calaveras,Principality of Cynagua
-county,06013,Contra Costa,Principality of the Mists
-county,06017,El Dorado,Principality of Cynagua
-county,06019,Fresno,Kingdom of Caid
-county,06025,Imperial,Kingdom of Caid
-county,06027,Inyo,Kingdom of Caid
-county,06029,Kern,Kingdom of Caid
-county,06031,Kings,Kingdom of Caid
-county,06037,Los Angeles,Kingdom of Caid
-county,06039,Madera,Kingdom of Caid
-county,06041,Marin,Principality of the Mists
-county,06043,Mariposa,Kingdom of Caid
-county,06047,Merced,Principality of Cynagua
-county,06055,Napa,Principality of the Mists
-county,06059,Orange,Kingdom of Caid
-county,06061,Placer,Principality of Cynagua
-county,06065,Riverside,Kingdom of Caid
-county,06067,Sacramento,Principality of Cynagua
-county,06071,San Bernardino,Kingdom of Caid
-county,06073,San Diego,Kingdom of Caid
-county,06075,San Francisco,Principality of the Mists
-county,06077,San Joaquin,Principality of Cynagua
-county,06079,San Luis Obispo,Kingdom of Caid
-county,06081,San Mateo,Principality of the Mists
-county,06083,Santa Barbara,Kingdom of Caid
-county,06085,Santa Clara,Principality of the Mists
-county,06087,Santa Cruz,Principality of the Mists
-county,06095,Solano,Principality of the Mists
-county,06097,Sonoma,Principality of the Mists
-county,06099,Stanislaus,Principality of Cynagua
-county,06101,Sutter,Principality of Cynagua
-county,06107,Tulare,Kingdom of Caid
-county,06109,Tuolumne,Principality of Cynagua
-county,06111,Ventura,Kingdom of Caid
-county,06113,Yolo,Principality of Cynagua
-county,06115,Yuba,Principality of Cynagua
-county,12013,Calhoun,Kingdom of Meridies
-county,12039,Gadsden,Kingdom of Meridies
-county,12045,Gulf,Kingdom of Meridies
-county,12059,Holmes,Kingdom of Meridies
-county,12063,Jackson,Kingdom of Meridies
-county,12065,Jefferson,Kingdom of Meridies
-county,12073,Leon,Kingdom of Meridies
+county,6001,Alameda,Principality of the Mists
+county,6005,Amador,Principality of Cynagua
+county,6009,Calaveras,Principality of Cynagua
+county,6013,Contra Costa,Principality of the Mists
+county,6017,El Dorado,Principality of Cynagua
+county,6019,Fresno,Kingdom of Caid
+county,6025,Imperial,Kingdom of Caid
+county,6027,Inyo,Kingdom of Caid
+county,6029,Kern,Kingdom of Caid
+county,6031,Kings,Kingdom of Caid
+county,6037,Los Angeles,Kingdom of Caid
+county,6039,Madera,Kingdom of Caid
+county,6041,Marin,Principality of the Mists
+county,6043,Mariposa,Kingdom of Caid
+county,6047,Merced,Principality of Cynagua
+county,6055,Napa,Principality of the Mists
+county,6059,Orange,Kingdom of Caid
+county,6061,Placer,Principality of Cynagua
+county,6065,Riverside,Kingdom of Caid
+county,6067,Sacramento,Principality of Cynagua
+county,6071,San Bernardino,Kingdom of Caid
+county,6073,San Diego,Kingdom of Caid
+county,6075,San Francisco,Principality of the Mists
+county,6077,San Joaquin,Principality of Cynagua
+county,6079,San Luis Obispo,Kingdom of Caid
+county,6081,San Mateo,Principality of the Mists
+county,6083,Santa Barbara,Kingdom of Caid
+county,6085,Santa Clara,Principality of the Mists
+county,6087,Santa Cruz,Principality of the Mists
+county,6095,Solano,Principality of the Mists
+county,6097,Sonoma,Principality of the Mists
+county,6099,Stanislaus,Principality of Cynagua
+county,6101,Sutter,Principality of Cynagua
+county,6107,Tulare,Kingdom of Caid
+county,6109,Tuolumne,Principality of Cynagua
+county,6111,Ventura,Kingdom of Caid
+county,6113,Yolo,Principality of Cynagua
+county,6115,Yuba,Principality of Cynagua
+county,12013,Calhoun,Kingdom of Trimaris
+county,12039,Gadsden,Kingdom of Trimaris
+county,12045,Gulf,Kingdom of Trimaris
+county,12059,Holmes,Kingdom of Trimaris
+county,12063,Jackson,Kingdom of Trimaris
+county,12065,Jefferson,Kingdom of Trimaris
+county,12073,Leon,Kingdom of Trimaris
 county,12091,Okaloosa,Kingdom of Meridies
 county,12113,Santa Rosa,Kingdom of Meridies
-county,12129,Wakulla,Kingdom of Meridies
+county,12129,Wakulla,Kingdom of Trimaris
 county,12131,Walton,Kingdom of Meridies
-county,12133,Washington,Kingdom of Meridies
+county,12133,Washington,Kingdom of Trimaris
 county,16009,Benewah,Kingdom of An Tir
 county,16017,Bonner,Kingdom of An Tir
 county,16021,Boundary,Kingdom of An Tir
@@ -191,6 +191,10 @@ county,56035,Sublette,Kingdom of Artemisia
 county,56037,Sweetwater,Kingdom of Artemisia
 county,56039,Teton,Kingdom of Artemisia
 county,56041,Uinta,Kingdom of Artemisia
+county,56042,Warren County,Kingdom of Meridies
+county,56043,Calloway County,Kingdom of Meridies
+county,56044,Simpson,Kingdom of Meridies
+county,56045,Allen,Kingdom of Meridies
 province,CA-AB,Alberta,Kingdom of Avacal
 province,CA-BC,British Columbia,Kingdom of An Tir
 province,CA-MB,Manitoba,Kingdom of Northshield
