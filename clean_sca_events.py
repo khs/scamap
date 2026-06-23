@@ -678,6 +678,9 @@ ADDRESS_WITHHELD_PATTERNS = [
     re.compile(r"\bpersonal\s+abode\b", re.IGNORECASE),
     re.compile(r"\bprivate\s+(residence|home)\b", re.IGNORECASE),
     re.compile(rf"\b[\w{_APOS}]+[{_APOS}]s\s+(?:home|house|abode|residence)\b", re.IGNORECASE),
+    # a contact verb followed directly by an SCA officer role ("Email Seneschal",
+    # "contact the marshal") — go-ask-someone, no street address.
+    re.compile(r"\b(e-?mail|contact|ask|message|dm|pm|call|text|see)\b\s+(the\s+)?(seneschal|marshal|steward|autocrat|chatelaine|herald|exchequer|hospitaller|knight\s+marshal|web\s?minister|chronicler)\b", re.IGNORECASE),
 ]
 
 
