@@ -31,26 +31,28 @@ ADMIN1_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/mas
 COUNTRIES_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson"
 
 # ---------------------------------------------------------------------------
-# Canada provinces by ISO 3166-2 code (or name) → kingdom
+# Canada provinces by ISO 3166-2 code → kingdom
 # ---------------------------------------------------------------------------
-# Most of Quebec is Ealdormere, but the eastern portion is Tir Mara. We can't
-# split QC at admin-1 level without more granular data, so we assign it to
-# Ealdormere as the larger half. Same for the An Tir / Tir Righ split inside
-# BC — most of BC is Tir Righ at the principality level.
+# Natural Earth admin-1 is province-level, so a few real sub-province splits
+# can't be drawn here and fall to the larger kingdom:
+#   • Ontario is Ealdormere, EXCEPT Essex County / Windsor (Midrealm) and
+#     north-western Ontario (Northshield) — not separable at province level.
+#   • British Columbia is mostly An Tir, but eastern BC is Avacal — likewise
+#     not separable, so the whole province shows as An Tir.
+# Nunavut is intentionally left unassigned (no kingdom claims it on this map).
 CANADA_KINGDOM = {
     "CA-AB": "Kingdom of Avacal",
     "CA-SK": "Kingdom of Avacal",
+    "CA-NT": "Kingdom of Avacal",           # Northwest Territories
     "CA-MB": "Kingdom of Northshield",
     "CA-ON": "Kingdom of Ealdormere",
-    "CA-QC": "Kingdom of Ealdormere",   # eastern QC is technically Tir Mara
-    "CA-NB": "Principality of Tir Mara",
-    "CA-NS": "Principality of Tir Mara",
-    "CA-PE": "Principality of Tir Mara",
-    "CA-NL": "Principality of Tir Mara",
-    "CA-YT": "Principality of Tir Righ",
-    "CA-NT": "Principality of Tir Righ",
-    "CA-NU": "Principality of Tir Righ",
-    "CA-BC": "Principality of Tir Righ",   # whole-province; main An Tir lives further south
+    "CA-QC": "Kingdom of the East",
+    "CA-NB": "Kingdom of the East",
+    "CA-NS": "Kingdom of the East",
+    "CA-PE": "Kingdom of the East",
+    "CA-NL": "Kingdom of the East",
+    "CA-YT": "Kingdom of An Tir",
+    "CA-BC": "Kingdom of An Tir",
 }
 
 AUSTRALIA_KINGDOM = {
@@ -92,6 +94,21 @@ COUNTRY_KINGDOM = {
     "Bulgaria":            "Kingdom of Drachenwald",
     "Romania":             "Kingdom of Drachenwald",
     "Greece":              "Kingdom of Drachenwald",
+    "Ukraine":             "Kingdom of Drachenwald",
+    # Balkans
+    "Serbia":              "Kingdom of Drachenwald",
+    "Bosnia and Herzegovina": "Kingdom of Drachenwald",
+    "Montenegro":          "Kingdom of Drachenwald",
+    "Albania":             "Kingdom of Drachenwald",
+    "Kosovo":              "Kingdom of Drachenwald",
+    "North Macedonia":     "Kingdom of Drachenwald",
+    "Macedonia":           "Kingdom of Drachenwald",   # older Natural Earth name
+    # Trimaris — Central America
+    "Panama":              "Kingdom of Trimaris",
+    # West — Pacific Rim
+    "Japan":               "Kingdom of the West",
+    "South Korea":         "Kingdom of the West",
+    "Thailand":            "Kingdom of the West",
 }
 
 
@@ -126,8 +143,15 @@ def main():
     # ── Whole-country mappings (Lochac AU+NZ, Drachenwald Europe) ───────
     for f in countries["features"]:
         props = f.get("properties", {})
+        # Natural Earth abbreviates some NAMEs ("Bosnia and Herz."), so also
+        # check the longer/admin name fields. Match on the country's OWN name
+        # only — NOT SOVEREIGNT/GEOUNIT, which would drag in overseas
+        # dependencies (Greenland, Falklands, New Caledonia, …) of UK/FR/DK.
+        candidates = [props.get(k) for k in
+                      ("NAME", "name", "NAME_LONG", "ADMIN", "NAME_EN")]
+        kingdom = next((COUNTRY_KINGDOM[c] for c in candidates
+                        if c in COUNTRY_KINGDOM), None)
         name = props.get("NAME") or props.get("name", "")
-        kingdom = COUNTRY_KINGDOM.get(name)
         if not kingdom:
             continue
         # Strip props down to just what we need (saves bytes)
