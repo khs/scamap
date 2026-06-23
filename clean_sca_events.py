@@ -1077,15 +1077,25 @@ def deduplicate(df: pd.DataFrame) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 def is_recurring(dates: list) -> bool:
-    """Return True if dates follow a consistent weekly or monthly pattern."""
+    """Return True if dates follow a weekly or monthly cadence, tolerating the
+    odd skipped week/month (a skip shows up as 2x/3x the typical gap)."""
     if len(dates) < 2:
         return False
     sorted_dates = sorted(dates)
     gaps = [(sorted_dates[i+1] - sorted_dates[i]).days
             for i in range(len(sorted_dates)-1)]
     avg_gap = sum(gaps) / len(gaps)
-    all_similar = all(abs(g - avg_gap) <= 3 for g in gaps)
-    return all_similar and (6 <= avg_gap <= 32)
+    # A single consistent cadence, small jitter allowed (the original test).
+    consistent = all(abs(g - avg_gap) <= 3 for g in gaps) and (6 <= avg_gap <= 32)
+    # ...or a weekly/monthly series that skips the odd week/month: the skip
+    # shows up as 2x/3x the base (smallest) gap, which the average test would
+    # wrongly reject — so a holiday-skipping practice stays one (RECURRING) row
+    # instead of fragmenting into a stack of separate pins.
+    base = min(gaps)
+    tol = 2 if base < 20 else 3
+    skips_ok = (6 <= base <= 32) and all(
+        any(abs(g - base * m) <= tol for m in (1, 2, 3)) for g in gaps)
+    return consistent or skips_ok
 
 
 def merge_recurring(df: pd.DataFrame) -> pd.DataFrame:

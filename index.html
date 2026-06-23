@@ -1311,7 +1311,7 @@ function applyFilters() {
       // z-index — it stays on top when pins overlap (esp. with aggregation off).
       zIndexOffset: filtered.length - i,
     });
-    marker.bindPopup(buildPopup(ev), { maxWidth: 320, maxHeight: 280 });
+    marker.bindPopup(() => buildPopup(ev), { maxWidth: 320, maxHeight: 280 });
     markerLayer.addLayer(marker);
     markerMap[ev._idx] = marker;
   });
@@ -1400,7 +1400,7 @@ function applyFilters() {
         icon: placeholderIconWithBadge(online.length),
         opacity: online.length ? 1 : 0.9,
       });
-      marker.bindPopup(buildPlaceholderPopup(pin, online), { maxWidth: 320, maxHeight: 280 });
+      marker.bindPopup(() => buildPlaceholderPopup(pin, online), { maxWidth: 320, maxHeight: 280 });
       placeholderLayer.addLayer(marker);
     });
   }
@@ -1548,9 +1548,8 @@ function parseCSV(text) {
 }
 
 // ── Load CSVs ─────────────────────────────────────────────────────
-// Events are required. Group pins are optional — if the file isn't there
-// (e.g. build_group_pins.py hasn't been run yet), the map just renders
-// without placeholder markers.
+// Events are required. Placeholder "?" pins come from locals.csv and are
+// optional — if that file isn't there, the map just renders without them.
 fetch('sca_events_clean.csv')
   .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
   .then(text => {
@@ -1586,7 +1585,13 @@ fetch('sca_events_clean.csv')
   });
 
 // ── Wire controls ─────────────────────────────────────────────────
-document.getElementById('search-input').addEventListener('input', applyFilters);
+// Debounce the search box: each keystroke otherwise re-renders every marker +
+// placeholder pin + the sidebar synchronously. Wait for a ~180ms typing pause.
+let _searchDebounce;
+document.getElementById('search-input').addEventListener('input', () => {
+  clearTimeout(_searchDebounce);
+  _searchDebounce = setTimeout(applyFilters, 180);
+});
 // Date-range filter — default to "today through six months out" so the map
 // opens focused on the near-term events most people are planning around.
 // Local YYYY-MM-DD (not toISOString — that converts to UTC and would slip a day

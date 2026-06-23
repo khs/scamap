@@ -36,6 +36,8 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).parent
 EVENTS_FILE = SCRIPT_DIR / "sca_events_clean.csv"
 CALENDARS_FILE = SCRIPT_DIR / "calendars.csv"
+LOCALS_FILE = SCRIPT_DIR / "locals.csv"
+FETCH_FAILURES_FILE = SCRIPT_DIR / "fetch_failures.json"
 STATE_FILE = SCRIPT_DIR / "health_state.json"
 # Written iff there are CRITICAL findings; the refresh workflow turns it into /
 # updates a GitHub issue, and removes-on-clean so the issue auto-closes. Not
@@ -114,6 +116,21 @@ def manual_kingdoms() -> set:
                 if r.get("type") == "kingdom" and (r.get("id") or "").startswith("file:")}
 
 
+_NO_CALENDAR = {"", "no calendar listed", "no calendar available",
+                "none", "n/a", "tbd", "-"}
+
+
+def configured_locals() -> list:
+    """Local-group sources (locals.csv) that have a real calendar feed — the
+    ones where 0 events is worth a soft warning (the feed may have broken), as
+    opposed to the many groups deliberately marked with no calendar."""
+    if not LOCALS_FILE.exists():
+        return []
+    with open(LOCALS_FILE, encoding="utf-8") as f:
+        return [(r.get("group") or "").strip() for r in csv.DictReader(f)
+                if (r.get("calendar_id") or "").strip().lower() not in _NO_CALENDAR]
+
+
 def main(strict: bool = False) -> int:
     _critical_msgs.clear()
     _warning_msgs.clear()
@@ -146,6 +163,7 @@ def main(strict: bool = False) -> int:
 
     kingdoms = configured_kingdoms()
     manual = manual_kingdoms()
+    locals_list = configured_locals()
     critical = warnings = 0
 
     # 1. A configured kingdom with zero events — almost certainly a dead feed.
@@ -180,12 +198,33 @@ def main(strict: bool = False) -> int:
                         f"({failed}/{geocodable})")
         warnings += 1
 
+    # 5. A baronial feed whose real event count dropped to zero — a soft signal
+    #    (locals legitimately go quiet, so WARN, never CRITICAL).
+    prev_local = prev.get("local_counts", {})
+    for g in sorted(set(locals_list)):
+        before = prev_local.get(g, 0)
+        if before >= MIN_BASELINE and counts.get(g, 0) == 0:
+            emit("warning", f"{g}: events {before} -> 0 (baronial feed may have broken)")
+            warnings += 1
+
+    # 6. Note any feeds that failed to fetch this run (carried-forward, so not
+    #    necessarily a regression — informational).
+    if FETCH_FAILURES_FILE.exists():
+        try:
+            failed_srcs = json.loads(FETCH_FAILURES_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            failed_srcs = []
+        if failed_srcs:
+            emit("notice", f"{len(failed_srcs)} feed(s) failed to fetch this run "
+                           f"(last-good carried forward): {', '.join(sorted(failed_srcs))}")
+
     # Update the baseline for next time.
     STATE_FILE.write_text(json.dumps({
         "total": total,
         "failed": failed,
         "geocodable": geocodable,
         "kingdom_counts": {k: counts.get(k, 0) for k in kingdoms},
+        "local_counts": {g: counts.get(g, 0) for g in locals_list},
     }, indent=2, sort_keys=True), encoding="utf-8")
 
     _write_alert_file(total, failed, geocodable)
