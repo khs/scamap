@@ -1,253 +1,258 @@
-type,id,name,kingdom
-state,1,Alabama,Kingdom of Meridies
-state,2,Alaska,Principality of Oertha
-state,4,Arizona,Kingdom of Atenveldt
-state,5,Arkansas,Kingdom of Gleann Abhann
-state,6,California,Kingdom of the West
-state,8,Colorado,Kingdom of the Outlands
-state,9,Connecticut,Kingdom of the East
-state,10,Delaware,Kingdom of the East
-state,11,District of Columbia,Kingdom of Atlantia
-state,12,Florida,Kingdom of Trimaris
-state,13,Georgia,Kingdom of Meridies
-state,15,Hawaii,Kingdom of Caid
-state,16,Idaho,Kingdom of Artemisia
-state,17,Illinois,Kingdom of the Middle
-state,18,Indiana,Kingdom of the Middle
-state,19,Iowa,Kingdom of Calontir
-state,20,Kansas,Kingdom of Calontir
-state,21,Kentucky,Kingdom of the Middle
-state,22,Louisiana,Kingdom of Gleann Abhann
-state,23,Maine,Kingdom of the East
-state,24,Maryland,Kingdom of Atlantia
-state,25,Massachusetts,Kingdom of the East
-state,26,Michigan,Kingdom of the Middle
-state,27,Minnesota,Kingdom of Northshield
-state,28,Mississippi,Kingdom of Gleann Abhann
-state,29,Missouri,Kingdom of Calontir
-state,30,Montana,Kingdom of Artemisia
-state,31,Nebraska,Kingdom of Calontir
-state,32,Nevada,Kingdom of the West
-state,33,New Hampshire,Kingdom of the East
-state,34,New Jersey,Kingdom of the East
-state,35,New Mexico,Kingdom of the Outlands
-state,36,New York,Kingdom of the East
-state,37,North Carolina,Kingdom of Atlantia
-state,38,North Dakota,Kingdom of Northshield
-state,39,Ohio,Kingdom of the Middle
-state,40,Oklahoma,Kingdom of Ansteorra
-state,41,Oregon,Kingdom of An Tir
-state,42,Pennsylvania,Kingdom of AEthelmearc
-state,44,Rhode Island,Kingdom of the East
-state,45,South Carolina,Kingdom of Atlantia
-state,46,South Dakota,Kingdom of Northshield
-state,47,Tennessee,Kingdom of Meridies
-state,48,Texas,Kingdom of Ansteorra
-state,49,Utah,Kingdom of Artemisia
-state,50,Vermont,Kingdom of the East
-state,51,Virginia,Kingdom of Atlantia
-state,53,Washington,Kingdom of An Tir
-state,54,West Virginia,Kingdom of AEthelmearc
-state,55,Wisconsin,Kingdom of Northshield
-state,56,Wyoming,Kingdom of the Outlands
-state,72,Puerto Rico,Kingdom of Trimaris
-county,6001,Alameda,Principality of the Mists
-county,6005,Amador,Principality of Cynagua
-county,6009,Calaveras,Principality of Cynagua
-county,6013,Contra Costa,Principality of the Mists
-county,6017,El Dorado,Principality of Cynagua
-county,6019,Fresno,Kingdom of Caid
-county,6025,Imperial,Kingdom of Caid
-county,6027,Inyo,Kingdom of Caid
-county,6029,Kern,Kingdom of Caid
-county,6031,Kings,Kingdom of Caid
-county,6037,Los Angeles,Kingdom of Caid
-county,6039,Madera,Kingdom of Caid
-county,6041,Marin,Principality of the Mists
-county,6043,Mariposa,Kingdom of Caid
-county,6047,Merced,Principality of Cynagua
-county,6055,Napa,Principality of the Mists
-county,6059,Orange,Kingdom of Caid
-county,6061,Placer,Principality of Cynagua
-county,6065,Riverside,Kingdom of Caid
-county,6067,Sacramento,Principality of Cynagua
-county,6071,San Bernardino,Kingdom of Caid
-county,6073,San Diego,Kingdom of Caid
-county,6075,San Francisco,Principality of the Mists
-county,6077,San Joaquin,Principality of Cynagua
-county,6079,San Luis Obispo,Kingdom of Caid
-county,6081,San Mateo,Principality of the Mists
-county,6083,Santa Barbara,Kingdom of Caid
-county,6085,Santa Clara,Principality of the Mists
-county,6087,Santa Cruz,Principality of the Mists
-county,6095,Solano,Principality of the Mists
-county,6097,Sonoma,Principality of the Mists
-county,6099,Stanislaus,Principality of Cynagua
-county,6101,Sutter,Principality of Cynagua
-county,6107,Tulare,Kingdom of Caid
-county,6109,Tuolumne,Principality of Cynagua
-county,6111,Ventura,Kingdom of Caid
-county,6113,Yolo,Principality of Cynagua
-county,6115,Yuba,Principality of Cynagua
-county,12013,Calhoun,Kingdom of Trimaris
-county,12039,Gadsden,Kingdom of Trimaris
-county,12045,Gulf,Kingdom of Trimaris
-county,12059,Holmes,Kingdom of Trimaris
-county,12063,Jackson,Kingdom of Trimaris
-county,12065,Jefferson,Kingdom of Trimaris
-county,12073,Leon,Kingdom of Trimaris
-county,12091,Okaloosa,Kingdom of Meridies
-county,12113,Santa Rosa,Kingdom of Meridies
-county,12129,Wakulla,Kingdom of Trimaris
-county,12131,Walton,Kingdom of Meridies
-county,12133,Washington,Kingdom of Trimaris
-county,16009,Benewah,Kingdom of An Tir
-county,16017,Bonner,Kingdom of An Tir
-county,16021,Boundary,Kingdom of An Tir
-county,16035,Clearwater,Kingdom of An Tir
-county,16049,Idaho,Kingdom of An Tir
-county,16055,Kootenai,Kingdom of An Tir
-county,16057,Latah,Kingdom of An Tir
-county,16061,Lewis,Kingdom of An Tir
-county,16069,Nez Perce,Kingdom of An Tir
-county,16079,Shoshone,Kingdom of An Tir
-county,32003,Clark,Kingdom of Caid
-county,32023,Nye,Kingdom of Caid
-county,36003,Allegany,Kingdom of AEthelmearc
-county,36009,Cattaraugus,Kingdom of AEthelmearc
-county,36013,Chautauqua,Kingdom of AEthelmearc
-county,36029,Erie,Kingdom of AEthelmearc
-county,36037,Genesee,Kingdom of AEthelmearc
-county,36051,Livingston,Kingdom of AEthelmearc
-county,36055,Monroe,Kingdom of AEthelmearc
-county,36063,Niagara,Kingdom of AEthelmearc
-county,36069,Ontario,Kingdom of AEthelmearc
-county,36073,Orleans,Kingdom of AEthelmearc
-county,36101,Steuben,Kingdom of AEthelmearc
-county,36117,Wayne,Kingdom of AEthelmearc
-county,36121,Wyoming,Kingdom of AEthelmearc
-county,36123,Yates,Kingdom of AEthelmearc
-county,41003,Benton,Principality of the Summits
-county,41011,Coos,Principality of the Summits
-county,41015,Curry,Principality of the Summits
-county,41019,Douglas,Principality of the Summits
-county,41029,Jackson,Principality of the Summits
-county,41033,Josephine,Principality of the Summits
-county,41035,Klamath,Principality of the Summits
-county,41037,Lake,Principality of the Summits
-county,41039,Lane,Principality of the Summits
-county,41041,Lincoln,Principality of the Summits
-county,41043,Linn,Principality of the Summits
-county,41047,Marion,Principality of the Summits
-county,42011,Berks,Kingdom of the East
-county,42017,Bucks,Kingdom of the East
-county,42025,Carbon,Kingdom of the East
-county,42029,Chester,Kingdom of the East
-county,42041,Cumberland,Kingdom of the East
-county,42043,Dauphin,Kingdom of the East
-county,42045,Delaware,Kingdom of the East
-county,42069,Lackawanna,Kingdom of the East
-county,42071,Lancaster,Kingdom of the East
-county,42077,Lehigh,Kingdom of the East
-county,42079,Luzerne,Kingdom of the East
-county,42089,Monroe,Kingdom of the East
-county,42091,Montgomery,Kingdom of the East
-county,42093,Montour,Kingdom of the East
-county,42095,Northampton,Kingdom of the East
-county,42097,Northumberland,Kingdom of the East
-county,42099,Perry,Kingdom of the East
-county,42101,Philadelphia,Kingdom of the East
-county,42103,Pike,Kingdom of the East
-county,42107,Schuylkill,Kingdom of the East
-county,42109,Snyder,Kingdom of the East
-county,42115,Susquehanna,Kingdom of the East
-county,42119,Union,Kingdom of the East
-county,42127,Wayne,Kingdom of the East
-county,42131,Wyoming,Kingdom of the East
-county,42133,York,Kingdom of the East
-county,47045,Dyer,Kingdom of Gleann Abhann
-county,47047,Fayette,Kingdom of Gleann Abhann
-county,47075,Haywood,Kingdom of Gleann Abhann
-county,47077,Henderson,Kingdom of Gleann Abhann
-county,47097,Lauderdale,Kingdom of Gleann Abhann
-county,47109,McNairy,Kingdom of Gleann Abhann
-county,47113,Madison,Kingdom of Gleann Abhann
-county,47131,Obion,Kingdom of Gleann Abhann
-county,47157,Shelby,Kingdom of Gleann Abhann
-county,47167,Tipton,Kingdom of Gleann Abhann
-county,47183,Weakley,Kingdom of Gleann Abhann
-county,48141,El Paso,Kingdom of the Outlands
-county,48229,Hudspeth,Kingdom of the Outlands
-county,53029,Island,Principality of Tir Righ
-county,53055,San Juan,Principality of Tir Righ
-county,53057,Skagit,Principality of Tir Righ
-county,53073,Whatcom,Principality of Tir Righ
-county,56003,Big Horn,Kingdom of Artemisia
-county,56013,Fremont,Kingdom of Artemisia
-county,56017,Hot Springs,Kingdom of Artemisia
-county,56023,Lincoln,Kingdom of Artemisia
-county,56029,Park,Kingdom of Artemisia
-county,56035,Sublette,Kingdom of Artemisia
-county,56037,Sweetwater,Kingdom of Artemisia
-county,56039,Teton,Kingdom of Artemisia
-county,56041,Uinta,Kingdom of Artemisia
-county,56042,Warren County,Kingdom of Meridies
-county,56043,Calloway County,Kingdom of Meridies
-county,56044,Simpson,Kingdom of Meridies
-county,56045,Allen,Kingdom of Meridies
-province,CA-AB,Alberta,Kingdom of Avacal
-province,CA-BC,British Columbia,Kingdom of An Tir
-province,CA-MB,Manitoba,Kingdom of Northshield
-province,CA-NB,New Brunswick,Kingdom of the East
-province,CA-NL,Newfoundland and Labrador,Kingdom of the East
-province,CA-NS,Nova Scotia,Kingdom of the East
-province,CA-NT,Northwest Territories,Kingdom of Avacal
-province,CA-ON,Ontario,Kingdom of Ealdormere
-province,CA-PE,Prince Edward Island,Kingdom of the East
-province,CA-QC,Quebec,Kingdom of the East
-province,CA-SK,Saskatchewan,Kingdom of Avacal
-province,CA-YT,Yukon,Kingdom of An Tir
-country,Albania,Albania,Kingdom of Drachenwald
-country,Australia,Australia,Kingdom of Lochac
-country,Austria,Austria,Kingdom of Drachenwald
-country,Belgium,Belgium,Kingdom of Drachenwald
-country,Bosnia and Herzegovina,Bosnia and Herzegovina,Kingdom of Drachenwald
-country,Bulgaria,Bulgaria,Kingdom of Drachenwald
-country,Croatia,Croatia,Kingdom of Drachenwald
-country,Czechia,Czechia,Kingdom of Drachenwald
-country,Denmark,Denmark,Kingdom of Drachenwald
-country,Estonia,Estonia,Kingdom of Drachenwald
-country,Finland,Finland,Kingdom of Drachenwald
-country,France,France,Kingdom of Drachenwald
-country,Germany,Germany,Kingdom of Drachenwald
-country,Greece,Greece,Kingdom of Drachenwald
-country,Hungary,Hungary,Kingdom of Drachenwald
-country,Iceland,Iceland,Kingdom of Drachenwald
-country,Ireland,Ireland,Kingdom of Drachenwald
-country,Italy,Italy,Kingdom of Drachenwald
-country,Japan,Japan,Kingdom of the West
-country,Kosovo,Kosovo,Kingdom of Drachenwald
-country,Latvia,Latvia,Kingdom of Drachenwald
-country,Lithuania,Lithuania,Kingdom of Drachenwald
-country,Luxembourg,Luxembourg,Kingdom of Drachenwald
-country,Macedonia,Macedonia,Kingdom of Drachenwald
-country,Moldova,Moldova,Kingdom of Drachenwald
-country,Montenegro,Montenegro,Kingdom of Drachenwald
-country,Netherlands,Netherlands,Kingdom of Drachenwald
-country,New Zealand,New Zealand,Kingdom of Lochac
-country,North Macedonia,North Macedonia,Kingdom of Drachenwald
-country,Norway,Norway,Kingdom of Drachenwald
-country,Panama,Panama,Kingdom of Trimaris
-country,Poland,Poland,Kingdom of Drachenwald
-country,Portugal,Portugal,Kingdom of Drachenwald
-country,Romania,Romania,Kingdom of Drachenwald
-country,Serbia,Serbia,Kingdom of Drachenwald
-country,Slovakia,Slovakia,Kingdom of Drachenwald
-country,Slovenia,Slovenia,Kingdom of Drachenwald
-country,South Korea,South Korea,Kingdom of the West
-country,Spain,Spain,Kingdom of Drachenwald
-country,Sweden,Sweden,Kingdom of Drachenwald
-country,Switzerland,Switzerland,Kingdom of Drachenwald
-country,Thailand,Thailand,Kingdom of the West
-country,Ukraine,Ukraine,Kingdom of Drachenwald
-country,United Kingdom,United Kingdom,Kingdom of Drachenwald
+type,id,name,kingdom,parent kingdom
+state,1,Alabama,Kingdom of Meridies,
+state,2,Alaska,Principality of Oertha,Kingdom of the West
+state,4,Arizona,Kingdom of Atenveldt,
+state,5,Arkansas,Kingdom of Gleann Abhann,
+state,6,California,Kingdom of the West,
+state,8,Colorado,Kingdom of the Outlands,
+state,9,Connecticut,Kingdom of the East,
+state,10,Delaware,Kingdom of the East,
+state,11,District of Columbia,Kingdom of Atlantia,
+state,12,Florida,Kingdom of Trimaris,
+state,13,Georgia,Kingdom of Meridies,
+state,15,Hawaii,Kingdom of Caid,
+state,16,Idaho,Kingdom of Artemisia,
+state,17,Illinois,Kingdom of the Middle,
+state,18,Indiana,Kingdom of the Middle,
+state,19,Iowa,Kingdom of Calontir,
+state,20,Kansas,Kingdom of Calontir,
+state,21,Kentucky,Kingdom of the Middle,
+state,22,Louisiana,Kingdom of Gleann Abhann,
+state,23,Maine,Kingdom of the East,
+state,24,Maryland,Kingdom of Atlantia,
+state,25,Massachusetts,Kingdom of the East,
+state,26,Michigan,Kingdom of the Middle,
+state,27,Minnesota,Kingdom of Northshield,
+state,28,Mississippi,Kingdom of Gleann Abhann,
+state,29,Missouri,Kingdom of Calontir,
+state,30,Montana,Kingdom of Artemisia,
+state,31,Nebraska,Kingdom of Calontir,
+state,32,Nevada,Kingdom of the West,
+state,33,New Hampshire,Kingdom of the East,
+state,34,New Jersey,Kingdom of the East,
+state,35,New Mexico,Kingdom of the Outlands,
+state,36,New York,Kingdom of the East,
+state,37,North Carolina,Kingdom of Atlantia,
+state,38,North Dakota,Kingdom of Northshield,
+state,39,Ohio,Kingdom of the Middle,
+state,40,Oklahoma,Principality of Vindheim,Kingdom of Ansteorra
+state,41,Oregon,Kingdom of An Tir,
+state,42,Pennsylvania,Kingdom of AEthelmearc,
+state,44,Rhode Island,Kingdom of the East,
+state,45,South Carolina,Kingdom of Atlantia,
+state,46,South Dakota,Kingdom of Northshield,
+state,47,Tennessee,Kingdom of Meridies,
+state,48,Texas,Kingdom of Ansteorra,
+state,49,Utah,Kingdom of Artemisia,
+state,50,Vermont,Kingdom of the East,
+state,51,Virginia,Kingdom of Atlantia,
+state,53,Washington,Kingdom of An Tir,
+state,54,West Virginia,Kingdom of AEthelmearc,
+state,55,Wisconsin,Kingdom of Northshield,
+state,56,Wyoming,Kingdom of the Outlands,
+county,6001,Alameda,Principality of the Mists,Kingdom of the West
+county,6005,Amador,Principality of Cynagua,Kingdom of the West
+county,6009,Calaveras,Principality of Cynagua,Kingdom of the West
+county,6013,Contra Costa,Principality of the Mists,Kingdom of the West
+county,6017,El Dorado,Principality of Cynagua,Kingdom of the West
+county,6019,Fresno,Kingdom of Caid,
+county,6025,Imperial,Kingdom of Caid,
+county,6027,Inyo,Kingdom of Caid,
+county,6029,Kern,Kingdom of Caid,
+county,6031,Kings,Kingdom of Caid,
+county,6037,Los Angeles,Kingdom of Caid,
+county,6039,Madera,Kingdom of Caid,
+county,6041,Marin,Principality of the Mists,Kingdom of the West
+county,6043,Mariposa,Kingdom of Caid,
+county,6047,Merced,Principality of Cynagua,Kingdom of the West
+county,6055,Napa,Principality of the Mists,Kingdom of the West
+county,6059,Orange,Kingdom of Caid,
+county,6061,Placer,Principality of Cynagua,Kingdom of the West
+county,6065,Riverside,Kingdom of Caid,
+county,6067,Sacramento,Principality of Cynagua,Kingdom of the West
+county,6071,San Bernardino,Kingdom of Caid,
+county,6073,San Diego,Kingdom of Caid,
+county,6075,San Francisco,Principality of the Mists,Kingdom of the West
+county,6077,San Joaquin,Principality of Cynagua,Kingdom of the West
+county,6079,San Luis Obispo,Kingdom of Caid,
+county,6081,San Mateo,Principality of the Mists,Kingdom of the West
+county,6083,Santa Barbara,Kingdom of Caid,
+county,6085,Santa Clara,Principality of the Mists,Kingdom of the West
+county,6087,Santa Cruz,Principality of the Mists,Kingdom of the West
+county,6095,Solano,Principality of the Mists,Kingdom of the West
+county,6097,Sonoma,Principality of the Mists,Kingdom of the West
+county,6099,Stanislaus,Principality of Cynagua,Kingdom of the West
+county,6101,Sutter,Principality of Cynagua,Kingdom of the West
+county,6107,Tulare,Kingdom of Caid,
+county,6109,Tuolumne,Principality of Cynagua,Kingdom of the West
+county,6111,Ventura,Kingdom of Caid,
+county,6113,Yolo,Principality of Cynagua,Kingdom of the West
+county,6115,Yuba,Principality of Cynagua,Kingdom of the West
+county,12013,Calhoun,Kingdom of Trimaris,
+county,12039,Gadsden,Kingdom of Trimaris,
+county,12045,Gulf,Kingdom of Trimaris,
+county,12059,Holmes,Kingdom of Trimaris,
+county,12063,Jackson,Kingdom of Trimaris,
+county,12065,Jefferson,Kingdom of Trimaris,
+county,12073,Leon,Kingdom of Trimaris,
+county,12091,Okaloosa,Kingdom of Meridies,
+county,12113,Santa Rosa,Kingdom of Meridies,
+county,12129,Wakulla,Kingdom of Trimaris,
+county,12131,Walton,Kingdom of Meridies,
+county,12133,Washington,Kingdom of Trimaris,
+county,16009,Benewah,Kingdom of An Tir,
+county,16017,Bonner,Kingdom of An Tir,
+county,16021,Boundary,Kingdom of An Tir,
+county,16035,Clearwater,Kingdom of An Tir,
+county,16049,Idaho,Kingdom of An Tir,
+county,16055,Kootenai,Kingdom of An Tir,
+county,16057,Latah,Kingdom of An Tir,
+county,16061,Lewis,Kingdom of An Tir,
+county,16069,Nez Perce,Kingdom of An Tir,
+county,16079,Shoshone,Kingdom of An Tir,
+county,32003,Clark,Kingdom of Caid,
+county,32023,Nye,Kingdom of Caid,
+county,36003,Allegany,Kingdom of AEthelmearc,
+county,36009,Cattaraugus,Kingdom of AEthelmearc,
+county,36013,Chautauqua,Kingdom of AEthelmearc,
+county,36029,Erie,Kingdom of AEthelmearc,
+county,36037,Genesee,Kingdom of AEthelmearc,
+county,36051,Livingston,Kingdom of AEthelmearc,
+county,36055,Monroe,Kingdom of AEthelmearc,
+county,36063,Niagara,Kingdom of AEthelmearc,
+county,36069,Ontario,Kingdom of AEthelmearc,
+county,36073,Orleans,Kingdom of AEthelmearc,
+county,36101,Steuben,Kingdom of AEthelmearc,
+county,36117,Wayne,Kingdom of AEthelmearc,
+county,36121,Wyoming,Kingdom of AEthelmearc,
+county,36123,Yates,Kingdom of AEthelmearc,
+county,41003,Benton,Principality of the Summits,Kingdom of An Tir
+county,41011,Coos,Principality of the Summits,Kingdom of An Tir
+county,41015,Curry,Principality of the Summits,Kingdom of An Tir
+county,41019,Douglas,Principality of the Summits,Kingdom of An Tir
+county,41029,Jackson,Principality of the Summits,Kingdom of An Tir
+county,41033,Josephine,Principality of the Summits,Kingdom of An Tir
+county,41035,Klamath,Principality of the Summits,Kingdom of An Tir
+county,41037,Lake,Principality of the Summits,Kingdom of An Tir
+county,41039,Lane,Principality of the Summits,Kingdom of An Tir
+county,41041,Lincoln,Principality of the Summits,Kingdom of An Tir
+county,41043,Linn,Principality of the Summits,Kingdom of An Tir
+county,41047,Marion,Principality of the Summits,Kingdom of An Tir
+county,42011,Berks,Kingdom of the East,
+county,42017,Bucks,Kingdom of the East,
+county,42025,Carbon,Kingdom of the East,
+county,42029,Chester,Kingdom of the East,
+county,42041,Cumberland,Kingdom of the East,
+county,42043,Dauphin,Kingdom of the East,
+county,42045,Delaware,Kingdom of the East,
+county,42069,Lackawanna,Kingdom of the East,
+county,42071,Lancaster,Kingdom of the East,
+county,42077,Lehigh,Kingdom of the East,
+county,42079,Luzerne,Kingdom of the East,
+county,42089,Monroe,Kingdom of the East,
+county,42091,Montgomery,Kingdom of the East,
+county,42093,Montour,Kingdom of the East,
+county,42095,Northampton,Kingdom of the East,
+county,42097,Northumberland,Kingdom of the East,
+county,42099,Perry,Kingdom of the East,
+county,42101,Philadelphia,Kingdom of the East,
+county,42103,Pike,Kingdom of the East,
+county,42107,Schuylkill,Kingdom of the East,
+county,42109,Snyder,Kingdom of the East,
+county,42115,Susquehanna,Kingdom of the East,
+county,42119,Union,Kingdom of the East,
+county,42127,Wayne,Kingdom of the East,
+county,42131,Wyoming,Kingdom of the East,
+county,42133,York,Kingdom of the East,
+county,47045,Dyer,Kingdom of Gleann Abhann,
+county,47047,Fayette,Kingdom of Gleann Abhann,
+county,47075,Haywood,Kingdom of Gleann Abhann,
+county,47077,Henderson,Kingdom of Gleann Abhann,
+county,47097,Lauderdale,Kingdom of Gleann Abhann,
+county,47109,McNairy,Kingdom of Gleann Abhann,
+county,47113,Madison,Kingdom of Gleann Abhann,
+county,47131,Obion,Kingdom of Gleann Abhann,
+county,47157,Shelby,Kingdom of Gleann Abhann,
+county,47167,Tipton,Kingdom of Gleann Abhann,
+county,47183,Weakley,Kingdom of Gleann Abhann,
+county,48141,El Paso,Kingdom of the Outlands,
+county,48229,Hudspeth,Kingdom of the Outlands,
+county,53029,Island,Principality of Tir Righ,Kingdom of An Tir
+county,53055,San Juan,Principality of Tir Righ,Kingdom of An Tir
+county,53057,Skagit,Principality of Tir Righ,Kingdom of An Tir
+county,53073,Whatcom,Principality of Tir Righ,Kingdom of An Tir
+county,56003,Big Horn,Kingdom of Artemisia,
+county,56013,Fremont,Kingdom of Artemisia,
+county,56017,Hot Springs,Kingdom of Artemisia,
+county,56023,Lincoln,Kingdom of Artemisia,
+county,56029,Park,Kingdom of Artemisia,
+county,56035,Sublette,Kingdom of Artemisia,
+county,56037,Sweetwater,Kingdom of Artemisia,
+county,56039,Teton,Kingdom of Artemisia,
+county,56041,Uinta,Kingdom of Artemisia,
+county,21227,Warren County,Kingdom of Meridies,
+county,21035,Calloway County,Kingdom of Meridies,
+county,21213,Simpson,Kingdom of Meridies,
+county,21003,Allen,Kingdom of Meridies,
+county,13245,Richmond,Kingdom of Atlantia,
+province,CA-AB,Alberta,Kingdom of Avacal,
+province,CA-BC,British Columbia,Kingdom of An Tir,
+province,CA-MB,Manitoba,Kingdom of Northshield,
+province,CA-NB,New Brunswick,Kingdom of the East,
+province,CA-NL,Newfoundland and Labrador,Kingdom of the East,
+province,CA-NS,Nova Scotia,Kingdom of the East,
+province,CA-NT,Northwest Territories,Kingdom of Avacal,
+province,CA-ON,Ontario,Kingdom of Ealdormere,
+province,CA-PE,Prince Edward Island,Kingdom of the East,
+province,CA-QC,Quebec,Kingdom of the East,
+province,CA-SK,Saskatchewan,Kingdom of Avacal,
+province,CA-YT,Yukon,Kingdom of An Tir,
+country,Albania,Albania,Kingdom of Drachenwald,
+country,Australia,Australia,Kingdom of Lochac,
+country,Austria,Austria,Kingdom of Drachenwald,
+country,Belgium,Belgium,Kingdom of Drachenwald,
+country,Bosnia and Herzegovina,Bosnia and Herzegovina,Kingdom of Drachenwald,
+country,Bulgaria,Bulgaria,Kingdom of Drachenwald,
+country,Croatia,Croatia,Kingdom of Drachenwald,
+country,Czechia,Czechia,Kingdom of Drachenwald,
+country,Denmark,Denmark,Kingdom of Drachenwald,
+country,Estonia,Estonia,Kingdom of Drachenwald,
+country,Finland,Finland,Kingdom of Drachenwald,
+country,France,France,Kingdom of Drachenwald,
+country,Germany,Germany,Kingdom of Drachenwald,
+country,Greece,Greece,Kingdom of Drachenwald,
+country,Hungary,Hungary,Kingdom of Drachenwald,
+country,Iceland,Iceland,Kingdom of Drachenwald,
+country,Ireland,Ireland,Kingdom of Drachenwald,
+country,Italy,Italy,Kingdom of Drachenwald,
+country,Japan,Japan,Kingdom of the West,
+country,Kosovo,Kosovo,Kingdom of Drachenwald,
+country,Latvia,Latvia,Kingdom of Drachenwald,
+country,Lithuania,Lithuania,Kingdom of Drachenwald,
+country,Luxembourg,Luxembourg,Kingdom of Drachenwald,
+country,Macedonia,Macedonia,Kingdom of Drachenwald,
+country,Moldova,Moldova,Kingdom of Drachenwald,
+country,Montenegro,Montenegro,Kingdom of Drachenwald,
+country,Netherlands,Netherlands,Kingdom of Drachenwald,
+country,New Zealand,New Zealand,Kingdom of Lochac,
+country,North Macedonia,North Macedonia,Kingdom of Drachenwald,
+country,Norway,Norway,Kingdom of Drachenwald,
+country,Panama,Panama,Kingdom of Trimaris,
+country,Poland,Poland,Kingdom of Drachenwald,
+country,Portugal,Portugal,Kingdom of Drachenwald,
+country,Romania,Romania,Kingdom of Drachenwald,
+country,Serbia,Serbia,Kingdom of Drachenwald,
+country,Slovakia,Slovakia,Kingdom of Drachenwald,
+country,Slovenia,Slovenia,Kingdom of Drachenwald,
+country,South Korea,South Korea,Kingdom of the West,
+country,Spain,Spain,Kingdom of Drachenwald,
+country,Sweden,Sweden,Kingdom of Drachenwald,
+country,Switzerland,Switzerland,Kingdom of Drachenwald,
+country,Thailand,Thailand,Kingdom of the West,
+country,Ukraine,Ukraine,Kingdom of Drachenwald,
+country,United Kingdom,United Kingdom,Principality of Insulae Draconis,Kingdom of Drachenwald
+country,Ireland,Ireland,Principality of Insulae Draconis,Kingdom of Drachenwald
+country,Vietnam,Vietnam,The Marches,Kingdom of the West
+country,South Korea,South Korea,The Marches,Kingdom of the West
+country,Japan,Japan,The Marches,Kingdom of the West
+territory,Guam,Guam,The Marches,Kingdom of the West
