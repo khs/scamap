@@ -21,6 +21,7 @@ Run:
 from __future__ import annotations
 
 import csv
+import json
 import re
 import unittest
 from pathlib import Path
@@ -29,6 +30,7 @@ HERE = Path(__file__).parent
 TERRITORY = HERE / "territory_kingdoms.csv"
 LOCALS = HERE / "locals.csv"
 INDEX = HERE / "index.html"
+CANADA_CD = HERE / "canada-cd.topojson"
 
 
 def _kingdom_colors() -> set:
@@ -60,7 +62,8 @@ class TestTerritoryKingdoms(unittest.TestCase):
 
     def test_type_is_valid(self):
         bad = sorted({r["type"] for r in self.rows
-                      if r["type"] not in {"state", "county", "province", "country", "territory"}})
+                      if r["type"] not in {"state", "county", "cd",
+                                           "province", "country", "territory"}})
         self.assertEqual(bad, [], f"unknown row types: {bad}")
 
     def test_colour_kingdom_is_known_to_the_map(self):
@@ -92,6 +95,7 @@ class TestTerritoryKingdoms(unittest.TestCase):
             t, i = r["type"], r["id"]
             ok = ((t == "state" and re.fullmatch(r"\d{1,2}", i)) or
                   (t == "county" and re.fullmatch(r"\d{4,5}", i)) or
+                  (t == "cd" and re.fullmatch(r"\d{4}", i)) or
                   (t == "province" and re.fullmatch(r"[A-Z]{2}-[A-Z0-9]{2,3}", i)) or
                   (t in ("country", "territory") and i.strip()))
             if not ok:
@@ -155,6 +159,32 @@ class TestLocals(unittest.TestCase):
             if not (-90 <= la <= 90 and -180 <= lo <= 180):
                 bad.append((r.get("group"), lat, lng))
         self.assertEqual(bad, [], f"out-of-range or unpaired coordinates: {bad}")
+
+
+class TestCanadaCdTopojson(unittest.TestCase):
+    """Guard the committed Canada census-division layer the overlay rides on."""
+
+    def test_topojson_is_well_formed(self):
+        self.assertTrue(CANADA_CD.exists(), "canada-cd.topojson is missing")
+        t = json.loads(CANADA_CD.read_text(encoding="utf-8"))
+        self.assertIn("cd", t.get("objects", {}), "missing 'cd' object")
+        geoms = t["objects"]["cd"]["geometries"]
+        # 293 census divisions in the 2021 file; allow a little slack.
+        self.assertGreater(len(geoms), 250, f"only {len(geoms)} CDs")
+        props = geoms[0].get("properties", {})
+        self.assertIn("CDUID", props)
+        self.assertIn("PRUID", props)
+
+    def test_pruids_map_to_provinces(self):
+        # Every CD's PRUID must be one the front-end can resolve to a province
+        # default (PRUID_TO_ISO in index.html). Catches a stray/garbage PRUID.
+        valid = {"10", "11", "12", "13", "24", "35",
+                 "46", "47", "48", "59", "60", "61", "62"}
+        t = json.loads(CANADA_CD.read_text(encoding="utf-8"))
+        bad = sorted({str(g["properties"].get("PRUID", "")).zfill(2)
+                      for g in t["objects"]["cd"]["geometries"]
+                      if str(g["properties"].get("PRUID", "")).zfill(2) not in valid})
+        self.assertEqual(bad, [], f"unmapped PRUIDs: {bad}")
 
 
 if __name__ == "__main__":

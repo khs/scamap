@@ -675,7 +675,7 @@ function eventColor(ev) {
 // zoom when the overlay is on, visually identical.
 const map = L.map('map', { center: [38, -96], zoom: 4, preferCanvas: true });
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors · Canada CD boundaries adapted from Statistics Canada, 2021 Census',
   maxZoom: 19,
 }).addTo(map);
 
@@ -729,6 +729,23 @@ function overlayLabel(info) {
   return info.parent ? `${info.kingdom}, ${info.parent}` : info.kingdom;
 }
 
+// Canada census divisions (canada-cd.topojson, keyed by 4-digit CDUID). A CD
+// takes a type=cd override row if one exists, else its province's default. The
+// province rows (CA-xx) seed those defaults; a CD's PRUID (its 2-digit province
+// code) maps to the province ISO.
+let CD_OVERRIDES = {};      // CDUID -> {kingdom, parent}
+let CANADA_PROVINCE = {};   // "CA-ON" -> {kingdom, parent}
+const PRUID_TO_ISO = {
+  '10': 'CA-NL', '11': 'CA-PE', '12': 'CA-NS', '13': 'CA-NB', '24': 'CA-QC',
+  '35': 'CA-ON', '46': 'CA-MB', '47': 'CA-SK', '48': 'CA-AB', '59': 'CA-BC',
+  '60': 'CA-YT', '61': 'CA-NT', '62': 'CA-NU',
+};
+function territoryForCD(cduid, pruid) {
+  return CD_OVERRIDES[String(cduid).padStart(4, '0')]
+      || CANADA_PROVINCE[PRUID_TO_ISO[String(pruid).padStart(2, '0')]]
+      || null;
+}
+
 // Lazy-load TopoJSON + topojson-client; convert counties layer to GeoJSON
 let kingdomOverlay = null;
 let kingdomOverlayPromise = null;
@@ -736,15 +753,17 @@ let kingdomOverlayPromise = null;
 function loadKingdomOverlay() {
   if (kingdomOverlayPromise) return kingdomOverlayPromise;
   kingdomOverlayPromise = (async () => {
-    // Pull both layers + the topojson-client converter in parallel.
-    // - us-counties.topojson: fine US county detail (with override table)
-    // - world-kingdoms.topojson: Canadian provinces (Avacal/Ealdormere/Tir Mara/
-    //   Tir Righ-BC), Lochac (AU+NZ), Drachenwald (Europe). Each feature is
-    //   pre-tagged with a `kingdom` property by build_world_kingdoms.py.
-    //   TopoJSON (~132KB) instead of raw GeoJSON (~366KB).
-    const [topoResp, worldResp] = await Promise.all([
+    // Pull the three boundary layers + the topojson-client converter in parallel.
+    // - us-counties.topojson: fine US county detail (state default + overrides)
+    // - canada-cd.topojson: Canadian census divisions (province default + per-CD
+    //   overrides), from Statistics Canada's 2021 cartographic boundary file.
+    // - world-kingdoms.topojson: Lochac (AU+NZ), Drachenwald (Europe), and a few
+    //   Asia/UK country-level principalities. Pre-tagged `kingdom`/`parent` by
+    //   build_world_kingdoms.py.
+    const [topoResp, worldResp, canadaResp] = await Promise.all([
       fetch('us-counties.topojson'),
       fetch('world-kingdoms.topojson'),
+      fetch('canada-cd.topojson').catch(() => null),
       new Promise((resolve, reject) => {
         if (window.topojson) { resolve(); return; }
         const s = document.createElement('script');
@@ -761,6 +780,12 @@ function loadKingdomOverlay() {
     if (worldResp.ok) {
       const worldTopo = await worldResp.json();
       world = window.topojson.feature(worldTopo, worldTopo.objects.data);
+    }
+    // Canada census divisions (province default + per-CD overrides).
+    let canadaCd = { type: 'FeatureCollection', features: [] };
+    if (canadaResp && canadaResp.ok) {
+      const cdTopo = await canadaResp.json();
+      canadaCd = window.topojson.feature(cdTopo, cdTopo.objects.cd);
     }
 
     // Binding 3000+ tooltips up front pegs the renderer; instead, manage a
@@ -799,6 +824,8 @@ function loadKingdomOverlay() {
         const info = { kingdom: r.kingdom, parent: (r['parent kingdom'] || '').trim() };
         if (r.type === 'state') STATE_FIPS_TO_KINGDOM[String(r.id).padStart(2, '0')] = info;
         else if (r.type === 'county') COUNTY_OVERRIDES[String(r.id).padStart(5, '0')] = info;
+        else if (r.type === 'cd') CD_OVERRIDES[String(r.id).padStart(4, '0')] = info;
+        else if (r.type === 'province') CANADA_PROVINCE[(r.id || '').trim()] = info;
       });
     } catch (e) { /* no CSV -> US counties render uncoloured */ }
 
@@ -842,7 +869,27 @@ function loadKingdomOverlay() {
       },
     });
 
-    kingdomOverlay = L.layerGroup([worldLayer, countiesLayer]);
+    const canadaCdLayer = L.geoJSON(canadaCd, {
+      style: feature => {
+        const p = feature.properties || {};
+        return {
+          color: '#222',
+          weight: 0.2,
+          fillColor: overlayColor(territoryForCD(p.CDUID, p.PRUID)),
+          fillOpacity: 0.30,
+          interactive: true,
+        };
+      },
+      onEachFeature: (feature, layer) => {
+        layer.on('mouseover mousemove', (e) => {
+          const p = feature.properties || {};
+          showOverlayTooltip(e, overlayLabel(territoryForCD(p.CDUID, p.PRUID)));
+        });
+        layer.on('mouseout', closeOverlayTooltip);
+      },
+    });
+
+    kingdomOverlay = L.layerGroup([worldLayer, canadaCdLayer, countiesLayer]);
     return kingdomOverlay;
   })();
   return kingdomOverlayPromise;
