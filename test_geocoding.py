@@ -115,12 +115,19 @@ class TestCoordState(unittest.TestCase):
     def test_in_sca_region(self):
         self.assertTrue(gse.in_sca_region(33.749, -84.388))    # Atlanta
         self.assertTrue(gse.in_sca_region(21.305, -157.856))   # Honolulu
+        self.assertTrue(gse.in_sca_region(13.85, 100.42))      # Nonthaburi, Thailand (The Marches)
         self.assertFalse(gse.in_sca_region(0.0, 20.0))         # equatorial Africa
 
     def test_lochac_region(self):
         # A Wisconsin coord is NOT in Lochac's regions; Melbourne is.
         self.assertFalse(gse.in_source_regions(42.91, -89.22, "Kingdom of Lochac"))
         self.assertTrue(gse.in_source_regions(-37.81, 144.96, "Kingdom of Lochac"))
+
+    def test_marches_region_for_west(self):
+        # The West's Asian territories (The Marches): a Thai venue is in-region
+        # for the West but not for an east-coast kingdom.
+        self.assertTrue(gse.in_source_regions(13.85, 100.42, "Kingdom of the West"))
+        self.assertFalse(gse.in_source_regions(13.85, 100.42, "Kingdom of Atlantia"))
 
 
 class TestValidate(unittest.TestCase):
@@ -147,6 +154,31 @@ class TestValidate(unittest.TestCase):
         self.assertFalse(gse._validate(47.61, -122.33, "", va_barony, "Barony of Stierbach"))
         # ...but an event genuinely in-region is fine.
         self.assertTrue(gse._validate(38.30, -77.46, "", va_barony, "Barony of Stierbach"))
+
+
+class TestAcceptableStatesInheritance(unittest.TestCase):
+    """A barony with no explicit BARONY_HOME_STATES entry inherits its kingdom's
+    member states (via the locals.csv source->kingdom map), so it stays
+    in-kingdom rather than accepting a match anywhere in North America."""
+
+    def test_unlisted_caid_barony_inherits_kingdom_states(self):
+        acc = gse.acceptable_states_for_source("Barony of Lyondemere")
+        self.assertIsNotNone(acc, "Caid barony should inherit Caid's states")
+        self.assertTrue({"CA", "NV", "HI"} <= acc, acc)
+
+    def test_tagged_caid_source_resolves_via_stripped_name(self):
+        # The "(Practices)" tag is stripped to match the locals.csv group.
+        acc = gse.acceptable_states_for_source("Barony of Calafia (Practices)")
+        self.assertTrue(acc and {"CA", "NV", "HI"} <= acc)
+
+    def test_explicitly_listed_barony_keeps_its_tight_states(self):
+        # Lochmere is explicitly {MD}: it must NOT widen to all of Atlantia.
+        acc = gse.acceptable_states_for_source("Barony of Lochmere")
+        self.assertIn("MD", acc)
+        self.assertNotIn("NC", acc)
+
+    def test_unknown_source_is_none(self):
+        self.assertIsNone(gse.acceptable_states_for_source("Barony of Nowhere At All"))
 
 
 class TestSeatLookup(unittest.TestCase):
