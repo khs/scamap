@@ -126,6 +126,9 @@ class TestAddressWithheld(unittest.TestCase):
         "please contact the autocrat for directions",
         "Email the seneschal for the address",
         "Lady Ana's house",
+        "Email Seneschal",                                      # bare contact-a-role
+        "contact the marshal",
+        "see the seneschal",
     ]
     # Real addresses (or venue names) that must keep a non-empty confidence —
     # they merely contain a trigger word.
@@ -136,6 +139,8 @@ class TestAddressWithheld(unittest.TestCase):
         "123 Discord Lane, Cherokee, IA",                       # 'discord' inside a real street
         "Join our Discord server after you arrive at 5 Main St",  # 'discord' mid-string, no 'dm'
         "Private Property 190 State Rt 219, Leeds, ME 04263",    # 'private', not residence/home
+        "Marshall, TX 75670",                                    # a city named Marshall, no contact verb
+        "123 Steward Ave, Dayton, OH 45402",                    # street named Steward, no contact verb
     ]
 
     def test_withheld_locations_collapse_to_empty(self):

@@ -532,8 +532,12 @@
       Baronial (Practices)
     </label>
     <label class="check-label">
+      <input type="checkbox" id="chk-placeholders" checked />
+      Show markers for groups without calendars
+    </label>
+    <label class="check-label">
       <input type="checkbox" id="chk-aggregate" />
-      Aggregate events
+      Number events in the same location
     </label>
     <label class="check-label kingdom-overlay-toggle">
       <input type="checkbox" id="chk-overlay" />
@@ -929,8 +933,49 @@ function escapeHtml(s) {
     .replace(/'/g, '&#39;');
 }
 
+// ── Hardcoded practices (hardcoded_events.csv) ───────────────────
+// Some groups publish their practices only as a static webpage, not an
+// importable calendar. hardcoded_events.csv lets us place those by hand: each
+// row becomes a baronial pin at a fixed coordinate, with a popup that points
+// to the group's schedule page. These carry no date, so they bypass the
+// time-window filter (see applyFilters) and always show while Baronial is on.
+function ingestHardcodedEvents(text) {
+  parseCSV(text).forEach(row => {
+    const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
+    if (isNaN(lat) || isNaN(lng)) return;   // can't place a pin without coordinates
+    allEvents.push({
+      title: row.title || '', source: row.source || '',
+      calendar_type: 'baronial', is_virtual: 'False', is_hardcoded: 'True',
+      lat: row.lat, lng: row.lng,
+      location: row.location || '', clean_location: row.location || '',
+      day: row.day || '',
+      schedule_url: row['schedule url'] || row.schedule_url || '',
+      start: '', end: '', description: '',
+    });
+  });
+}
+
+function buildHardcodedPopup(ev) {
+  const where = ev.location ? ` at ${escapeHtml(ev.location)}` : '';
+  const when  = ev.day ? ` on ${escapeHtml(ev.day)}` : '';
+  const url   = ev.schedule_url || '';
+  const site  = url
+    ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(url)}</a>`
+    : 'the group’s website';
+  return `<div class="event-popup">
+    <h3>${escapeHtml(ev.title)}</h3>
+    <span class="source-pill">${escapeHtml(ev.source)}</span>
+    <div class="desc" style="margin-top:0.45rem;">
+      EventScout is unable to import this calendar, but we believe this practice is${where}${when}.
+      Please check the website: ${site}.<br>
+      Please <a href="https://forms.gle/gcdRyUnVv8FbLqG3A" target="_blank" rel="noopener">let us know</a> if this event information is out of date.
+    </div>
+  </div>`;
+}
+
 // ── Popup builder ─────────────────────────────────────────────────
 function buildPopup(ev) {
+  if (ev.is_hardcoded === 'True') return buildHardcodedPopup(ev);
   const dateStr = formatDate(ev.start) +
     (ev.end && ev.end !== ev.start ? ' – ' + formatDate(ev.end) : '');
   const desc = ev.description
@@ -1160,6 +1205,42 @@ function onlineEventsForGroup(group) {
   return _onlineByGroup.get(group) || [];
 }
 
+// For viewport-aware Online-list filtering: a *baronial* online meeting is only
+// interesting near its group (a barony's Zoom practice means little to someone
+// across the world), so tag each virtual event with its parent group's
+// coordinate — its own source-group pin, else a business-meeting title match in
+// the same kingdom. Kingdom-level online events get NO parent and are never
+// location-filtered. Computed once, lazily, from allEvents + groupPins.
+let _virtualParentsReady = false;
+function ensureVirtualParents() {
+  if (_virtualParentsReady) return;
+  if (!allEvents.length || !groupPins.length) return;        // data not ready; retry later
+  const pinByGroup = new Map();
+  const cands = [];
+  groupPins.forEach(p => {
+    const lat = parseFloat(p.lat), lng = parseFloat(p.lng);
+    if (isNaN(lat) || isNaN(lng)) return;
+    if (!pinByGroup.has(p.group)) pinByGroup.set(p.group, [lat, lng]);
+    const s = normName(groupShortName(p.group));
+    if (s.length >= 4) cands.push({ kingdom: p.kingdom, s, lat, lng });
+  });
+  allEvents.forEach(ev => {
+    if (ev.is_virtual !== 'True') return;
+    let ll = pinByGroup.get(ev.source);                      // a barony's own online event
+    if (!ll) {                                               // a promoted business meeting
+      const nt = normName(ev.title);
+      let best = null;
+      cands.forEach(x => {
+        if (x.kingdom !== ev.source || !nt.includes(x.s)) return;
+        if (!best || x.s.length > best.s.length) best = x;
+      });
+      if (best) ll = [best.lat, best.lng];
+    }
+    if (ll) { ev._parentLat = ll[0]; ev._parentLng = ll[1]; }
+  });
+  _virtualParentsReady = true;
+}
+
 // SCA group names are "<Type> of <Name>" (Principality of Oertha, Shire of …,
 // Crown Province of …). Pull the type so a popup never calls a principality —
 // or a shire, canton, college, province, riding, stronghold — a "barony".
@@ -1225,10 +1306,14 @@ function applyFilters() {
   // Filter
   const filtered = allEvents.filter((ev, i) => {
     ev._idx = i;
+    // Hardcoded practices (hardcoded_events.csv) carry no date — they're
+    // recurring entries placed by hand — so they skip the time-window filter
+    // and always show, subject only to the Baronial + search filters.
+    const isHardcoded = ev.is_hardcoded === 'True';
     // Date-range filter — applied universally (map AND online). An event is in
     // range when its window [start, end] overlaps [fromDate, toDate]: drop it
     // only when it ENDS before the window or STARTS after it.
-    if (fromDate || toDate) {
+    if (!isHardcoded && (fromDate || toDate)) {
       const evStart = (ev.start || '').slice(0, 10);
       const evEnd   = (ev.end   || ev.start || '').slice(0, 10);
       if (!evStart) return false;                                    // no usable date
@@ -1301,6 +1386,11 @@ function applyFilters() {
   }
 
   filtered.forEach((ev, i) => {
+    // Online/virtual events never get a map marker (req: "don't ever display a
+    // marker for them") — they live in the Online tab and as the teal badge on a
+    // group's "?" pin. Some carry stray coordinates (a Zoom meeting geocoded to a
+    // venue), so guard explicitly rather than relying on missing lat/lng.
+    if (ev.is_virtual === 'True') return;
     const lat = parseFloat(ev.lat), lng = parseFloat(ev.lng);
     if (isNaN(lat) || isNaN(lng)) return;
     const [plotLat, plotLng] = spiralOffset(lat, lng);
@@ -1333,6 +1423,7 @@ function applyFilters() {
   const sourcesWithMappedEvents = new Set();
   const mappedTitlesLowercase = [];
   filtered.forEach(ev => {
+    if (ev.is_virtual === 'True') return;   // no marker → doesn't represent a group on the map
     const lat = parseFloat(ev.lat), lng = parseFloat(ev.lng);
     if (isNaN(lat) || isNaN(lng)) return;
     sourcesWithMappedEvents.add(ev.source);
@@ -1361,8 +1452,11 @@ function applyFilters() {
   }
   // Skip placeholder "?" pins entirely on the Online Only tab -- they're
   // baronial seats with no current event, which just clutters the view when
-  // the user is hunting for actual online events to attend.
-  if (document.getElementById('chk-baronial').checked && !onlineOnly) {
+  // the user is hunting for actual online events to attend. They're also
+  // suppressible directly via the "Show markers for groups without calendars"
+  // checkbox.
+  if (document.getElementById('chk-baronial').checked &&
+      document.getElementById('chk-placeholders').checked && !onlineOnly) {
     const query = document.getElementById('search-input').value.toLowerCase().trim();
     const sortedPins = [...groupPins].sort(
       (a, b) => pinTypePriority(a.group) - pinTypePriority(b.group)
@@ -1418,28 +1512,49 @@ function applyFilters() {
 // rebuilding the markers/clusters.
 function renderSidebarList() {
   const list = document.getElementById('sidebar-list');
+  // The list is rebuilt on every map move (both modes now). Remember which
+  // Online-tab items are expanded so panning doesn't collapse an open one.
+  const openIdx = new Set();
+  list.querySelectorAll('.event-item.expanded').forEach(el => {
+    if (el.dataset.idx != null) openIdx.add(el.dataset.idx);
+  });
   list.innerHTML = '';
 
+  ensureVirtualParents();
   const inMapMode = (sidebarMode === 'map');
-  const bounds = inMapMode ? map.getBounds() : null;
+  const bounds = map.getBounds();
   const shown = inMapMode
     ? lastFiltered.filter(ev => {
         const marker = markerMap[ev._idx];
         return marker && bounds.contains(marker.getLatLng());
       })
-    : lastFiltered;
+    : lastFiltered.filter(ev => {
+        // Online tab: kingdom-level online events always show; a baronial online
+        // event shows only when its parent group sits in the current view (or we
+        // couldn't locate the group — then we don't hide it).
+        if (ev.calendar_type !== 'baronial') return true;
+        if (ev._parentLat == null) return true;
+        return bounds.contains([ev._parentLat, ev._parentLng]);
+      });
 
   if (shown.length === 0) {
-    const msg = inMapMode ? 'No events in this part of the map — zoom out or pan.'
-                          : 'No events match your search.';
+    const msg = inMapMode
+      ? 'No events in this part of the map — zoom out or pan.'
+      : (lastFiltered.length
+          ? 'No online events for groups in this map view — zoom out or pan.'
+          : 'No online events match your search.');
     list.innerHTML = `<div style="padding:1rem;color:#888;font-style:italic;font-size:0.85rem;">${msg}</div>`;
   } else {
     shown.forEach(ev => {
       const color = eventColor(ev);
       const item = document.createElement('div');
       item.className = 'event-item';
+      item.dataset.idx = ev._idx;
       const isVirtual = ev.is_virtual === 'True';
       const virtualTag = isVirtual ? '<span class="virtual-tag">Virtual</span>' : '';
+      // Hardcoded practices have no date — show their recurring day instead.
+      const dateLabel = ev.is_hardcoded === 'True'
+        ? escapeHtml(ev.day || 'Recurring') : shortDate(ev.start);
       const eventLink  = bestLinkFor(ev);
       const sourceUrl  = websiteForSource(ev.source);
       const sourceHtml = sourceUrl
@@ -1467,7 +1582,7 @@ function renderSidebarList() {
       item.title = expandable ? 'Click to show date, time & link' : 'Click to show on the map';
       item.innerHTML = `
         <div class="event-item-title">${escapeHtml(ev.title)}${virtualTag}</div>
-        <div class="event-item-date">${shortDate(ev.start)}</div>
+        <div class="event-item-date">${dateLabel}</div>
         <div class="event-item-source">${sourceHtml}</div>
         <span class="event-item-dot" style="background:${color}"></span>
         ${detailHtml}
@@ -1485,7 +1600,9 @@ function renderSidebarList() {
       };
       item.tabIndex = 0;
       item.setAttribute('role', 'button');
-      if (expandable) item.setAttribute('aria-expanded', 'false');
+      if (expandable && openIdx.has(String(ev._idx))) item.classList.add('expanded');
+      if (expandable) item.setAttribute('aria-expanded',
+        item.classList.contains('expanded') ? 'true' : 'false');
       item.addEventListener('click', activate);
       item.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
@@ -1499,11 +1616,15 @@ function renderSidebarList() {
   const placeholderSuffix = placeholderCount ? ` · ${placeholderCount} barony pins` : '';
   document.getElementById('sidebar-count').textContent = inMapMode
     ? `${shown.length} in view · ${mapCount} mapped${placeholderSuffix}`
-    : `${shown.length} virtual events`;
+    : (shown.length === lastFiltered.length
+        ? `${shown.length} virtual events`
+        : `${shown.length} of ${lastFiltered.length} virtual events in view`);
 }
 
-// Auto-sync the map-mode sidebar to the visible area as the user pans/zooms.
-map.on('moveend', () => { if (sidebarMode === 'map') renderSidebarList(); });
+// Auto-sync the sidebar to the visible area as the user pans/zooms. Both modes
+// are now viewport-aware: map mode tracks visible markers, the Online tab tracks
+// which baronies are in view (kingdom-level online events always show).
+map.on('moveend', renderSidebarList);
 
 // ── CSV parser ───────────────────────────────────────────────────
 // Single-pass RFC 4180 parser: tokenises text directly into records of
@@ -1554,14 +1675,13 @@ fetch('sca_events_clean.csv')
   .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
   .then(text => {
     allEvents = parseCSV(text);
-    // Placeholder "?" pins + the source→website lookup come from locals.csv
-    // (the local-group registry; lat/lng are hand-maintained there now).
-    return fetch('locals.csv').then(
-      r => r.ok ? r.text() : '',
-      () => '',   // network error: treat as missing file
-    );
+    // Placeholder "?" pins + source→website come from locals.csv; hand-kept
+    // practices for groups whose schedule is only a static webpage come from
+    // hardcoded_events.csv. Both are optional — a missing file just renders less.
+    const opt = name => fetch(name).then(r => r.ok ? r.text() : '', () => '');
+    return Promise.all([opt('locals.csv'), opt('hardcoded_events.csv')]);
   })
-  .then(pinsText => {
+  .then(([pinsText, hardText]) => {
     if (pinsText) groupPins = parseCSV(pinsText);
     // Build source→website + source→kingdom lookups from locals.csv so an event
     // whose source is "Barony of X" can fall back to that barony's official site
@@ -1572,6 +1692,9 @@ fetch('sca_events_clean.csv')
       if (p.group && p.website && !sourceWebsite[p.group]) sourceWebsite[p.group] = p.website;
       if (p.group && p.kingdom && !groupKingdom[p.group]) groupKingdom[p.group] = p.kingdom;
     });
+    // Append hand-maintained practices AFTER groupKingdom is built (so they pick
+    // up their barony's kingdom colour) and BEFORE applyFilters (so they render).
+    if (hardText) ingestHardcodedEvents(hardText);
     applyFilters();
   })
   .catch(err => {
@@ -1615,6 +1738,7 @@ document.getElementById('date-reset').addEventListener('click', () => {
 
 document.getElementById('chk-kingdom').addEventListener('change', applyFilters);
 document.getElementById('chk-baronial').addEventListener('change', applyFilters);
+document.getElementById('chk-placeholders').addEventListener('change', applyFilters);
 document.getElementById('chk-aggregate').addEventListener('change', applyFilters);
 document.getElementById('chk-virtual').addEventListener('change', applyFilters);
 
