@@ -537,7 +537,7 @@
     </label>
     <label class="check-label kingdom-overlay-toggle">
       <input type="checkbox" id="chk-overlay" />
-      Color states by kingdom
+      Colour background by kingdom
     </label>
   </div>
 
@@ -606,7 +606,7 @@ const KINGDOM_COLORS = {
   "Kingdom of AEthelmearc":     "#cc2200",   // scarlet
   "Kingdom of Atenveldt":       "#1e90ff",   // bright blue
   "Kingdom of An Tir":          "#e8e0b0",   // pale yellow
-  "Kingdom of Ealdormere":      "#f0f0f0",   // white
+  "Kingdom of Ealdormere":      "#f0a6c6",   // pale pink
   "Kingdom of Caid":            "#2e2d7a",   // dark purplish blue
   "Kingdom of Lochac":          "#d8d8d8",   // white/silver
   "Kingdom of Drachenwald":     "#c87070",   // pale red
@@ -621,7 +621,7 @@ const KINGDOM_COLORS = {
   "Principality of the Summits":"#c89868",   // amber (An Tir sub)
 };
 
-const BARONIAL_COLOR  = "#2255aa";
+const BARONIAL_COLOR  = "#2255aa";   // fallback when a barony's kingdom is unknown
 const VIRTUAL_COLOR   = "#777777";
 const FALLBACK_COLOR  = "#666666";
 
@@ -629,9 +629,29 @@ function kingdomColor(source) {
   return KINGDOM_COLORS[source] || FALLBACK_COLOR;
 }
 
+// Mute a kingdom colour toward its own grey so baronial events read as a
+// desaturated version of their kingdom's colour — distinct from kingdom events
+// but still showing which kingdom they belong to (helps read boundaries).
+function desaturate(hex) {
+  const m = hex.replace('#', '');
+  const r = parseInt(m.slice(0, 2), 16),
+        g = parseInt(m.slice(2, 4), 16),
+        b = parseInt(m.slice(4, 6), 16);
+  const grey = 0.3 * r + 0.59 * g + 0.11 * b, t = 0.55;
+  const hx = c => Math.round(c + (grey - c) * t).toString(16).padStart(2, '0');
+  return `#${hx(r)}${hx(g)}${hx(b)}`;
+}
+
+// barony/shire/… → kingdom, built from locals.csv after it loads (see below).
+let groupKingdom = {};
+
 function eventColor(ev) {
   if (ev.is_virtual === 'True') return VIRTUAL_COLOR;
-  if (ev.calendar_type === 'baronial') return BARONIAL_COLOR;
+  if (ev.calendar_type === 'baronial') {
+    const kingdom = groupKingdom[ev.source];
+    const base = kingdom && KINGDOM_COLORS[kingdom];
+    return base ? desaturate(base) : BARONIAL_COLOR;
+  }
   return kingdomColor(ev.source);
 }
 
@@ -1179,7 +1199,11 @@ function eventClusterRadius(zoom) {
 }
 const markerLayer = L.markerClusterGroup(
   { ...CLUSTER_OPTS, maxClusterRadius: eventClusterRadius }).addTo(map);
-const placeholderLayer = L.markerClusterGroup(CLUSTER_OPTS).addTo(map);
+// Placeholder "?" pins follow the same "Aggregate events" toggle as events, so
+// when aggregation is off they don't collapse into numbered circles either
+// (several groups can share one best-guess coordinate).
+const placeholderLayer = L.markerClusterGroup(
+  { ...CLUSTER_OPTS, maxClusterRadius: eventClusterRadius }).addTo(map);
 
 // Some calendar feeds annotate the source name with a parenthesised tag,
 // e.g. "Barony of Stierbach (Workshops)". Strip the tag so lookups against
@@ -1710,13 +1734,14 @@ fetch('sca_events_clean.csv')
   })
   .then(pinsText => {
     if (pinsText) groupPins = parseCSV(pinsText);
-    // Build source→website lookup so an event whose source is "Barony of X"
-    // can fall back to that barony's official site when it has no event_url.
+    // Build source→website + source→kingdom lookups from locals.csv so an event
+    // whose source is "Barony of X" can fall back to that barony's official site
+    // and be coloured as a muted version of its kingdom's colour.
     sourceWebsite = {};
+    groupKingdom = {};
     groupPins.forEach(p => {
-      if (p.group && p.website && !sourceWebsite[p.group]) {
-        sourceWebsite[p.group] = p.website;
-      }
+      if (p.group && p.website && !sourceWebsite[p.group]) sourceWebsite[p.group] = p.website;
+      if (p.group && p.kingdom && !groupKingdom[p.group]) groupKingdom[p.group] = p.kingdom;
     });
     applyFilters();
   })
