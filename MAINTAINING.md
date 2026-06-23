@@ -139,6 +139,28 @@ check the new group's events appear.
 
 ---
 
+## Editing the kingdom-colour overlay
+
+The "Colour background by kingdom" overlay is driven by
+**`territory_kingdoms.csv`** — one row per region, columns `type,id,name,kingdom`:
+
+- **`type=state` / `type=county`** — US regions, keyed by 2- or 5-digit FIPS.
+  `index.html` reads these **at runtime**, so a fix is instant: edit the row,
+  reload the page. (A `county` row overrides its state's default.)
+- **`type=province`** (Canada, ISO like `CA-ON`) / **`type=country`** (by name)
+  — the non-US world layer. `build_world_kingdoms.py` reads these, so after
+  editing run **`python build_world_kingdoms.py`** to regenerate
+  `world-kingdoms.topojson`, then reload. Adding a *brand-new* country also needs
+  that re-run (it fetches the polygon from Natural Earth).
+
+The data is province/country level, so a few real sub-province splits can't be
+drawn — Essex County/Windsor → Midrealm, NW Ontario → Northshield, eastern BC →
+Avacal, and French Guiana out of France. Per-kingdom *marker* colours (and the
+desaturated barony shades) live in the `KINGDOM_COLORS` / `BARONY_COLOR_OVERRIDE`
+maps near the top of `index.html`.
+
+---
+
 ## Monitoring
 
 - **The only alarm:** GitHub issues labelled `pipeline-health`. One opens when a
