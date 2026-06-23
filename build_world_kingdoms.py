@@ -41,7 +41,10 @@ TERRITORY_CSV = SCRIPT_DIR / "territory_kingdoms.csv"
 
 
 def load_territory():
-    """territory_kingdoms.csv -> (canada_by_iso, country_by_name) dicts."""
+    """territory_kingdoms.csv -> (canada_by_iso, country_by_name) dicts, each
+    mapping id -> (kingdom, parent_kingdom). `parent_kingdom` is set when the
+    assignment is a principality, so the front-end can paint it in its parent
+    kingdom's colour while the hover label names both."""
     canada, country = {}, {}
     with open(TERRITORY_CSV, encoding="utf-8", newline="") as f:
         for r in csv.DictReader(f):
@@ -49,10 +52,11 @@ def load_territory():
             kingdom = (r.get("kingdom") or "").strip()
             if not kingdom:
                 continue
+            parent = (r.get("parent kingdom") or "").strip()
             if t == "province":
-                canada[(r.get("id") or "").strip()] = kingdom
+                canada[(r.get("id") or "").strip()] = (kingdom, parent)
             elif t == "country":
-                country[(r.get("id") or "").strip()] = kingdom
+                country[(r.get("id") or "").strip()] = (kingdom, parent)
     return canada, country
 
 
@@ -74,15 +78,18 @@ def main():
         if props.get("admin") != "Canada":
             continue
         iso = props.get("iso_3166_2", "")
-        kingdom = CANADA_KINGDOM.get(iso)
-        if not kingdom:
+        entry = CANADA_KINGDOM.get(iso)
+        if not entry:
             print(f"  (skipping Canadian province {iso} — no kingdom mapping)")
             continue
+        kingdom, parent = entry
         f["properties"] = {
             "kingdom": kingdom,
             "name":   props.get("name", ""),
             "admin1": iso,
         }
+        if parent:
+            f["properties"]["parent"] = parent
         out_features.append(f)
 
     # ── Whole-country mappings (Lochac AU+NZ, Drachenwald Europe) ───────
@@ -94,17 +101,20 @@ def main():
         # dependencies (Greenland, Falklands, New Caledonia, …) of UK/FR/DK.
         candidates = [props.get(k) for k in
                       ("NAME", "name", "NAME_LONG", "ADMIN", "NAME_EN")]
-        kingdom = next((COUNTRY_KINGDOM[c] for c in candidates
-                        if c in COUNTRY_KINGDOM), None)
+        entry = next((COUNTRY_KINGDOM[c] for c in candidates
+                      if c in COUNTRY_KINGDOM), None)
         name = props.get("NAME") or props.get("name", "")
-        if not kingdom:
+        if not entry:
             continue
+        kingdom, parent = entry
         # Strip props down to just what we need (saves bytes)
         f["properties"] = {
             "kingdom": kingdom,
             "name":   name,
             "iso_a2": props.get("ISO_A2", ""),
         }
+        if parent:
+            f["properties"]["parent"] = parent
         out_features.append(f)
 
     fc = {"type": "FeatureCollection", "features": out_features}

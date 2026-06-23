@@ -659,7 +659,9 @@ const BARONY_COLOR_OVERRIDE = {
 function eventColor(ev) {
   if (ev.is_virtual === 'True') return VIRTUAL_COLOR;
   if (ev.calendar_type === 'baronial') {
-    const kingdom = groupKingdom[ev.source];
+    // Hardcoded events carry their own `kingdom` (so a group missing from
+    // locals.csv still colours correctly); everyone else uses the registry.
+    const kingdom = ev.kingdom || groupKingdom[ev.source];
     if (kingdom && BARONY_COLOR_OVERRIDE[kingdom]) return BARONY_COLOR_OVERRIDE[kingdom];
     const base = kingdom && KINGDOM_COLORS[kingdom];
     return base ? desaturate(base) : BARONIAL_COLOR;
@@ -706,10 +708,25 @@ const PRINCIPALITY_BY_FIPS = {
   // California data than we currently have — omitted for now.)
 };
 
-function kingdomForFIPS(fips5) {
+// Territory assignment for a county FIPS: {kingdom, parent} or null. `kingdom`
+// is the assigned group (which may be a principality); `parent` is its parent
+// kingdom when the assignment is a principality (blank otherwise).
+function territoryForFIPS(fips5) {
   return COUNTY_OVERRIDES[fips5]
       || STATE_FIPS_TO_KINGDOM[fips5.slice(0, 2)]
       || null;
+}
+// A principality takes its PARENT kingdom's colour (so it blends into the
+// kingdom on the map), but the hover label names both ("Principality of Oertha,
+// Kingdom of the West").
+function overlayColor(info) {
+  if (!info) return '#aaa';
+  const k = info.parent || info.kingdom;
+  return (k && KINGDOM_COLORS[k]) || '#666';
+}
+function overlayLabel(info) {
+  if (!info || !info.kingdom) return '';
+  return info.parent ? `${info.kingdom}, ${info.parent}` : info.kingdom;
 }
 
 // Lazy-load TopoJSON + topojson-client; convert counties layer to GeoJSON
@@ -777,20 +794,21 @@ function loadKingdomOverlay() {
     try {
       const terrResp = await fetch('territory_kingdoms.csv');
       if (terrResp.ok) parseCSV(await terrResp.text()).forEach(r => {
-        if (r.type === 'state') STATE_FIPS_TO_KINGDOM[r.id] = r.kingdom;
-        else if (r.type === 'county') COUNTY_OVERRIDES[r.id] = r.kingdom;
+        // Excel strips leading zeros from FIPS ("02"->"2", "06001"->"6001"), so
+        // pad on read to match the zero-padded county ids in the topojson.
+        const info = { kingdom: r.kingdom, parent: (r['parent kingdom'] || '').trim() };
+        if (r.type === 'state') STATE_FIPS_TO_KINGDOM[String(r.id).padStart(2, '0')] = info;
+        else if (r.type === 'county') COUNTY_OVERRIDES[String(r.id).padStart(5, '0')] = info;
       });
     } catch (e) { /* no CSV -> US counties render uncoloured */ }
 
     const countiesLayer = L.geoJSON(counties, {
       style: feature => {
         const fips = String(feature.id || '').padStart(5, '0');
-        const kingdom = kingdomForFIPS(fips);
-        const color = kingdom ? (KINGDOM_COLORS[kingdom] || '#666') : '#aaa';
         return {
           color: '#222',         // border
           weight: 0.15,          // very thin so counties read as one mass
-          fillColor: color,
+          fillColor: overlayColor(territoryForFIPS(fips)),
           fillOpacity: 0.30,
           interactive: true,
         };
@@ -798,7 +816,7 @@ function loadKingdomOverlay() {
       onEachFeature: (feature, layer) => {
         layer.on('mouseover mousemove', (e) => {
           const fips = String(feature.id || '').padStart(5, '0');
-          showOverlayTooltip(e, kingdomForFIPS(fips));
+          showOverlayTooltip(e, overlayLabel(territoryForFIPS(fips)));
         });
         layer.on('mouseout', closeOverlayTooltip);
       },
@@ -806,19 +824,19 @@ function loadKingdomOverlay() {
 
     const worldLayer = L.geoJSON(world, {
       style: feature => {
-        const kingdom = feature.properties && feature.properties.kingdom;
-        const color = kingdom ? (KINGDOM_COLORS[kingdom] || '#666') : '#aaa';
+        const p = feature.properties || {};
         return {
           color: '#222',
           weight: 0.2,
-          fillColor: color,
+          fillColor: overlayColor({ kingdom: p.kingdom, parent: p.parent }),
           fillOpacity: 0.30,
           interactive: true,
         };
       },
       onEachFeature: (feature, layer) => {
         layer.on('mouseover mousemove', (e) => {
-          showOverlayTooltip(e, feature.properties && feature.properties.kingdom);
+          const p = feature.properties || {};
+          showOverlayTooltip(e, overlayLabel({ kingdom: p.kingdom, parent: p.parent }));
         });
         layer.on('mouseout', closeOverlayTooltip);
       },
@@ -942,16 +960,25 @@ function escapeHtml(s) {
 function ingestHardcodedEvents(text) {
   parseCSV(text).forEach(row => {
     const lat = parseFloat(row.lat), lng = parseFloat(row.lng);
-    if (isNaN(lat) || isNaN(lng)) return;   // can't place a pin without coordinates
-    allEvents.push({
+    if (isNaN(lat) || isNaN(lng)) return;   // lat/lng are required (placed by hand)
+    const virtual = /^true$/i.test((row.is_virtual || '').trim());
+    const ev = {
       title: row.title || '', source: row.source || '',
-      calendar_type: 'baronial', is_virtual: 'False', is_hardcoded: 'True',
+      calendar_type: 'baronial',
+      is_virtual: virtual ? 'True' : 'False',
+      is_hardcoded: 'True',
+      kingdom: (row.kingdom || '').trim(),   // colour source (overrides the locals.csv lookup)
       lat: row.lat, lng: row.lng,
       location: row.location || '', clean_location: row.location || '',
       day: row.day || '',
-      schedule_url: row['schedule url'] || row.schedule_url || '',
+      schedule_url: row.schedule_url || row['schedule url'] || '',
       start: '', end: '', description: '',
-    });
+    };
+    // A virtual hardcoded practice behaves like any other online event: no pin,
+    // just tied to its parent group's coordinate (provided here) for the
+    // Online-tab viewport filter.
+    if (virtual) { ev._parentLat = lat; ev._parentLng = lng; }
+    allEvents.push(ev);
   });
 }
 
@@ -1108,6 +1135,7 @@ function isSpecificFacebookEvent(url) {
 // specific Facebook event, then a generic listing event_url, then any facebook
 // url, then the source's barony/kingdom site.
 function bestLinkFor(ev) {
+  if (ev.is_hardcoded === 'True') return ev.schedule_url || websiteForSource(ev.source);
   if (ev.event_url && !isGenericListing(ev.event_url)) return ev.event_url;
   if (isSpecificFacebookEvent(ev.facebook_url)) return ev.facebook_url;
   return ev.event_url
@@ -1226,6 +1254,7 @@ function ensureVirtualParents() {
   });
   allEvents.forEach(ev => {
     if (ev.is_virtual !== 'True') return;
+    if (ev._parentLat != null) return;                       // already tagged (hardcoded virtual)
     let ll = pinByGroup.get(ev.source);                      // a barony's own online event
     if (!ll) {                                               // a promoted business meeting
       const nt = normName(ev.title);

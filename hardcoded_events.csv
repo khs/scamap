@@ -1,4 +1,4 @@
-"title","location","day","schedule url","source","is_virtual","lat","lng"
-"Tir-y-Don Fighter Practice","Nike Park, 13036 Nike Park Rd, Carrollton, VA 23314","Sundays","https://tirydon.atlantia.sca.org/activities/","Barony of Tir-y-Don",FALSE,36.961231,-76.561179
-"Tir-y-Don Archery Practice","Newport News Park, Archery Range ","Sundays","https://tirydon.atlantia.sca.org/activities/","Barony of Tir-y-Don",FALSE,37.189352,-76.558459
-"Tir-y-Don Arts & Sciences Night","Cornerstone Community Church, 1003 Moyer Rd, Newport News, VA 23608 ","Thursdays","https://tirydon.atlantia.sca.org/activities/","Barony of Tir-y-Don",FALSE,37.13495,-76.573874
+"title","location","day","schedule_url","source","kingdom","is_virtual","lat","lng"
+"Tir-y-Don Fighter Practice","Nike Park, 13036 Nike Park Rd, Carrollton, VA 23314","Sundays","https://tirydon.atlantia.sca.org/activities/","Barony of Tir-y-Don","Kingdom of Atlantia",FALSE,36.961231,-76.561179
+"Tir-y-Don Archery Practice","Newport News Park, Archery Range ","Sundays","https://tirydon.atlantia.sca.org/activities/","Barony of Tir-y-Don","Kingdom of Atlantia",FALSE,37.189352,-76.558459
+"Tir-y-Don Arts & Sciences Night","Cornerstone Community Church, 1003 Moyer Rd, Newport News, VA 23608 ","Thursdays","https://tirydon.atlantia.sca.org/activities/","Barony of Tir-y-Don","Kingdom of Atlantia",FALSE,37.13495,-76.573874
