@@ -1,18 +1,18 @@
 /* Shared styling for the static sub-pages (about / how-to-help /
-   first-event). Mirrors the design tokens and header/nav layout from
-   index.html so the look is consistent across the site. */
+   first-event). Mirrors the design tokens, fonts, header and nav of the
+   current index.html so the look is consistent across the site.
+   No underlines, gradients or shadows; content matches the map box width. */
 
-/* Blue + white palette (variables keep their old names for diff-friendliness). */
+/* ── Design tokens (kept in sync with index.html) ──────────────── */
 :root {
-  --crimson:     #1e3a8a;   /* royal blue — primary */
-  --crimson-dk:  #0c1e5c;   /* deep navy   — primary darker */
-  --gold:        #3b82f6;   /* sky blue   — accent */
-  --gold-lt:     #bfdbfe;   /* very light blue — accent on dark bg */
-  --parchment:   #f8fafc;   /* off-white  — page background */
-  --parchment-dk:#e2e8f0;   /* light blue-grey */
-  --ink:         #0f172a;
-  --ink-lt:      #334155;
-  --shadow:      rgba(15, 23, 42, 0.28);
+  --blue:        #1b485e;   /* primary blue */
+  --blue-dark:   #1b485e;   /* primary blue, darker shade */
+  --sky-blue:    #609cb9;   /* accent */
+  --light-blue:  #bfdbfe;   /* very light blue — accent on dark bg */
+  --parchment:   #eee4d3;   /* off-white — page background */
+  --border-grey: #e2e8f0;   /* light blue-grey — borders */
+  --ink:         #0f172a;   /* near-black slate — body text */
+  --ink-lt:      #334155;   /* mid slate — secondary text */
   --nav-h:       52px;
 }
 
@@ -24,62 +24,40 @@ body {
   color: var(--ink);
   min-height: 100vh;
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E"),
-    linear-gradient(160deg, #ffffff 0%, #dbeafe 50%, #f8fafc 100%);
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
 }
 
-header {
-  text-align: center;
-  padding: 2rem 1rem 0.8rem;
-}
-header::after {
-  content: '';
-  display: block;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, var(--gold), var(--crimson), var(--gold), transparent);
-  margin: 0.6rem auto 0;
-  max-width: 700px;
-}
-
+/* ── Header ────────────────────────────────────────────────────── */
+header { text-align: center; padding: 1rem 1rem 0.8rem; }
 .site-title {
-  font-family: 'MedievalSharp', 'EB Garamond', serif;
+  font-family: 'Cormorant Unicase', serif;
   font-size: clamp(2rem, 5.5vw, 3.8rem);
-  color: var(--crimson-dk);
+  color: var(--blue-dark);
   letter-spacing: 0.03em;
   line-height: 1.15;
-  text-shadow: 2px 2px 0 var(--gold-lt), 3px 3px 8px var(--shadow);
 }
-.site-title a {
-  color: inherit;
-  text-decoration: none;
-}
-.site-title a:hover { color: var(--crimson); }
+.site-title a { color: inherit; text-decoration: none; }
+.site-title a:hover { color: var(--sky-blue); }
 
-nav {
-  background: linear-gradient(180deg, var(--crimson-dk) 0%, var(--crimson) 100%);
-  border-top: 2px solid var(--gold);
-  border-bottom: 2px solid var(--gold);
-  box-shadow: 0 3px 12px var(--shadow);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-}
+/* ── Navigation ────────────────────────────────────────────────── */
+nav { background: var(--blue); position: sticky; top: 0; z-index: 1000; }
 nav ul {
   list-style: none;
   display: flex;
   justify-content: center;
+  flex-wrap: wrap;
   max-width: 900px;
   margin: 0 auto;
-  height: var(--nav-h);
 }
 nav li { display: flex; }
 nav a {
-  font-family: 'Cinzel', serif;
-  font-size: 0.78rem;
+  font-family: 'Cormorant Unicase', serif;
+  font-size: 0.9rem;
   letter-spacing: 0.12em;
-  color: var(--gold-lt);
+  color: var(--light-blue);
   text-decoration: none;
   padding: 0 1.6rem;
+  min-height: var(--nav-h);
   display: flex;
   align-items: center;
   border-right: 1px solid rgba(191,219,254,0.30);
@@ -87,59 +65,52 @@ nav a {
   text-align: center;
 }
 nav li:first-child a { border-left: 1px solid rgba(191,219,254,0.30); }
-nav a:hover, nav a[aria-current="page"] {
-  background: rgba(191,219,254,0.20);
-  color: #fff;
-}
+nav a:hover,
+nav a[aria-current="page"] { background: rgba(191,219,254,0.20); color: #fff; }
 
-main {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
-}
+/* ── Main / article ────────────────────────────────────────────── */
+/* max-width matches index.html's <main> (the map box width). */
+main { max-width: 1280px; margin: 0 auto; padding: 1.5rem 1.2rem 3rem; }
 
 article h1 {
-  font-family: 'MedievalSharp', 'EB Garamond', serif;
-  font-size: clamp(1.6rem, 4vw, 2.6rem);
-  color: var(--crimson-dk);
-  border-bottom: 1px solid var(--parchment-dk);
-  padding-bottom: 0.4rem;
+  font-family: 'Cormorant Unicase', serif;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  color: var(--blue-dark);
+  letter-spacing: 0.04em;
   margin-bottom: 1.2rem;
 }
-
 article h2 {
-  font-family: 'Cinzel', serif;
-  font-size: 1.2rem;
-  letter-spacing: 0.04em;
-  color: var(--crimson-dk);
-  margin-top: 1.8rem;
+  font-family: 'Cormorant Unicase', serif;
+  font-size: 1.4rem;
+  color: var(--blue-dark);
+  letter-spacing: 0.06em;
+  margin-top: 1.9rem;
   margin-bottom: 0.6rem;
 }
-
 article h3 {
-  font-family: 'Cinzel', serif;
-  font-size: 1.02rem;
-  letter-spacing: 0.03em;
-  color: var(--ink);
+  font-family: 'Cormorant Unicase', serif;
+  font-size: 1.12rem;
+  color: var(--blue-dark);
+  letter-spacing: 0.04em;
   margin-top: 1.4rem;
   margin-bottom: 0.4rem;
 }
-
 article p {
-  font-size: 1.05rem;
-  line-height: 1.65;
+  font-size: 1.06rem;
+  line-height: 1.8;
+  color: var(--ink-lt);
   margin-bottom: 1rem;
-  color: var(--ink-lt);
 }
-
 article ul, article ol {
-  font-size: 1.05rem;
-  line-height: 1.6;
-  margin: 0 0 1rem 1.4rem;
+  font-size: 1.06rem;
+  line-height: 1.7;
   color: var(--ink-lt);
+  margin: 0 0 1rem 1.4rem;
 }
+article a { color: var(--blue); }
+article a:hover { color: var(--sky-blue); }
 
 @media (max-width: 700px) {
-  nav a { padding: 0 0.8rem; font-size: 0.68rem; }
-  main { padding: 1.5rem 1rem 3rem; }
+  nav a { padding: 0 0.8rem; font-size: 0.78rem; }
+  main { padding: 1.2rem 1rem 2.5rem; }
 }
