@@ -21,6 +21,7 @@ Run:
 from __future__ import annotations
 
 import csv
+import json
 import re
 import unittest
 from pathlib import Path
@@ -29,6 +30,7 @@ HERE = Path(__file__).parent
 TERRITORY = HERE / "territory_kingdoms.csv"
 LOCALS = HERE / "locals.csv"
 INDEX = HERE / "index.html"
+CANADA_CD = HERE / "canada-cd.topojson"
 
 
 def _kingdom_colors() -> set:
@@ -56,26 +58,46 @@ class TestTerritoryKingdoms(unittest.TestCase):
 
     def test_header_is_exact(self):
         with open(TERRITORY, encoding="utf-8", newline="") as f:
-            self.assertEqual(f.readline().strip(), "type,id,name,kingdom")
+            self.assertEqual(f.readline().strip(), "type,id,name,kingdom,parent kingdom")
 
     def test_type_is_valid(self):
         bad = sorted({r["type"] for r in self.rows
-                      if r["type"] not in {"state", "county", "province", "country"}})
+                      if r["type"] not in {"state", "county", "cd",
+                                           "province", "country", "territory"}})
         self.assertEqual(bad, [], f"unknown row types: {bad}")
 
-    def test_every_kingdom_is_known_to_the_map(self):
-        unknown = sorted({r["kingdom"] for r in self.rows
-                          if r["kingdom"] and r["kingdom"] not in VALID_KINGDOMS})
-        self.assertEqual(unknown, [], f"kingdoms not in KINGDOM_COLORS: {unknown}")
+    def test_colour_kingdom_is_known_to_the_map(self):
+        # A principality is painted in its PARENT kingdom's colour, so the
+        # colour-bearing name is the parent when present, else the kingdom field.
+        # That effective name must exist in KINGDOM_COLORS.
+        unknown = set()
+        for r in self.rows:
+            colour_name = (r.get("parent kingdom") or "").strip() or r["kingdom"]
+            if colour_name and colour_name not in VALID_KINGDOMS:
+                unknown.add(colour_name)
+        self.assertEqual(sorted(unknown), [],
+                         f"colour kingdoms not in KINGDOM_COLORS: {sorted(unknown)}")
+
+    def test_parent_kingdom_is_a_real_kingdom(self):
+        # When set, the parent must be an actual Kingdom known to the colour map.
+        bad = set()
+        for r in self.rows:
+            parent = (r.get("parent kingdom") or "").strip()
+            if parent and (not parent.startswith("Kingdom of") or parent not in VALID_KINGDOMS):
+                bad.add(parent)
+        self.assertEqual(sorted(bad), [], f"bad parent kingdoms: {sorted(bad)}")
 
     def test_ids_are_well_formed(self):
+        # FIPS may arrive Excel-stripped of leading zeros ("02"->"2",
+        # "06001"->"6001"); the front-end zero-pads on read, so accept either.
         bad = []
         for r in self.rows:
             t, i = r["type"], r["id"]
-            ok = ((t == "state" and re.fullmatch(r"\d{2}", i)) or
-                  (t == "county" and re.fullmatch(r"\d{5}", i)) or
+            ok = ((t == "state" and re.fullmatch(r"\d{1,2}", i)) or
+                  (t == "county" and re.fullmatch(r"\d{4,5}", i)) or
+                  (t == "cd" and re.fullmatch(r"\d{4}", i)) or
                   (t == "province" and re.fullmatch(r"[A-Z]{2}-[A-Z0-9]{2,3}", i)) or
-                  (t == "country" and i.strip()))
+                  (t in ("country", "territory") and i.strip()))
             if not ok:
                 bad.append((t, i))
         self.assertEqual(bad, [], f"malformed type/id rows: {bad}")
@@ -89,10 +111,11 @@ class TestTerritoryKingdoms(unittest.TestCase):
 
     def test_counties_sit_under_a_mapped_state(self):
         # A county FIPS is <2-digit state><3-digit county>; its state prefix
-        # should be one we also list, so the override has a base to override.
-        states = {r["id"] for r in self.rows if r["type"] == "state"}
-        orphans = sorted({r["id"] for r in self.rows
-                          if r["type"] == "county" and r["id"][:2] not in states})
+        # should be one we also list. Zero-pad first so Excel-stripped ids
+        # ("6001" -> "06001", state "6" -> "06") still line up.
+        states = {r["id"].zfill(2) for r in self.rows if r["type"] == "state"}
+        orphans = sorted({r["id"].zfill(5) for r in self.rows
+                          if r["type"] == "county" and r["id"].zfill(5)[:2] not in states})
         self.assertEqual(orphans, [], f"county FIPS with unmapped state prefix: {orphans}")
 
 
@@ -136,6 +159,32 @@ class TestLocals(unittest.TestCase):
             if not (-90 <= la <= 90 and -180 <= lo <= 180):
                 bad.append((r.get("group"), lat, lng))
         self.assertEqual(bad, [], f"out-of-range or unpaired coordinates: {bad}")
+
+
+class TestCanadaCdTopojson(unittest.TestCase):
+    """Guard the committed Canada census-division layer the overlay rides on."""
+
+    def test_topojson_is_well_formed(self):
+        self.assertTrue(CANADA_CD.exists(), "canada-cd.topojson is missing")
+        t = json.loads(CANADA_CD.read_text(encoding="utf-8"))
+        self.assertIn("cd", t.get("objects", {}), "missing 'cd' object")
+        geoms = t["objects"]["cd"]["geometries"]
+        # 293 census divisions in the 2021 file; allow a little slack.
+        self.assertGreater(len(geoms), 250, f"only {len(geoms)} CDs")
+        props = geoms[0].get("properties", {})
+        self.assertIn("CDUID", props)
+        self.assertIn("PRUID", props)
+
+    def test_pruids_map_to_provinces(self):
+        # Every CD's PRUID must be one the front-end can resolve to a province
+        # default (PRUID_TO_ISO in index.html). Catches a stray/garbage PRUID.
+        valid = {"10", "11", "12", "13", "24", "35",
+                 "46", "47", "48", "59", "60", "61", "62"}
+        t = json.loads(CANADA_CD.read_text(encoding="utf-8"))
+        bad = sorted({str(g["properties"].get("PRUID", "")).zfill(2)
+                      for g in t["objects"]["cd"]["geometries"]
+                      if str(g["properties"].get("PRUID", "")).zfill(2) not in valid})
+        self.assertEqual(bad, [], f"unmapped PRUIDs: {bad}")
 
 
 if __name__ == "__main__":

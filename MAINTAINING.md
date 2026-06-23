@@ -145,22 +145,46 @@ check the new group's events appear.
 ## Editing the kingdom-colour overlay
 
 The "Colour background by kingdom" overlay is driven by
-**`territory_kingdoms.csv`** — one row per region, columns `type,id,name,kingdom`:
+**`territory_kingdoms.csv`** — one row per region, columns
+`type,id,name,kingdom,parent kingdom`. Leave `parent kingdom` blank for a
+kingdom; set it (to a `Kingdom of …`) when `kingdom` is a **principality** — the
+region is then painted in the *parent's* colour while the hover label names both
+("Principality of Oertha, Kingdom of the West").
 
-- **`type=state` / `type=county`** — US regions, keyed by 2- or 5-digit FIPS.
-  `index.html` reads these **at runtime**, so a fix is instant: edit the row,
-  reload the page. (A `county` row overrides its state's default.)
-- **`type=province`** (Canada, ISO like `CA-ON`) / **`type=country`** (by name)
-  — the non-US world layer. `build_world_kingdoms.py` reads these, so after
-  editing run **`python build_world_kingdoms.py`** to regenerate
-  `world-kingdoms.topojson`, then reload. Adding a *brand-new* country also needs
-  that re-run (it fetches the polygon from Natural Earth).
+**Read at runtime** (edit a row, reload the page — instant):
 
-The data is province/country level, so a few real sub-province splits can't be
-drawn — Essex County/Windsor → Midrealm, NW Ontario → Northshield, eastern BC →
-Avacal, and French Guiana out of France. Per-kingdom *marker* colours (and the
-desaturated barony shades) live in the `KINGDOM_COLORS` / `BARONY_COLOR_OVERRIDE`
-maps near the top of `index.html`.
+- **`type=state` / `type=county`** — US regions, by 2- or 5-digit FIPS. A
+  `county` row overrides its state's default.
+- **`type=province`** (Canada, ISO like `CA-ON`) — the **default** colour for
+  every census division in that province.
+- **`type=cd`** — a Canadian **census division**, by its 4-digit `CDUID`. It
+  overrides that division's province default — this is how you draw sub-province
+  splits (NW Ontario → Northshield, eastern BC → Avacal, …). Find a CDUID by
+  searching the division name in `canada-cd.topojson`, or on Statistics Canada's
+  census-division reference map.
+
+**Read by `build_world_kingdoms.py`** (re-run `python build_world_kingdoms.py`
+to regenerate `world-kingdoms.topojson`, then reload):
+
+- **`type=country`** (by name) — the non-US, non-Canada world layer. Adding a
+  *brand-new* country needs the re-run (it fetches the polygon from Natural Earth).
+
+Notes:
+
+- **Excel strips leading zeros** from FIPS (`02`→`2`) when it saves the CSV; the
+  code zero-pads on read, so it still works — don't bother re-padding by hand.
+- Canada is now census-division level, so most sub-province splits *can* be
+  drawn via `type=cd`. The main remaining country-level limit is France
+  (whole-country, so no French Guiana split).
+- The Canada boundaries come from **Statistics Canada's 2021 Census cartographic
+  boundary file** (open licence — keep the "Statistics Canada" credit in the map
+  attribution). To refresh them (rare — the divisions barely change): download
+  *Census divisions → Cartographic Boundary File → Shapefile* from StatCan's
+  boundary-files page, then run it through mapshaper (`-proj wgs84 -simplify 12%
+  keep-shapes -filter-fields CDUID,CDNAME,PRUID -rename-layers cd -o
+  format=topojson canada-cd.topojson`).
+- Per-kingdom *marker* colours (and the desaturated barony shades) live in the
+  `KINGDOM_COLORS` / `BARONY_COLOR_OVERRIDE` maps near the top of `index.html`.
 
 ---
 

@@ -1,17 +1,18 @@
 """
 build_world_kingdoms.py
 -----------------------
-One-off helper that builds `world-kingdoms.json`, a minimal GeoJSON
-containing only the non-US polygons we need for the kingdom-color overlay:
+One-off helper that builds `world-kingdoms.topojson`, a minimal layer
+containing only the non-US, non-Canada polygons we need for the overlay:
 
-  • Canadian provinces (Avacal, Ealdormere, Tir Righ, Tir Mara)
   • Australian states + New Zealand (Lochac)
   • Western/Northern/Central European countries (Drachenwald)
+  • a few country-level principalities (The Marches in Asia, Insulae Draconis
+    in the UK/Ireland) coloured by their parent kingdom
 
-Source data is Natural Earth (50m admin-1 for Canada/AU provinces, 50m
-admin-0 for countries that we color whole). We tag every feature with a
-`kingdom` property so the front-end can color without needing a separate
-lookup table.
+Canada is NOT here — it is drawn at census-division granularity from
+canada-cd.topojson. Source data is Natural Earth (50m admin-0 for the whole
+countries). We tag every feature with `kingdom` (and `parent` for a
+principality) so the front-end can colour without a separate lookup.
 
 Output: world-kingdoms.geojson (~150 KB) committed to the repo.
 
@@ -41,7 +42,10 @@ TERRITORY_CSV = SCRIPT_DIR / "territory_kingdoms.csv"
 
 
 def load_territory():
-    """territory_kingdoms.csv -> (canada_by_iso, country_by_name) dicts."""
+    """territory_kingdoms.csv -> (canada_by_iso, country_by_name) dicts, each
+    mapping id -> (kingdom, parent_kingdom). `parent_kingdom` is set when the
+    assignment is a principality, so the front-end can paint it in its parent
+    kingdom's colour while the hover label names both."""
     canada, country = {}, {}
     with open(TERRITORY_CSV, encoding="utf-8", newline="") as f:
         for r in csv.DictReader(f):
@@ -49,41 +53,24 @@ def load_territory():
             kingdom = (r.get("kingdom") or "").strip()
             if not kingdom:
                 continue
+            parent = (r.get("parent kingdom") or "").strip()
             if t == "province":
-                canada[(r.get("id") or "").strip()] = kingdom
+                canada[(r.get("id") or "").strip()] = (kingdom, parent)
             elif t == "country":
-                country[(r.get("id") or "").strip()] = kingdom
+                country[(r.get("id") or "").strip()] = (kingdom, parent)
     return canada, country
 
 
 def main():
-    CANADA_KINGDOM, COUNTRY_KINGDOM = load_territory()
-    print(f"Fetching {ADMIN1_URL[-50:]}...")
-    admin1 = requests.get(ADMIN1_URL, timeout=60).json()
-    print(f"  {len(admin1['features'])} admin-1 features")
-
+    # Canada is drawn at census-division granularity from canada-cd.topojson
+    # (province default + per-CD overrides), so we no longer emit its provinces
+    # here — only the country-level layers below would otherwise double-render.
+    _canada, COUNTRY_KINGDOM = load_territory()
     print(f"Fetching {COUNTRIES_URL[-50:]}...")
     countries = requests.get(COUNTRIES_URL, timeout=60).json()
     print(f"  {len(countries['features'])} country features")
 
     out_features = []
-
-    # ── Canada provinces ────────────────────────────────────────────────
-    for f in admin1["features"]:
-        props = f.get("properties", {})
-        if props.get("admin") != "Canada":
-            continue
-        iso = props.get("iso_3166_2", "")
-        kingdom = CANADA_KINGDOM.get(iso)
-        if not kingdom:
-            print(f"  (skipping Canadian province {iso} — no kingdom mapping)")
-            continue
-        f["properties"] = {
-            "kingdom": kingdom,
-            "name":   props.get("name", ""),
-            "admin1": iso,
-        }
-        out_features.append(f)
 
     # ── Whole-country mappings (Lochac AU+NZ, Drachenwald Europe) ───────
     for f in countries["features"]:
@@ -94,17 +81,20 @@ def main():
         # dependencies (Greenland, Falklands, New Caledonia, …) of UK/FR/DK.
         candidates = [props.get(k) for k in
                       ("NAME", "name", "NAME_LONG", "ADMIN", "NAME_EN")]
-        kingdom = next((COUNTRY_KINGDOM[c] for c in candidates
-                        if c in COUNTRY_KINGDOM), None)
+        entry = next((COUNTRY_KINGDOM[c] for c in candidates
+                      if c in COUNTRY_KINGDOM), None)
         name = props.get("NAME") or props.get("name", "")
-        if not kingdom:
+        if not entry:
             continue
+        kingdom, parent = entry
         # Strip props down to just what we need (saves bytes)
         f["properties"] = {
             "kingdom": kingdom,
             "name":   name,
             "iso_a2": props.get("ISO_A2", ""),
         }
+        if parent:
+            f["properties"]["parent"] = parent
         out_features.append(f)
 
     fc = {"type": "FeatureCollection", "features": out_features}
