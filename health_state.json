@@ -1,6 +1,6 @@
 {
   "failed": 19,
-  "geocodable": 807,
+  "geocodable": 874,
   "kingdom_counts": {
     "Kingdom of AEthelmearc": 29,
     "Kingdom of An Tir": 0,
@@ -21,16 +21,21 @@
     "Kingdom of the East": 34,
     "Kingdom of the Middle": 50,
     "Kingdom of the Outlands": 28,
-    "Kingdom of the West": 368
+    "Kingdom of the West": 371
   },
   "local_counts": {
     "Barony of Aarquelle": 0,
     "Barony of Allyshia": 5,
-    "Barony of Black Diamond": 6,
+    "Barony of Altavia": 2,
+    "Barony of Black Diamond": 7,
     "Barony of Blackstone Mountain": 0,
     "Barony of Bright Hills": 0,
     "Barony of Caer Mear": 3,
-    "Barony of Carolingia": 15,
+    "Barony of Calafia": 5,
+    "Barony of Calafia (Arts and Sciences Events)": 0,
+    "Barony of Calafia (Guild Events)": 1,
+    "Barony of Calafia (Practices)": 16,
+    "Barony of Carolingia": 13,
     "Barony of Concordia of the Snows": 13,
     "Barony of Darkwood": 1,
     "Barony of Delftwood": 0,
@@ -38,6 +43,7 @@
     "Barony of Dun Carraig": 0,
     "Barony of Eskalya": 0,
     "Barony of Fettburg": 4,
+    "Barony of Gyldenholt": 7,
     "Barony of Hawkwood": 1,
     "Barony of Hidden Mountain": 0,
     "Barony of Highland Foorde": 2,
@@ -45,6 +51,7 @@
     "Barony of Innilgard": 4,
     "Barony of Kra\u00e9 Glas": 2,
     "Barony of Lochmere": 1,
+    "Barony of Lyondemere": 3,
     "Barony of Marinus": 2,
     "Barony of Politarchopolis": 6,
     "Barony of Ponte Alto": 6,
@@ -64,7 +71,7 @@
     "Barony of Stierbach": 0,
     "Barony of Stierbach (Workshops)": 3,
     "Barony of Stormhold": 2,
-    "Barony of Storvik": 10,
+    "Barony of Storvik": 6,
     "Barony of Tarnmist": 0,
     "Barony of Thescorre": 2,
     "Barony of Unser Hafen": 8,
@@ -94,6 +101,7 @@
     "Eternal Winds": 0,
     "Fortaleza de Islas de las Velas Latinas": 0,
     "Hamlet of Wildmoor": 0,
+    "Local Groups AMP Feed": 40,
     "Principality of Cynagua": 0,
     "Principality of Oertha": 0,
     "Principality of the Mists": 0,
@@ -139,5 +147,5 @@
     "Vale de Draco": 0,
     "Warriors\u2019 Gate": 0
   },
-  "total": 1326
+  "total": 1398
 }
