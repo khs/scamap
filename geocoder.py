@@ -127,6 +127,7 @@ def nominatim(query: str, session: requests.Session, *,
         params["addressdetails"] = 1
     result = (None, None)
     _throttle()
+    session.headers["User-Agent"] = USER_AGENT   # never send Nominatim an unidentified request
     try:
         r = session.get(NOMINATIM_URL, params=params, timeout=15)
         r.raise_for_status()
@@ -152,6 +153,7 @@ def photon(query: str, session: requests.Session) -> tuple:
         return cached
     result = (None, None)
     _throttle()
+    session.headers["User-Agent"] = USER_AGENT   # identify ourselves to Photon too
     try:
         r = session.get(PHOTON_URL, params={"q": query, "limit": 1}, timeout=15)
         r.raise_for_status()
