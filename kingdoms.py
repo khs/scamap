@@ -197,6 +197,11 @@ SCA_REGION_BBOXES = {
     "europe":        (34.5, 71.5,  -10.5,  41.0),
     "australia":     (-45.0, -9.0, 110.0, 156.0),
     "new_zealand":   (-47.5, -33.5, 165.0, 179.5),
+    # The Marches (West Kingdom): Japan, Korea, Thailand, Vietnam, Guam, the
+    # Philippines — the West's trans-Pacific / Asian territories. Without this,
+    # a real Thai venue (Golden Playne in Nonthaburi) is rejected as "outside
+    # SCA regions" and falls back to a wrong US-ZIP match.
+    "east_asia":     (0.0, 46.0, 95.0, 150.0),
 }
 
 # Which region(s) a kingdom's events can legitimately land in.
@@ -220,5 +225,5 @@ KINGDOM_REGIONS = {
     "Kingdom of the Outlands":  {"north_america"},
     "Kingdom of Trimaris":      {"north_america"},
     "Kingdom of the East":      {"north_america"},
-    "Kingdom of the West":      {"north_america"},
+    "Kingdom of the West":      {"north_america", "east_asia"},
 }
