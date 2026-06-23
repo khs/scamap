@@ -19,6 +19,7 @@ Re-run only if the kingdom-to-territory mapping changes (rarely).
 """
 from __future__ import annotations
 
+import csv
 import json
 from pathlib import Path
 
@@ -31,88 +32,32 @@ ADMIN1_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/mas
 COUNTRIES_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson"
 
 # ---------------------------------------------------------------------------
-# Canada provinces by ISO 3166-2 code → kingdom
+# Province (Canada, by ISO 3166-2) + country (by name) -> kingdom assignments
+# live in territory_kingdoms.csv, the single editable territory registry (which
+# also holds the US state/county rows that index.html reads directly). Edit
+# that CSV and re-run this script to change the world overlay.
 # ---------------------------------------------------------------------------
-# Natural Earth admin-1 is province-level, so a few real sub-province splits
-# can't be drawn here and fall to the larger kingdom:
-#   • Ontario is Ealdormere, EXCEPT Essex County / Windsor (Midrealm) and
-#     north-western Ontario (Northshield) — not separable at province level.
-#   • British Columbia is mostly An Tir, but eastern BC is Avacal — likewise
-#     not separable, so the whole province shows as An Tir.
-# Nunavut is intentionally left unassigned (no kingdom claims it on this map).
-CANADA_KINGDOM = {
-    "CA-AB": "Kingdom of Avacal",
-    "CA-SK": "Kingdom of Avacal",
-    "CA-NT": "Kingdom of Avacal",           # Northwest Territories
-    "CA-MB": "Kingdom of Northshield",
-    "CA-ON": "Kingdom of Ealdormere",
-    "CA-QC": "Kingdom of the East",
-    "CA-NB": "Kingdom of the East",
-    "CA-NS": "Kingdom of the East",
-    "CA-PE": "Kingdom of the East",
-    "CA-NL": "Kingdom of the East",
-    "CA-YT": "Kingdom of An Tir",
-    "CA-BC": "Kingdom of An Tir",
-}
+TERRITORY_CSV = SCRIPT_DIR / "territory_kingdoms.csv"
 
-AUSTRALIA_KINGDOM = {
-    # Whole continent is Lochac (NZ added at country level below)
-}
 
-# Whole-country kingdom mapping (admin-0 features)
-COUNTRY_KINGDOM = {
-    "Australia":           "Kingdom of Lochac",
-    "New Zealand":         "Kingdom of Lochac",
-    # Drachenwald — Western/Central/Northern Europe (rough coverage matching
-    # the kingdom's actual baronies)
-    "United Kingdom":      "Kingdom of Drachenwald",
-    "Ireland":             "Kingdom of Drachenwald",
-    "France":              "Kingdom of Drachenwald",
-    "Germany":             "Kingdom of Drachenwald",
-    "Belgium":             "Kingdom of Drachenwald",
-    "Netherlands":         "Kingdom of Drachenwald",
-    "Luxembourg":          "Kingdom of Drachenwald",
-    "Switzerland":         "Kingdom of Drachenwald",
-    "Austria":             "Kingdom of Drachenwald",
-    "Italy":               "Kingdom of Drachenwald",
-    "Spain":               "Kingdom of Drachenwald",
-    "Portugal":            "Kingdom of Drachenwald",
-    "Denmark":             "Kingdom of Drachenwald",
-    "Sweden":              "Kingdom of Drachenwald",
-    "Norway":              "Kingdom of Drachenwald",
-    "Finland":             "Kingdom of Drachenwald",
-    "Iceland":             "Kingdom of Drachenwald",
-    "Poland":              "Kingdom of Drachenwald",
-    "Czechia":             "Kingdom of Drachenwald",
-    "Slovakia":            "Kingdom of Drachenwald",
-    "Hungary":             "Kingdom of Drachenwald",
-    "Slovenia":            "Kingdom of Drachenwald",
-    "Croatia":             "Kingdom of Drachenwald",
-    "Estonia":             "Kingdom of Drachenwald",
-    "Latvia":              "Kingdom of Drachenwald",
-    "Lithuania":           "Kingdom of Drachenwald",
-    "Bulgaria":            "Kingdom of Drachenwald",
-    "Romania":             "Kingdom of Drachenwald",
-    "Greece":              "Kingdom of Drachenwald",
-    "Ukraine":             "Kingdom of Drachenwald",
-    # Balkans
-    "Serbia":              "Kingdom of Drachenwald",
-    "Bosnia and Herzegovina": "Kingdom of Drachenwald",
-    "Montenegro":          "Kingdom of Drachenwald",
-    "Albania":             "Kingdom of Drachenwald",
-    "Kosovo":              "Kingdom of Drachenwald",
-    "North Macedonia":     "Kingdom of Drachenwald",
-    "Macedonia":           "Kingdom of Drachenwald",   # older Natural Earth name
-    # Trimaris — Central America
-    "Panama":              "Kingdom of Trimaris",
-    # West — Pacific Rim
-    "Japan":               "Kingdom of the West",
-    "South Korea":         "Kingdom of the West",
-    "Thailand":            "Kingdom of the West",
-}
+def load_territory():
+    """territory_kingdoms.csv -> (canada_by_iso, country_by_name) dicts."""
+    canada, country = {}, {}
+    with open(TERRITORY_CSV, encoding="utf-8", newline="") as f:
+        for r in csv.DictReader(f):
+            t = (r.get("type") or "").strip().lower()
+            kingdom = (r.get("kingdom") or "").strip()
+            if not kingdom:
+                continue
+            if t == "province":
+                canada[(r.get("id") or "").strip()] = kingdom
+            elif t == "country":
+                country[(r.get("id") or "").strip()] = kingdom
+    return canada, country
 
 
 def main():
+    CANADA_KINGDOM, COUNTRY_KINGDOM = load_territory()
     print(f"Fetching {ADMIN1_URL[-50:]}...")
     admin1 = requests.get(ADMIN1_URL, timeout=60).json()
     print(f"  {len(admin1['features'])} admin-1 features")

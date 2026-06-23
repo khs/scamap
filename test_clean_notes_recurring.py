@@ -151,9 +151,24 @@ class TestIsRecurring(unittest.TestCase):
         # 7, 9, 5 -> avg 7, every gap within +/-3 of avg, avg in [6,32].
         self.assertTrue(clean.is_recurring(_series(7, 9, 5)))
 
-    def test_gaps_exceeding_tolerance_not_recurring(self):
-        # 7, 7, 14 -> avg ~9.33; the 14-day gap is >3 off the avg.
-        self.assertFalse(clean.is_recurring(_series(7, 7, 14)))
+    def test_weekly_skipping_a_week_is_recurring(self):
+        # 7, 7, 14 -> a weekly series that skips one week. The avg test alone
+        # rejects it (14 is >3 off the ~9.33 avg), but the skip-tolerant path
+        # keeps it as one (RECURRING) row instead of splitting off a stray pin.
+        self.assertTrue(clean.is_recurring(_series(7, 7, 14)))
+
+    def test_weekly_with_holiday_skip_pattern_is_recurring(self):
+        # A real practice cadence that skips a holiday week twice: 7,14,7,7,14,7.
+        self.assertTrue(clean.is_recurring(_series(7, 14, 7, 7, 14, 7)))
+
+    def test_monthly_skipping_a_month_is_recurring(self):
+        # 28, 56, 28 -> monthly with one month skipped (56 = 2x the base).
+        self.assertTrue(clean.is_recurring(_series(28, 56, 28)))
+
+    def test_irregular_large_gap_not_recurring(self):
+        # 7, 30, 7 -> a 30-day gap is neither ~weekly nor a small multiple of
+        # the 7-day base, so the series is not a clean cadence.
+        self.assertFalse(clean.is_recurring(_series(7, 30, 7)))
 
     def test_average_gap_below_six_not_recurring(self):
         # Consistent 5-day cadence but avg < 6 -> rejected.

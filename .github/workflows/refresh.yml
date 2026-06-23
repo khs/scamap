@@ -1,6 +1,6 @@
-name: Refresh events + group pins
+name: Refresh events
 
-# Runs the full data pipeline (fetch → clean → geocode → build group pins)
+# Runs the full data pipeline (fetch → clean → enrich → geocode)
 # and commits any updated artefacts back to the repo. GitHub Pages then
 # serves the fresh CSVs/TopoJSON to the public site.
 #
@@ -10,8 +10,8 @@ name: Refresh events + group pins
 #
 # Runtime budget: roughly 15–25 minutes per run. Nominatim rate-limits us
 # to ~1 req/sec, so the geocoder is the slow step. Re-running cheaply hits
-# the cached coords in group_pins.csv — only new groups or changed
-# locations cost a fresh API round-trip.
+# the cached coords in geocode_cache.json — only new or changed addresses
+# cost a fresh API round-trip.
 
 on:
   schedule:
@@ -73,7 +73,7 @@ jobs:
           # Commit the files the public site serves, plus the geocode cache
           # so the next scheduled run reuses prior lookups (and never repeats
           # the same Nominatim query, per their bulk-geocoding policy).
-          git add sca_events_clean.csv group_pins.csv group_locations.csv geocode_cache.json description_cache.json eventprime_cache.json calon_desc_cache.json health_state.json
+          git add sca_events_clean.csv geocode_cache.json description_cache.json eventprime_cache.json calon_desc_cache.json health_state.json
 
           if git diff --cached --quiet; then
             echo "No data changes to commit."

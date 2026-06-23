@@ -657,10 +657,34 @@ def _strip_leading_venue(part: str) -> str:
 
 
 PLACEHOLDER_LOCATIONS = {
-    "tbd", "tba", "to be announced", "to be determined", "tbc",
+    "tbd", "tba", "to be announced", "to be determined", "to be determine", "tbc",
     "n/a", "na", "none", "unknown", "pending", "see description",
-    "see facebook", "see website", "see event page",
+    "see facebook", "see website", "see event page", "discord",
 }
+
+# Locations that deliberately WITHHOLD the address — "ask the marshal for the
+# address", "DM me on Discord for directions", a private home. Nominatim/Photon
+# force-match these to a random place (a NY barony's "Discord" landed in Iowa),
+# so we blank them to ("", "empty") -> geocode_status "skipped", not "failed":
+# no bogus pin, and --retry-failed stops re-sending them forever. Each pattern
+# pairs a "go find out" cue with an address cue, so a real venue that merely
+# contains a word like "marshal", "contact", or "private" is not caught.
+# Verified against the full event set: zero real addresses match.
+_APOS = "'’"  # straight + curly apostrophe
+ADDRESS_WITHHELD_PATTERNS = [
+    re.compile(r"\bask\b.{0,40}\bfor\b.{0,20}\b(the\s+)?address\b", re.IGNORECASE),
+    re.compile(r"\b(ask|contact|e-?mail|dm)\b.{0,60}\bfor\b.{0,20}\b(the\s+)?(address|directions)\b", re.IGNORECASE),
+    re.compile(r"\bdm\b.{0,40}\bdiscord\b", re.IGNORECASE),
+    re.compile(r"\bpersonal\s+abode\b", re.IGNORECASE),
+    re.compile(r"\bprivate\s+(residence|home)\b", re.IGNORECASE),
+    re.compile(rf"\b[\w{_APOS}]+[{_APOS}]s\s+(?:home|house|abode|residence)\b", re.IGNORECASE),
+]
+
+
+def is_address_withheld(raw: str) -> bool:
+    """True if the location text directs you to ask/contact someone for the
+    address, or names a private home — i.e. there is no geocodable address."""
+    return isinstance(raw, str) and any(p.search(raw) for p in ADDRESS_WITHHELD_PATTERNS)
 
 # When a location is just a bare kingdom name (e.g. "Kingdom of Northshield"
 # — usually appears on out-of-kingdom events on another kingdom's calendar),
@@ -731,6 +755,11 @@ def clean_location(raw: str) -> tuple:
 
     # Placeholder strings like "TBD" — treat as empty so we don't geocode them
     if raw.strip().lower().rstrip(".") in PLACEHOLDER_LOCATIONS:
+        return ("", "empty")
+
+    # Deliberately address-free text ("ask the marshal for the address", "DM me
+    # on Discord", a private home) — blank so it is skipped, not failed forever.
+    if is_address_withheld(raw):
         return ("", "empty")
 
     # AEthelmearc-style "Default R3, 18515" template locations — not real
@@ -1041,8 +1070,11 @@ def preferred_source(group: pd.DataFrame) -> pd.Series:
 
 def deduplicate(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Remove duplicate events (same start date + same clean_location).
-    Keeps the most geographically appropriate, non-OOK source.
+    Remove duplicate events (same start date + same clean_location + same
+    calendar_type). Keeping calendar_type in the key means a baronial practice
+    is never deduplicated away by a kingdom event that happens to share its
+    date and venue — the two are kept as separate markers. Within one type,
+    keeps the most geographically appropriate, non-OOK source.
     """
     # format="mixed" is required: the column mixes "YYYY-MM-DD" and
     # "YYYY-MM-DD HH:MM:SS" values, and pandas 2.x silently returns NaT
@@ -1056,7 +1088,7 @@ def deduplicate(df: pd.DataFrame) -> pd.DataFrame:
     df_no_loc   = df[~has_loc].copy()
 
     kept_rows = []
-    for _, group in df_with_loc.groupby(["_start_date", "_loc_key"]):
+    for _, group in df_with_loc.groupby(["_start_date", "_loc_key", "calendar_type"]):
         kept_rows.append(preferred_source(group))
 
     if kept_rows:
@@ -1074,15 +1106,25 @@ def deduplicate(df: pd.DataFrame) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 def is_recurring(dates: list) -> bool:
-    """Return True if dates follow a consistent weekly or monthly pattern."""
+    """Return True if dates follow a weekly or monthly cadence, tolerating the
+    odd skipped week/month (a skip shows up as 2x/3x the typical gap)."""
     if len(dates) < 2:
         return False
     sorted_dates = sorted(dates)
     gaps = [(sorted_dates[i+1] - sorted_dates[i]).days
             for i in range(len(sorted_dates)-1)]
     avg_gap = sum(gaps) / len(gaps)
-    all_similar = all(abs(g - avg_gap) <= 3 for g in gaps)
-    return all_similar and (6 <= avg_gap <= 32)
+    # A single consistent cadence, small jitter allowed (the original test).
+    consistent = all(abs(g - avg_gap) <= 3 for g in gaps) and (6 <= avg_gap <= 32)
+    # ...or a weekly/monthly series that skips the odd week/month: the skip
+    # shows up as 2x/3x the base (smallest) gap, which the average test would
+    # wrongly reject — so a holiday-skipping practice stays one (RECURRING) row
+    # instead of fragmenting into a stack of separate pins.
+    base = min(gaps)
+    tol = 2 if base < 20 else 3
+    skips_ok = (6 <= base <= 32) and all(
+        any(abs(g - base * m) <= tol for m in (1, 2, 3)) for g in gaps)
+    return consistent or skips_ok
 
 
 def merge_recurring(df: pd.DataFrame) -> pd.DataFrame:

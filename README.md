@@ -22,7 +22,7 @@ checklist (repo transfer, the Nominatim contact secret, monitoring):
 
 ## How the data pipeline works
 
-`refresh.py` runs five steps in order (each is a standalone script you can also
+`refresh.py` runs four steps in order (each is a standalone script you can also
 run on its own):
 
 | Step | Script | What it does |
@@ -31,7 +31,6 @@ run on its own):
 | 2 | `clean_sca_events.py` | Clean text, de-duplicate, merge recurring series, carry forward last-good events for failed feeds, **apply `event_overrides.csv`**, backfill per-event URLs → `sca_events_clean.csv`. |
 | 3 | `enrich_descriptions.py` | Replace placeholder feed descriptions (Atlantia, East, Artemisia PDFs) with the real write-up from the linked event page. |
 | 4 | `geocode_sca_events.py` | Geocode addresses via Nominatim (+ Photon fallback), caching results in `geocode_cache.json`. Skips events a human pinned (`geocode_status = override`). |
-| 5 | `build_group_pins.py` | Placeholder pins for SCA groups so baronies with no current events still appear. |
 
 Run the whole thing locally:
 
@@ -55,10 +54,11 @@ annotations in the Actions run summary.
 | File | Role |
 | --- | --- |
 | `calendars.csv` | Kingdom feed list — one row per kingdom (`id,source,type`). |
-| `locals.csv` | Local-group registry — one row per known local group (barony/shire/canton/college/…): its calendar feed (or `No Calendar Listed`), plus type/website/social/`date_last_checked`. Add a group here, no code change needed. |
+| `locals.csv` | Local-group registry — one row per known local group: its calendar feed (or `No Calendar Listed`/`No Calendar Available`; `No location` on a secondary feed = import its events but show no pin), plus type/website/social/`date_last_checked` and the placeholder-pin `location`/`lat`/`lng`. Add a group here, no code change needed. |
 | `event_overrides.csv` | Hand-maintained event corrections (see EDITING_EVENTS.md). |
 | `sca_events_clean.csv` | The cleaned, geocoded events the map serves. **Generated — don't hand-edit.** |
-| `group_pins.csv`, `*.topojson` | Group placeholder pins and the kingdom-boundary overlay. |
+| `territory_kingdoms.csv` | Kingdom-colour overlay assignments (state/county/province/country → kingdom). Edit + reload for US rows; re-run `build_world_kingdoms.py` for province/country rows (see MAINTAINING.md). |
+| `*.topojson` | Boundary polygons for the overlay (US counties + world). |
 | `*_cache.json` | Committed caches (geocode, descriptions, per-scraper) so re-runs and the cron stay cheap and polite to upstream APIs. |
 | `index.html` | The Leaflet front-end (map, sidebar, filters). |
 | `reference/` | One-off scripts kept for posterity (not part of the pipeline). See its README. |

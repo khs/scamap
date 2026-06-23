@@ -107,6 +107,53 @@ class TestCleanLocation(unittest.TestCase):
         self.assertEqual(clean.clean_location(None), ("", "empty"))
 
 
+class TestAddressWithheld(unittest.TestCase):
+    """Deliberately address-free locations collapse to ("", "empty") so the
+    geocoder marks them "skipped" (no bogus pin, no endless --retry-failed).
+    The predicate was verified against the full event set: zero real addresses
+    are caught."""
+
+    # Real rows from the data + adversarial synthetic strings.
+    MUST_CATCH = [
+        "Ask the marshal for the address",
+        "Ask the Marshal for the address",                       # casing variant
+        "DM Finn on Discord or email at scarey161@gmail.com for directions",
+        "Mistress Rownan's Personal Abode in Cook. Contact her for the address (rgspencer@gmail.com)",
+        "Angelino and Ylaire's home",                            # possessive private home
+        "Discord",                                               # bare-field placeholder
+        "  discord  ",
+        "To Be Determine",                                       # typo of "to be determined"
+        "please contact the autocrat for directions",
+        "Email the seneschal for the address",
+        "Lady Ana's house",
+    ]
+    # Real addresses (or venue names) that must keep a non-empty confidence —
+    # they merely contain a trigger word.
+    MUST_NOT_CATCH = [
+        "St. Mary's Church, 100 Oak Ave, Leeds ME",             # possessive, not a home-word
+        "Farmer's Market, 10 Center St, Dayton OH",
+        "People's Place Community Center, 22 Village Ln, Akron OH",
+        "123 Discord Lane, Cherokee, IA",                       # 'discord' inside a real street
+        "Join our Discord server after you arrive at 5 Main St",  # 'discord' mid-string, no 'dm'
+        "Private Property 190 State Rt 219, Leeds, ME 04263",    # 'private', not residence/home
+    ]
+
+    def test_withheld_locations_collapse_to_empty(self):
+        for loc in self.MUST_CATCH:
+            self.assertEqual(clean.clean_location(loc), ("", "empty"), loc)
+
+    def test_predicate_spares_real_addresses(self):
+        for loc in self.MUST_NOT_CATCH:
+            self.assertFalse(clean.is_address_withheld(loc), f"false positive: {loc!r}")
+            self.assertNotIn(loc.strip().lower().rstrip("."),
+                             clean.PLACEHOLDER_LOCATIONS, loc)
+
+    def test_predicate_is_case_insensitive(self):
+        # Residual-risk tripwire: a future refactor must not drop re.IGNORECASE.
+        self.assertTrue(clean.is_address_withheld("ASK THE MARSHAL FOR THE ADDRESS"))
+        self.assertTrue(clean.is_address_withheld("ask the marshal for the address"))
+
+
 class TestExtractLocationFromDescription(unittest.TestCase):
     def test_free_floating_full_address_is_high(self):
         # Step 1: a bare "<num> <street>, <city>, <ST> <zip>" in prose.

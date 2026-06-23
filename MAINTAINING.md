@@ -50,7 +50,7 @@ You never need to hand-edit `sca_events_clean.csv`; it's regenerated every run.
 ## When a feed breaks (the `pipeline-health` issue opens)
 
 The issue body lists which kingdom(s) produced 0 events. To diagnose, open the
-latest **Actions → "Refresh events + group pins"** run and read that kingdom's
+latest **Actions → "Refresh events"** run and read that kingdom's
 `Fetching […]` line. Common causes, most to least likely:
 
 - **The site is just down or slow this run.** The pipeline already carries that
@@ -71,7 +71,7 @@ latest **Actions → "Refresh events + group pins"** run and read that kingdom's
   skipped instead of taking down the feed), so this shouldn't reach you — but if
   the log mentions it, that's why only one event went missing, not the kingdom.
 
-To re-run on demand: **Actions → Refresh events + group pins → Run workflow**.
+To re-run on demand: **Actions → Refresh events → Run workflow**.
 
 ### Updating An Tir
 
@@ -122,13 +122,16 @@ Google-Calendar or ICS feed:
   `kingdom`). Add or delete a row.
 - **Local groups → `locals.csv`** — a registry of every local group we know of
   (baronies, shires, cantons, colleges, …), columns
-  `kingdom,group,type,calendar_id,website,social,date_last_checked`. One row per
-  group; `calendar_id` is its feed, or the literal `No Calendar Listed` if it
-  has none (those rows are skipped for import but kept so you can track them).
-  Only `group` + a real `calendar_id` drive the import; `type`/`website`/`social`
-  are reference info. Bump `date_last_checked` (YYYY-MM-DD) whenever you
-  re-verify a row, so stale ones are easy to spot. This is the one place to
-  manage local groups.
+  `kingdom,group,type,calendar_id,website,social,date_last_checked,location,lat,lng`.
+  One row per group; `calendar_id` is its feed, or `No Calendar Listed` (we
+  haven't looked) / `No Calendar Available` (checked, it has none) — both keep
+  the row and still show a "?" pin so you can track it. Put `No location` in
+  `calendar_id` on a *secondary* feed for a group to import its events without a
+  second pin. `location`/`lat`/`lng` place that "?" pin (the map reads them
+  directly — no geocoding). Only `group` + a real `calendar_id` drive the
+  import; `type`/`website`/`social` are reference info. Bump `date_last_checked`
+  (YYYY-MM-DD) whenever you re-verify a row. This is the one place to manage
+  local groups.
 
 For either file, the `id`/`calendar_id` is the Google-Calendar ICS id/URL; a
 WordPress site may need a scraper prefix (`scrapers.py` lists them, and
@@ -136,6 +139,28 @@ WordPress site may need a scraper prefix (`scrapers.py` lists them, and
 names must match the names used elsewhere (the colour map in `index.html`, the
 home-state tables in `kingdoms.py`). After adding, run the workflow once and
 check the new group's events appear.
+
+---
+
+## Editing the kingdom-colour overlay
+
+The "Colour background by kingdom" overlay is driven by
+**`territory_kingdoms.csv`** — one row per region, columns `type,id,name,kingdom`:
+
+- **`type=state` / `type=county`** — US regions, keyed by 2- or 5-digit FIPS.
+  `index.html` reads these **at runtime**, so a fix is instant: edit the row,
+  reload the page. (A `county` row overrides its state's default.)
+- **`type=province`** (Canada, ISO like `CA-ON`) / **`type=country`** (by name)
+  — the non-US world layer. `build_world_kingdoms.py` reads these, so after
+  editing run **`python build_world_kingdoms.py`** to regenerate
+  `world-kingdoms.topojson`, then reload. Adding a *brand-new* country also needs
+  that re-run (it fetches the polygon from Natural Earth).
+
+The data is province/country level, so a few real sub-province splits can't be
+drawn — Essex County/Windsor → Midrealm, NW Ontario → Northshield, eastern BC →
+Avacal, and French Guiana out of France. Per-kingdom *marker* colours (and the
+desaturated barony shades) live in the `KINGDOM_COLORS` / `BARONY_COLOR_OVERRIDE`
+maps near the top of `index.html`.
 
 ---
 

@@ -61,7 +61,9 @@ class TestDeduplicate(unittest.TestCase):
         self.assertEqual(len(out), 1)
         self.assertEqual(out.iloc[0]["source"], "Kingdom of Ansteorra")
 
-    def test_kingdom_beats_baronial_when_no_geo_match(self):
+    def test_baronial_and_kingdom_same_place_are_kept_separately(self):
+        # Dedup is calendar_type-aware: a baronial practice is never removed by
+        # a kingdom event that happens to share its date and venue — both stay.
         df = _df([
             {"title": "A&S Day", "start": "2026-05-02", "clean_location": "Community Hall, Springfield",
              "source": "Barony of Foo", "calendar_type": "baronial"},
@@ -69,8 +71,8 @@ class TestDeduplicate(unittest.TestCase):
              "source": "Kingdom of Foo", "calendar_type": "kingdom"},
         ])
         out = clean.deduplicate(df)
-        self.assertEqual(len(out), 1)
-        self.assertEqual(out.iloc[0]["calendar_type"], "kingdom")
+        self.assertEqual(len(out), 2)
+        self.assertEqual(set(out["calendar_type"]), {"baronial", "kingdom"})
 
     def test_empty_location_rows_are_never_deduped(self):
         # No address means we can't be sure they're the same event — keep both.
