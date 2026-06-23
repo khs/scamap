@@ -199,13 +199,13 @@ county,13245,Richmond,Kingdom of Atlantia,
 province,CA-AB,Alberta,Kingdom of Avacal,
 province,CA-BC,British Columbia,Kingdom of An Tir,
 province,CA-MB,Manitoba,Kingdom of Northshield,
-province,CA-NB,New Brunswick,Kingdom of the East,
-province,CA-NL,Newfoundland and Labrador,Kingdom of the East,
-province,CA-NS,Nova Scotia,Kingdom of the East,
+province,CA-NB,New Brunswick,Principality of Tir Mara,Kingdom of the East
+province,CA-NL,Newfoundland and Labrador,Principality of Tir Mara,Kingdom of the East
+province,CA-NS,Nova Scotia,Principality of Tir Mara,Kingdom of the East
 province,CA-NT,Northwest Territories,Kingdom of Avacal,
 province,CA-ON,Ontario,Kingdom of Ealdormere,
-province,CA-PE,Prince Edward Island,Kingdom of the East,
-province,CA-QC,Quebec,Kingdom of the East,
+province,CA-PE,Prince Edward Island,Principality of Tir Mara,Kingdom of the East
+province,CA-QC,Quebec,Principality of Tir Mara,Kingdom of the East
 province,CA-SK,Saskatchewan,Kingdom of Avacal,
 province,CA-YT,Yukon,Kingdom of An Tir,
 country,Albania,Albania,Kingdom of Drachenwald,
@@ -246,7 +246,7 @@ country,Slovenia,Slovenia,Kingdom of Drachenwald,
 country,Spain,Spain,Kingdom of Drachenwald,
 country,Sweden,Sweden,Kingdom of Drachenwald,
 country,Switzerland,Switzerland,Kingdom of Drachenwald,
-country,Thailand,Thailand,Kingdom of the West,
+country,Thailand,Thailand,The Marches,Kingdom of the West
 country,Ukraine,Ukraine,Kingdom of Drachenwald,
 country,United Kingdom,United Kingdom,Principality of Insulae Draconis,Kingdom of Drachenwald
 country,Ireland,Ireland,Principality of Insulae Draconis,Kingdom of Drachenwald
@@ -254,3 +254,6 @@ country,Vietnam,Vietnam,The Marches,Kingdom of the West
 country,South Korea,South Korea,The Marches,Kingdom of the West
 country,Japan,Japan,The Marches,Kingdom of the West
 territory,Guam,Guam,The Marches,Kingdom of the West
+cd,3558,Thunder Bay,Kingdom of Northshield,
+cd,3559,Rainy River,Kingdom of Northshield,
+cd,3560,Kenora,Kingdom of Northshield,

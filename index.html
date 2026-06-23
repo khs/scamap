@@ -532,7 +532,7 @@
       Baronial (Practices)
     </label>
     <label class="check-label">
-      <input type="checkbox" id="chk-placeholders" checked />
+      <input type="checkbox" id="chk-placeholders" />
       Show markers for groups without calendars
     </label>
     <label class="check-label">
@@ -763,7 +763,7 @@ function loadKingdomOverlay() {
     const [topoResp, worldResp, canadaResp] = await Promise.all([
       fetch('us-counties.topojson'),
       fetch('world-kingdoms.topojson'),
-      fetch('canada-cd.topojson').catch(() => null),
+      fetch('canada-cd.topojson'),
       new Promise((resolve, reject) => {
         if (window.topojson) { resolve(); return; }
         const s = document.createElement('script');
@@ -773,20 +773,20 @@ function loadKingdomOverlay() {
         document.head.appendChild(s);
       }),
     ]);
-    if (!topoResp.ok) throw new Error(`HTTP ${topoResp.status}`);
+    // All three layers are required: throwing on any failure (rather than
+    // silently leaving a layer empty) routes a flaky load through the retry path
+    // below — otherwise a failed world/canada fetch would freeze "North America
+    // coloured, Asia/Europe blank" into the cached promise until a full refresh.
+    if (!topoResp.ok)   throw new Error(`us-counties HTTP ${topoResp.status}`);
+    if (!worldResp.ok)  throw new Error(`world-kingdoms HTTP ${worldResp.status}`);
+    if (!canadaResp.ok) throw new Error(`canada-cd HTTP ${canadaResp.status}`);
     const topo = await topoResp.json();
     const counties = window.topojson.feature(topo, topo.objects.counties);
-    let world = { type: 'FeatureCollection', features: [] };
-    if (worldResp.ok) {
-      const worldTopo = await worldResp.json();
-      world = window.topojson.feature(worldTopo, worldTopo.objects.data);
-    }
+    const worldTopo = await worldResp.json();
+    const world = window.topojson.feature(worldTopo, worldTopo.objects.data);
     // Canada census divisions (province default + per-CD overrides).
-    let canadaCd = { type: 'FeatureCollection', features: [] };
-    if (canadaResp && canadaResp.ok) {
-      const cdTopo = await canadaResp.json();
-      canadaCd = window.topojson.feature(cdTopo, cdTopo.objects.cd);
-    }
+    const cdTopo = await canadaResp.json();
+    const canadaCd = window.topojson.feature(cdTopo, cdTopo.objects.cd);
 
     // Binding 3000+ tooltips up front pegs the renderer; instead, manage a
     // single shared tooltip that follows the mouse and shows the kingdom for
@@ -892,6 +892,9 @@ function loadKingdomOverlay() {
     kingdomOverlay = L.layerGroup([worldLayer, canadaCdLayer, countiesLayer]);
     return kingdomOverlay;
   })();
+  // Don't cache a rejection forever (a flaky CDN script or fetch): clear it so
+  // the next toggle retries instead of leaving the overlay permanently blank.
+  kingdomOverlayPromise.catch(() => { kingdomOverlayPromise = null; });
   return kingdomOverlayPromise;
 }
 
@@ -1526,13 +1529,12 @@ function applyFilters() {
     const t = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
     return TYPE_PRIORITY[t] ?? 9;
   }
-  // Skip placeholder "?" pins entirely on the Online Only tab -- they're
-  // baronial seats with no current event, which just clutters the view when
-  // the user is hunting for actual online events to attend. They're also
-  // suppressible directly via the "Show markers for groups without calendars"
-  // checkbox.
-  if (document.getElementById('chk-baronial').checked &&
-      document.getElementById('chk-placeholders').checked && !onlineOnly) {
+  // Placeholder "?" pins have their own "Show markers for groups without
+  // calendars" checkbox, independent of the Baronial (Practices) filter — so you
+  // can show group seats with the baronial event markers hidden, or vice versa.
+  // (Off by default to keep the initial render light.) Still skipped on the
+  // Online Only tab, where empty seats just clutter the online-event hunt.
+  if (document.getElementById('chk-placeholders').checked && !onlineOnly) {
     const query = document.getElementById('search-input').value.toLowerCase().trim();
     const sortedPins = [...groupPins].sort(
       (a, b) => pinTypePriority(a.group) - pinTypePriority(b.group)
@@ -1771,7 +1773,11 @@ fetch('sca_events_clean.csv')
     // Append hand-maintained practices AFTER groupKingdom is built (so they pick
     // up their barony's kingdom colour) and BEFORE applyFilters (so they render).
     if (hardText) ingestHardcodedEvents(hardText);
-    applyFilters();
+    // First render only once the map container has its settled size — on a fast
+    // cache hit applyFilters() can otherwise run before layout, keying the canvas
+    // renderer + cluster grid to a 0-size projection so far regions (Asia/Europe)
+    // stay unpainted until a redraw (the "no events until refresh" symptom).
+    map.whenReady(() => { map.invalidateSize(); applyFilters(); });
   })
   .catch(err => {
     document.getElementById('sidebar-list').innerHTML =
@@ -1845,14 +1851,24 @@ document.querySelectorAll('.sidebar-tab').forEach(btn => {
 
 document.getElementById('chk-overlay').addEventListener('change', async (e) => {
   if (e.target.checked) {
-    const layer = await loadKingdomOverlay();
-    layer.addTo(map);
-    // Keep tile layer + overlay underneath markers
-    layer.bringToBack();
+    try {
+      const layer = await loadKingdomOverlay();
+      layer.addTo(map);
+      layer.bringToBack();   // keep tile layer + overlay underneath markers
+    } catch (err) {
+      // Load failed — uncheck the box (the promise was cleared, so toggling
+      // again retries) rather than leaving it checked over a blank map.
+      e.target.checked = false;
+    }
   } else if (kingdomOverlay) {
     map.removeLayer(kingdomOverlay);
   }
 });
+
+// After fonts/layout settle, make sure the map knows its real pixel size — a
+// belt-and-suspenders guard for the projection race below that can leave far
+// regions unpainted on a fast first load.
+window.addEventListener('load', () => map.invalidateSize());
 </script>
 </body>
 </html>
