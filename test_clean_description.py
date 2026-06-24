@@ -74,6 +74,19 @@ class TestCleanDescription(unittest.TestCase):
     def test_whitespace_collapsed(self):
         self.assertNotIn("  ", self._text("Lots    of\t\tspace   here"))
 
+    def test_empty_brackets_after_strips_removed(self):
+        # Stripping a URL/email out of "blog (http://…)" / "(foo@bar.com)" must
+        # not leave a stray "()" in the prose — the Debatable Lands practice bug.
+        # The links themselves are still surfaced separately as the event's URLs.
+        text, urls = clean.clean_description(
+            "Check the blog (http://debatablelands.org/blog), Facebook group "
+            "(https://www.facebook.com/groups/DL), or Discord. "
+            "Contact the marshal (marshal@example.org).")
+        self.assertNotIn("()", text)
+        self.assertNotIn("(", text)        # no orphaned brackets at all
+        self.assertIn("Check the blog, Facebook group, or Discord", text)
+        self.assertEqual(urls["event_url"], "http://debatablelands.org/blog")
+
 
 class TestExtractUrlsFromText(unittest.TestCase):
     def test_event_and_facebook_split(self):
