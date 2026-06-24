@@ -156,11 +156,43 @@ US_STATE_ADJACENT = kingdoms.US_STATE_ADJACENT
 KINGDOM_HOME_STATES = kingdoms.KINGDOM_HOME_STATES
 
 
+# Build source -> kingdom from locals.csv so a baronial source without an
+# explicit BARONY_HOME_STATES entry still inherits its kingdom's member states
+# (e.g. every Caid barony -> CA/NV/HI) instead of accepting a match anywhere in
+# North America. Silently empty if locals.csv is absent.
+def _load_source_kingdom() -> dict:
+    out = {}
+    path = Path(__file__).parent / "locals.csv"
+    if path.exists():
+        with open(path, encoding="utf-8", newline="") as f:
+            for r in csv.DictReader(f):
+                group = (r.get("group") or "").strip()
+                kingdom = (r.get("kingdom") or "").strip()
+                if group and kingdom:
+                    out.setdefault(group, kingdom)
+    return out
+
+
+SOURCE_KINGDOM = _load_source_kingdom()
+
+
+def _strip_source_tag(source: str) -> str:
+    """Drop a trailing "(Workshops)"-style tag so "Barony of X (Practices)"
+    matches the "Barony of X" row in locals.csv."""
+    return re.sub(r"\s*\([^)]*\)\s*$", "", source or "").strip()
+
+
 def acceptable_states_for_source(source: str) -> set | None:
     """Return the set of states an event from this source can legitimately
     be in (own state + adjacent states for a barony, member states only for
     a kingdom), or None if we have no record of the source."""
     home = BARONY_HOME_STATES.get(source) or KINGDOM_HOME_STATES.get(source)
+    if not home:
+        # An unlisted barony inherits its kingdom's member states (via
+        # locals.csv) so it stays in-kingdom rather than anywhere in NA.
+        kingdom = (SOURCE_KINGDOM.get(source)
+                   or SOURCE_KINGDOM.get(_strip_source_tag(source)))
+        home = KINGDOM_HOME_STATES.get(kingdom) if kingdom else None
     if not home:
         return None
     acceptable = set(home)

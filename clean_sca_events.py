@@ -621,6 +621,12 @@ def clean_description(desc: str) -> tuple:
     desc = re.sub(r"P\.?\s*O\.?\s*Box\s+\d+[\w\s,\.]*", "", desc, flags=re.IGNORECASE)
     desc = re.sub(r"c/o\s+[\w\s]+,[\w\s,]+\d{5}", "", desc, flags=re.IGNORECASE)
 
+    # The strips above leave behind empty brackets — "blog (http://…)" -> "blog ()",
+    # "contact (foo@bar.com)" -> "contact ()". Drop the now-empty (), [], {} (and
+    # the space before them) so the text reads cleanly. The stripped links are
+    # still surfaced separately as the event's link buttons.
+    desc = re.sub(r"\s*[\(\[\{]\s*[\)\]\}]", "", desc)
+
     # Collapse whitespace
     desc = re.sub(r"\s{2,}", " ", desc).strip(" .,;|")
 

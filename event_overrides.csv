@@ -20,3 +20,4 @@ match_event_url,match_source,match_title,match_date,new_location,new_lat,new_lng
 # Example (remove the leading # and edit to use):
 # ,Kingdom of Meridies,Greater Savannah Gathering,,"Savannah, GA, USA",,,"'Greater Savannah area' would not geocode; set to the city"
 # ---------------------------------------------------------------------------
+,Barony of Lyondemere,Archery Practice - Weeknight (RECURRING),,"Rancho Park Archery Range, Los Angeles, CA 90064",34.044,-118.4163,"Rancho Park archery range in West LA (the big park S of Century City, N of Cheviot Hills); the venue name won't geocode, so pinned by hand"

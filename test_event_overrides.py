@@ -195,10 +195,18 @@ class TestCommittedOverridesFile(unittest.TestCase):
             header = next(_csv.reader(f))
         self.assertEqual(header, clean.OVERRIDE_COLUMNS)
 
-    def test_no_active_overrides_committed(self):
-        # Every example in the shipped file must stay commented out, so a fresh
-        # checkout applies zero corrections until a human adds a real one.
-        self.assertEqual(clean._load_overrides(), [])
+    def test_committed_overrides_are_well_formed(self):
+        # A committed override must have a way to MATCH an event (a URL, or
+        # source + title) AND something to CHANGE (a new location and/or a valid
+        # exact pin) — so a half-filled or accidentally-uncommented row can't
+        # silently slip a wrong correction onto the map.
+        for ov in clean._load_overrides():
+            has_match = bool(ov["match_event_url"]
+                             or (ov["match_source"] and ov["match_title"]))
+            has_change = bool(ov["new_location"]
+                              or clean._valid_override_coords(ov["new_lat"], ov["new_lng"]))
+            self.assertTrue(has_match, f"override has no match key: {ov}")
+            self.assertTrue(has_change, f"override changes nothing: {ov}")
 
 
 if __name__ == "__main__":
