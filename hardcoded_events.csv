@@ -1,4 +1,6 @@
-"title","location","day","schedule_url","source","kingdom","is_virtual","lat","lng"
-"Tir-y-Don Fighter Practice","Nike Park, 13036 Nike Park Rd, Carrollton, VA 23314","Sundays","https://tirydon.atlantia.sca.org/activities/","Barony of Tir-y-Don","Kingdom of Atlantia",FALSE,36.961231,-76.561179
-"Tir-y-Don Archery Practice","Newport News Park, Archery Range ","Sundays","https://tirydon.atlantia.sca.org/activities/","Barony of Tir-y-Don","Kingdom of Atlantia",FALSE,37.189352,-76.558459
-"Tir-y-Don Arts & Sciences Night","Cornerstone Community Church, 1003 Moyer Rd, Newport News, VA 23608 ","Thursdays","https://tirydon.atlantia.sca.org/activities/","Barony of Tir-y-Don","Kingdom of Atlantia",FALSE,37.13495,-76.573874
+title,location,day,schedule_url,source,kingdom,is_virtual,lat,lng
+Tir-y-Don Fighter Practice,"Nike Park, 13036 Nike Park Rd, Carrollton, VA 23314",Sundays,https://tirydon.atlantia.sca.org/activities/,Barony of Tir-y-Don,Kingdom of Atlantia,FALSE,36.961231,-76.561179
+Tir-y-Don Archery Practice,"Newport News Park, Archery Range ",Sundays,https://tirydon.atlantia.sca.org/activities/,Barony of Tir-y-Don,Kingdom of Atlantia,FALSE,37.189352,-76.558459
+Tir-y-Don Arts & Sciences Night,"Cornerstone Community Church, 1003 Moyer Rd, Newport News, VA 23608 ",Thursdays,https://tirydon.atlantia.sca.org/activities/,Barony of Tir-y-Don,Kingdom of Atlantia,FALSE,37.13495,-76.573874
+Aire Faucon Arts & Sciences Meetings,"1306 Country Club Rd, Lincolnton, NC 28092 ",the first and third Tuesdays of each month,https://airefaucon.atlantia.sca.org/events/index.html,Canton of Aire Faucon,Kingdom of Atlantia,FALSE,35.466714,-81.237704
+Ritterwald A&S & Fighter Practice,Various members’ homes,Tuesdays,https://ritterwald.atlantia.sca.org/weekly-as-fighter-practice/,Canton of Ritterwald,Kingdom of Atlantia,FALSE,33.566574,-81.719398
