@@ -130,14 +130,22 @@ class TestLocals(unittest.TestCase):
                     "social", "date_last_checked", "location", "lat", "lng"}
         self.assertTrue(required <= header, f"missing columns: {required - header}")
 
-    def test_no_duplicate_groups(self):
+    def test_no_duplicate_group_calendars(self):
+        # A group may legitimately appear more than once — a barony with several
+        # feeds, with the secondary rows marked "No location" so they import
+        # events without adding a second "?" pin (e.g. Barony of Stierbach's main
+        # + workshops calendars). What's NOT allowed is the SAME calendar listed
+        # twice for a group — an accidental copy-paste that imports duplicates.
+        skip = {"", "no calendar listed", "no calendar available"}
         seen, dups = set(), []
         for r in self.rows:
             g = (r.get("group") or "").strip().lower()
-            if not g:
+            c = (r.get("calendar_id") or "").strip().lower()
+            if not g or c in skip:
                 continue
-            dups.append(g) if g in seen else seen.add(g)
-        self.assertEqual(dups, [], f"duplicate group rows: {dups}")
+            key = (g, c)
+            dups.append(key) if key in seen else seen.add(key)
+        self.assertEqual(dups, [], f"same calendar listed twice for a group: {dups}")
 
     def test_kingdoms_are_known_when_present(self):
         unknown = sorted({(r.get("kingdom") or "").strip() for r in self.rows

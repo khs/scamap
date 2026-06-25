@@ -496,6 +496,24 @@
       .sidebar { width: 100%; border-left: none; border-top: 2px solid var(--sky-blue); height: 260px; }
       nav a { padding: 0 0.8rem; font-size: 0.68rem; }
     }
+
+    /* Colour key beneath the map: a row of tiny event/practice swatches per
+       kingdom. Hover, tap, or focus a square to read what it means. */
+    .map-legend {
+      display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+      margin: 0.45rem 0 0.2rem; font-size: 0.78rem; color: var(--blue);
+    }
+    .map-legend .legend-title { font-weight: 700; letter-spacing: 0.04em; }
+    .legend-swatches { display: flex; flex-wrap: wrap; gap: 5px; }
+    .legend-pair { display: flex; gap: 1px; }
+    .legend-swatch {
+      width: 13px; height: 13px; border-radius: 2px; cursor: pointer;
+      border: 1px solid rgba(0,0,0,0.18);
+    }
+    .legend-swatch:hover, .legend-swatch:focus {
+      outline: 2px solid var(--blue); outline-offset: 1px;
+    }
+    .legend-readout { font-style: italic; color: #555; }
   </style>
 </head>
 <body>
@@ -575,6 +593,13 @@
         <div style="padding:1rem;color:#888;font-style:italic;font-size:0.85rem;">Loading…</div>
       </div>
     </aside>
+  </div>
+
+  <!-- Colour key: a row of per-kingdom event/practice swatches (filled by JS) -->
+  <div class="map-legend" aria-label="Map colour key">
+    <span class="legend-title">Key</span>
+    <span class="legend-swatches" id="legend-swatches"></span>
+    <span class="legend-readout" id="legend-readout" aria-live="polite">hover or tap a square to see what each colour means</span>
   </div>
 
   <section class="prose-section">
@@ -1811,6 +1836,43 @@ function setDefaultDateRange() {
   document.getElementById('date-to').value   = _localIso(future);
 }
 setDefaultDateRange();   // runs before applyFilters() ever fires
+
+// Build the colour key under the map: for each kingdom, an "events" swatch (its
+// full colour) and a "practices" swatch (the desaturated / override baronial
+// shade). Hover, tap, or focus a square to read its meaning in the readout.
+(function buildLegend() {
+  const wrap = document.getElementById('legend-swatches');
+  const readout = document.getElementById('legend-readout');
+  if (!wrap) return;
+  const kingdoms = Object.keys(KINGDOM_COLORS)
+    .filter(k => k.startsWith('Kingdom of')).sort();
+  const frag = document.createDocumentFragment();
+  kingdoms.forEach(k => {
+    const short = k.replace(/^Kingdom of (the )?/, '');
+    const pair = document.createElement('span');
+    pair.className = 'legend-pair';
+    [['events',    KINGDOM_COLORS[k]],
+     ['practices', BARONY_COLOR_OVERRIDE[k] || desaturate(KINGDOM_COLORS[k])]]
+      .forEach(([kind, color]) => {
+        const sw = document.createElement('span');
+        sw.className = 'legend-swatch';
+        sw.style.background = color;
+        const label = `${short} (${kind})`;
+        sw.title = label;
+        sw.tabIndex = 0;
+        sw.setAttribute('role', 'button');
+        sw.setAttribute('aria-label', label);
+        const show = () => { readout.textContent = label; };
+        sw.addEventListener('mouseenter', show);
+        sw.addEventListener('click', show);
+        sw.addEventListener('focus', show);
+        pair.appendChild(sw);
+      });
+    frag.appendChild(pair);
+  });
+  wrap.appendChild(frag);
+})();
+
 document.getElementById('date-from').addEventListener('change', applyFilters);
 document.getElementById('date-to').addEventListener('change', applyFilters);
 document.getElementById('date-reset').addEventListener('click', () => {
@@ -1854,10 +1916,13 @@ document.getElementById('chk-overlay').addEventListener('change', async (e) => {
     try {
       const layer = await loadKingdomOverlay();
       layer.addTo(map);
-      layer.bringToBack();   // keep tile layer + overlay underneath markers
+      // No bringToBack(): the GeoJSON overlay already renders in Leaflet's
+      // overlayPane, below the marker pane. (Calling bringToBack on a plain
+      // LayerGroup throws — which used to trip the catch below and silently
+      // uncheck the box while leaving the colour on the map.)
     } catch (err) {
-      // Load failed — uncheck the box (the promise was cleared, so toggling
-      // again retries) rather than leaving it checked over a blank map.
+      // Genuine load failure — uncheck the box (the promise was cleared, so
+      // toggling again retries) rather than leaving it checked over a blank map.
       e.target.checked = false;
     }
   } else if (kingdomOverlay) {

@@ -142,6 +142,54 @@ check the new group's events appear.
 
 ---
 
+## Publishing your change (no Claude, no credits)
+
+Everything here runs locally with the free scripts — you never need Claude to
+ship an update. Which scripts depends on what you edited:
+
+**You added events to `hardcoded_events.csv`** (a static practice page, with
+hand-entered `lat`/`lng`). The map reads this file *directly* in the browser —
+no pipeline, no geocoding. Just commit and push it:
+
+```bash
+git pull --rebase
+git add hardcoded_events.csv
+git commit -m "Add Foo practice events"
+git push
+```
+
+**You added or fixed a feed in `locals.csv`** (or `calendars.csv`). Run the
+pipeline once so the new feed's events are imported and its addresses geocoded,
+then push what changed:
+
+```bash
+git pull --rebase                  # take the cron's latest first
+python refresh.py                  # imports every feed, geocodes only NEW addresses
+git add locals.csv calendars.csv sca_events_clean.csv \
+        geocode_cache.json description_cache.json
+git commit -m "Add/refresh local calendars"
+git push
+```
+
+(Drop `calendars.csv` from the `add` if you didn't touch it. Adding the two
+`*_cache.json` files is what keeps the next run — and the cron — from redoing
+work you already paid for.)
+
+`refresh.py` is **incremental**: `geocode_cache.json` remembers every address it
+has ever resolved and the geocoder skips rows already marked done, so a re-run
+only calls Nominatim for genuinely *new* addresses — it does **not** re-geocode
+the whole map. That's exactly the re-attempt path when you've only *fixed a
+broken link*: correct the `calendar_id`, re-run `refresh.py`, and just that
+feed's events get (re)imported and geocoded while everything else is served from
+cache. (A stray trailing space in a pasted ICS URL is fine — the importer trims
+it before fetching.)
+
+Prefer not to run anything? Commit the `locals.csv` edit on its own: the 2-day
+cron runs `refresh.py` in GitHub Actions (on its own IP) and imports the new
+feed within ~48 hours. Running it yourself just makes it instant.
+
+---
+
 ## Editing the kingdom-colour overlay
 
 The "Colour background by kingdom" overlay is driven by
