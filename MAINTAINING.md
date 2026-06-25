@@ -231,8 +231,16 @@ Notes:
   boundary-files page, then run it through mapshaper (`-proj wgs84 -simplify 12%
   keep-shapes -filter-fields CDUID,CDNAME,PRUID -rename-layers cd -o
   format=topojson canada-cd.topojson`).
-- Per-kingdom *marker* colours (and the desaturated barony shades) live in the
-  `KINGDOM_COLORS` / `BARONY_COLOR_OVERRIDE` maps near the top of `index.html`.
+- **Changing the colours** (both the marker/pin colours *and* this overlay): edit
+  **`colourschemes.csv`** — one row per kingdom, columns
+  `kingdom,event_color,practice_color`. `event_color` is the kingdom's pin +
+  background colour; `practice_color` is the (lighter) shade used for that
+  kingdom's baronial events and practices. Hex with or without a leading `#` both
+  work. It's read at runtime, so edit a hex, reload the page, and the whole map
+  (pins, overlay, and the legend under the map) retints — no code change.
+  Principalities aren't listed; they inherit their parent kingdom's colour. If the
+  file is missing or a hex is malformed the map shows a load error rather than
+  reverting silently, and `test_csv_integrity.py` guards it so a typo can't ship.
 
 ---
 

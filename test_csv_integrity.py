@@ -31,16 +31,24 @@ TERRITORY = HERE / "territory_kingdoms.csv"
 LOCALS = HERE / "locals.csv"
 INDEX = HERE / "index.html"
 CANADA_CD = HERE / "canada-cd.topojson"
+COLOURS = HERE / "colourschemes.csv"
+CALENDARS = HERE / "calendars.csv"
+
+# A hex colour the front-end's normHex() accepts: 3- or 6-digit, with or without
+# a leading "#". This is the contract colourschemes.csv must satisfy.
+HEX_RE = re.compile(r"#?(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
 
 
 def _kingdom_colors() -> set:
-    """Parse the KINGDOM_COLORS object literal out of index.html -> the set of
-    kingdom/principality names the front-end knows how to colour."""
-    text = INDEX.read_text(encoding="utf-8")
-    m = re.search(r"const KINGDOM_COLORS\s*=\s*\{(.*?)\n\s*\};", text, re.S)
-    assert m, "could not locate KINGDOM_COLORS object in index.html"
-    names = set(re.findall(r'"([^"]+)"\s*:', m.group(1)))
-    assert names, "parsed KINGDOM_COLORS but found no kingdom names"
+    """The set of kingdom names the map knows how to colour — sourced from
+    colourschemes.csv, the single sheet the maintainer edits to retint the map.
+    (Principalities aren't listed; they inherit their parent kingdom's colour.)
+    Reads the file directly rather than via _rows(), which is defined below this
+    module-level call."""
+    with open(COLOURS, encoding="utf-8", newline="") as f:
+        names = {(r.get("kingdom") or "").strip()
+                 for r in csv.DictReader(f) if (r.get("kingdom") or "").strip()}
+    assert names, "parsed colourschemes.csv but found no kingdom names"
     return names
 
 
@@ -167,6 +175,69 @@ class TestLocals(unittest.TestCase):
             if not (-90 <= la <= 90 and -180 <= lo <= 180):
                 bad.append((r.get("group"), lat, lng))
         self.assertEqual(bad, [], f"out-of-range or unpaired coordinates: {bad}")
+
+
+class TestColourSchemes(unittest.TestCase):
+    """colourschemes.csv is the single source of truth for kingdom + practice
+    colours — index.html and the legend read it at load. Guard its shape so a
+    typo can't silently grey a kingdom or paint an invalid colour."""
+
+    def setUp(self):
+        self.rows = _rows(COLOURS)
+
+    def test_header_is_exact(self):
+        with open(COLOURS, encoding="utf-8", newline="") as f:
+            self.assertEqual(f.readline().strip(),
+                             "kingdom,event_color,practice_color")
+
+    def test_kingdoms_named_canonically(self):
+        # The names must match the kingdom strings used everywhere else (locals,
+        # calendars, territory_kingdoms), which all start with "Kingdom of".
+        bad = sorted({r["kingdom"] for r in self.rows
+                      if not (r.get("kingdom") or "").startswith("Kingdom of")})
+        self.assertEqual(bad, [], f"non-canonical kingdom names: {bad}")
+
+    def test_event_colour_present_and_valid(self):
+        # event_color is required — it's the kingdom's pin + overlay colour.
+        bad = [(r.get("kingdom"), r.get("event_color")) for r in self.rows
+               if not HEX_RE.fullmatch((r.get("event_color") or "").strip())]
+        self.assertEqual(bad, [], f"missing/invalid event_color: {bad}")
+
+    def test_practice_colour_valid_when_present(self):
+        # practice_color is optional — a blank one falls back to a desaturated
+        # event colour at runtime — but when set it must be a real hex.
+        bad = [(r.get("kingdom"), r.get("practice_color")) for r in self.rows
+               if (r.get("practice_color") or "").strip()
+               and not HEX_RE.fullmatch((r.get("practice_color") or "").strip())]
+        self.assertEqual(bad, [], f"invalid practice_color: {bad}")
+
+    def test_no_duplicate_kingdoms(self):
+        seen, dups = set(), []
+        for r in self.rows:
+            k = (r.get("kingdom") or "").strip()
+            dups.append(k) if k in seen else seen.add(k)
+        self.assertEqual(dups, [], f"duplicate kingdom rows: {dups}")
+
+    def test_covers_every_locals_kingdom(self):
+        # Every kingdom a group actually lives in must have a colour row, else
+        # that group's events/practices fall back to the generic shade.
+        have = {(r.get("kingdom") or "").strip() for r in self.rows}
+        used = {(r.get("kingdom") or "").strip() for r in _rows(LOCALS)
+                if (r.get("kingdom") or "").strip()}
+        missing = sorted(used - have)
+        self.assertEqual(missing, [],
+                         f"locals.csv kingdoms with no colour row: {missing}")
+
+    def test_covers_every_kingdom_calendar(self):
+        # Every kingdom-level feed source must have a colour row too, so a
+        # kingdom-level event never renders with the fallback colour.
+        have = {(r.get("kingdom") or "").strip() for r in self.rows}
+        used = {(r.get("source") or "").strip() for r in _rows(CALENDARS)
+                if (r.get("type") or "").strip() == "kingdom"
+                and (r.get("source") or "").strip()}
+        missing = sorted(used - have)
+        self.assertEqual(missing, [],
+                         f"kingdom calendars with no colour row: {missing}")
 
 
 class TestCanadaCdTopojson(unittest.TestCase):

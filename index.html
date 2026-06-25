@@ -616,39 +616,41 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
-// ── Kingdom colour dictionary ────────────────────────────────────
-// Includes all 20 known-world kingdoms, even those not yet in the calendar list
-const KINGDOM_COLORS = {
-  "Kingdom of the East":        "#4b0082",   // dark purple
-  "Kingdom of Calontir":        "#8a2be2",   // lighter purple
-  "Kingdom of Atlantia":        "#008b8b",   // turquoise
-  "Kingdom of Northshield":     "#1a1a1a",   // black
-  "Kingdom of Meridies":        "#888888",   // grey
-  "Kingdom of Trimaris":        "#00008b",   // dark blue
-  "Kingdom of Gleann Abhann":   "#6b0000",   // dark red
-  "Kingdom of Avacal":          "#ff4500",   // orange-red (bright red / orange)
-  "Kingdom of Ansteorra":       "#ffd700",   // sunshine yellow
-  "Kingdom of the Middle":      "#1a4a1a",   // dark forest green
-  "Kingdom of the Outlands":    "#4a8a4a",   // medium/light green
-  "Kingdom of the West":        "#7fff00",   // lime/neon green
-  "Kingdom of Artemisia":       "#b8860b",   // dark yellow ochre
-  "Kingdom of AEthelmearc":     "#cc2200",   // scarlet
-  "Kingdom of Atenveldt":       "#1e90ff",   // bright blue
-  "Kingdom of An Tir":          "#e8e0b0",   // pale yellow
-  "Kingdom of Ealdormere":      "#f0a6c6",   // pale pink
-  "Kingdom of Caid":            "#2e2d7a",   // dark purplish blue
-  "Kingdom of Lochac":          "#b57edc",   // lavender
-  "Kingdom of Drachenwald":     "#c87070",   // pale red
-  // Sub-principalities — given their own tints so the overlay shows them
-  // distinctly inside their parent kingdom's territory.
-  "Principality of Oertha":     "#7fb7e6",   // chill light blue (West sub)
-  "Principality of the Mists":  "#a8d8a8",   // sage (West sub)
-  "Principality of Cynagua":    "#c4e0a8",   // pale green (West sub)
-  "Principality of Tir Mara":   "#6e3b6e",   // deeper purple (East sub)
-  "Principality of the Sun":    "#5fb8d8",   // light blue (Atenveldt sub)
-  "Principality of Tir Righ":   "#f0e0a0",   // wheat (An Tir sub)
-  "Principality of the Summits":"#c89868",   // amber (An Tir sub)
-};
+// ── Kingdom colours ──────────────────────────────────────────────
+// One row per kingdom in colourschemes.csv (event hex + practice hex); these
+// dicts are filled from it by loadColourSchemes() before the first render, so
+// the whole map can be retinted by editing that one sheet — no code change.
+// Principalities aren't listed: they inherit their parent kingdom's colour (the
+// overlay paints them by `parent`, and no event/calendar is sourced from a
+// principality). A missing/garbled sheet is a loud load error, not a grey map.
+let KINGDOM_COLORS = {};   // "Kingdom of X" -> kingdom-event hex (#rrggbb)
+let BARONY_COLORS  = {};   // "Kingdom of X" -> baronial/practice hex (#rrggbb)
+
+// Accept "#rrggbb" / "rrggbb" / "#rgb" / "rgb"; return "#rrggbb" lower-case or null.
+function normHex(s) {
+  const m = String(s || '').trim().replace(/^#/, '');
+  if (/^[0-9a-fA-F]{6}$/.test(m)) return '#' + m.toLowerCase();
+  if (/^[0-9a-fA-F]{3}$/.test(m)) return '#' + [...m].map(c => c + c).join('').toLowerCase();
+  return null;
+}
+// Fill KINGDOM_COLORS / BARONY_COLORS from colourschemes.csv. Required: throws
+// if the file is missing, unreadable, or yields no usable rows, so the load
+// chain's .catch surfaces it instead of the map rendering silently grey.
+function loadColourSchemes() {
+  return fetch('colourschemes.csv')
+    .then(r => { if (!r.ok) throw new Error(`colourschemes.csv HTTP ${r.status}`); return r.text(); })
+    .then(text => {
+      parseCSV(text).forEach(row => {
+        const k = (row.kingdom || '').trim();
+        if (!k) return;
+        const ev = normHex(row.event_color), ba = normHex(row.practice_color);
+        if (ev) KINGDOM_COLORS[k] = ev;
+        if (ba) BARONY_COLORS[k] = ba;
+      });
+      if (!Object.keys(KINGDOM_COLORS).length)
+        throw new Error('colourschemes.csv had no usable colour rows');
+    });
+}
 
 const BARONIAL_COLOR  = "#2255aa";   // fallback when a barony's kingdom is unknown
 const VIRTUAL_COLOR   = "#777777";
@@ -658,9 +660,10 @@ function kingdomColor(source) {
   return KINGDOM_COLORS[source] || FALLBACK_COLOR;
 }
 
-// Mute a kingdom colour toward its own grey so baronial events read as a
-// desaturated version of their kingdom's colour — distinct from kingdom events
-// but still showing which kingdom they belong to (helps read boundaries).
+// Mute a kingdom colour toward its own grey. Baronial events now get an explicit
+// practice colour from colourschemes.csv; this is only the fallback used when a
+// row leaves practice blank, so such a barony still reads as a muted kingdom
+// shade rather than the generic blue.
 function desaturate(hex) {
   const m = hex.replace('#', '');
   const r = parseInt(m.slice(0, 2), 16),
@@ -674,20 +677,17 @@ function desaturate(hex) {
 // barony/shire/… → kingdom, built from locals.csv after it loads (see below).
 let groupKingdom = {};
 
-// Kingdoms whose marker colour is black/grey don't desaturate usefully, so
-// their baronies get an explicit shade instead of desaturate().
-const BARONY_COLOR_OVERRIDE = {
-  "Kingdom of Northshield": "#595959",   // dark grey (kingdom events are black)
-  "Kingdom of Meridies":    "#c2c2c2",   // paler grey (kingdom events are mid grey)
-};
-
 function eventColor(ev) {
   if (ev.is_virtual === 'True') return VIRTUAL_COLOR;
   if (ev.calendar_type === 'baronial') {
     // Hardcoded events carry their own `kingdom` (so a group missing from
     // locals.csv still colours correctly); everyone else uses the registry.
     const kingdom = ev.kingdom || groupKingdom[ev.source];
-    if (kingdom && BARONY_COLOR_OVERRIDE[kingdom]) return BARONY_COLOR_OVERRIDE[kingdom];
+    // Explicit baronial/practice colour from colourschemes.csv; fall back to a
+    // desaturated kingdom colour if a row left practice blank, then to the
+    // generic baronial shade if the kingdom itself is unknown.
+    const explicit = kingdom && BARONY_COLORS[kingdom];
+    if (explicit) return explicit;
     const base = kingdom && KINGDOM_COLORS[kingdom];
     return base ? desaturate(base) : BARONIAL_COLOR;
   }
@@ -1774,10 +1774,16 @@ function parseCSV(text) {
 // ── Load CSVs ─────────────────────────────────────────────────────
 // Events are required. Placeholder "?" pins come from locals.csv and are
 // optional — if that file isn't there, the map just renders without them.
-fetch('sca_events_clean.csv')
-  .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
-  .then(text => {
+// Events and the colour sheet are both required and load in parallel; the legend
+// is built once colours exist. locals.csv / hardcoded_events.csv are optional
+// and load in the next step.
+Promise.all([
+  fetch('sca_events_clean.csv').then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); }),
+  loadColourSchemes(),
+])
+  .then(([text]) => {
     allEvents = parseCSV(text);
+    buildLegend();   // KINGDOM_COLORS / BARONY_COLORS are populated now
     // Placeholder "?" pins + source→website come from locals.csv; hand-kept
     // practices for groups whose schedule is only a static webpage come from
     // hardcoded_events.csv. Both are optional — a missing file just renders less.
@@ -1807,9 +1813,10 @@ fetch('sca_events_clean.csv')
   .catch(err => {
     document.getElementById('sidebar-list').innerHTML =
       `<div style="padding:1rem;color:#a00;font-size:0.85rem;">
-         Could not load events: ${err.message}<br>
-         Make sure sca_events_clean.csv is in the same folder and you're
-         serving the page via a local web server (not file://).
+         Could not load map data: ${err.message}<br>
+         Make sure the data files (sca_events_clean.csv, colourschemes.csv) are
+         in the same folder and you're serving the page via a local web server
+         (not file://).
        </div>`;
     document.getElementById('sidebar-count').textContent = 'Error';
   });
@@ -1838,12 +1845,13 @@ function setDefaultDateRange() {
 setDefaultDateRange();   // runs before applyFilters() ever fires
 
 // Build the colour key under the map: for each kingdom, an "events" swatch (its
-// full colour) and a "practices" swatch (the desaturated / override baronial
-// shade). Hover, tap, or focus a square to read its meaning in the readout.
-(function buildLegend() {
+// full colour) and a "practices" swatch (its baronial colour). Hover, tap, or
+// focus a square to read its meaning in the readout. Called once colours load.
+function buildLegend() {
   const wrap = document.getElementById('legend-swatches');
   const readout = document.getElementById('legend-readout');
   if (!wrap) return;
+  wrap.innerHTML = '';
   const kingdoms = Object.keys(KINGDOM_COLORS)
     .filter(k => k.startsWith('Kingdom of')).sort();
   const frag = document.createDocumentFragment();
@@ -1852,7 +1860,7 @@ setDefaultDateRange();   // runs before applyFilters() ever fires
     const pair = document.createElement('span');
     pair.className = 'legend-pair';
     [['events',    KINGDOM_COLORS[k]],
-     ['practices', BARONY_COLOR_OVERRIDE[k] || desaturate(KINGDOM_COLORS[k])]]
+     ['practices', BARONY_COLORS[k] || desaturate(KINGDOM_COLORS[k])]]
       .forEach(([kind, color]) => {
         const sw = document.createElement('span');
         sw.className = 'legend-swatch';
@@ -1871,7 +1879,7 @@ setDefaultDateRange();   // runs before applyFilters() ever fires
     frag.appendChild(pair);
   });
   wrap.appendChild(frag);
-})();
+}
 
 document.getElementById('date-from').addEventListener('change', applyFilters);
 document.getElementById('date-to').addEventListener('change', applyFilters);
