@@ -51,6 +51,16 @@ class TestPromoteVirtualBaronials(unittest.TestCase):
             w.writerows(rows)
         return p
 
+    def test_nan_title_does_not_crash(self):
+        # An event with no SUMMARY arrives as a NaN (float) title; is_baronial must
+        # coerce it rather than crash (this took down a whole refresh).
+        df = _df([
+            {"title": "Barony of Foo Business Meeting", "source": "Kingdom of X"},
+            {"title": float("nan"), "source": "Kingdom of X"},
+        ])
+        n = clean.promote_virtual_baronials(df, self.nonexistent)
+        self.assertEqual(n, 1)   # real baronial row promotes; the NaN one doesn't crash
+
     def test_group_prefix_title_promoted(self):
         df = _df([{"title": "Barony of Tarnmists Business Meeting (Virtual)",
                    "source": "Kingdom of the West"}])
