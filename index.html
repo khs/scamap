@@ -774,6 +774,9 @@ function territoryForCD(cduid, pruid) {
 // Lazy-load TopoJSON + topojson-client; convert counties layer to GeoJSON
 let kingdomOverlay = null;
 let kingdomOverlayPromise = null;
+// Decoded territory polygons, stashed once loadKingdomOverlay() has them, so the
+// war-host point lookup (kingdomAtPoint) can reuse them without a second fetch.
+let _territoryData = null;
 
 function loadKingdomOverlay() {
   if (kingdomOverlayPromise) return kingdomOverlayPromise;
@@ -914,6 +917,7 @@ function loadKingdomOverlay() {
       },
     });
 
+    _territoryData = { counties, world, canadaCd };
     kingdomOverlay = L.layerGroup([worldLayer, canadaCdLayer, countiesLayer]);
     return kingdomOverlay;
   })();
@@ -923,25 +927,100 @@ function loadKingdomOverlay() {
   return kingdomOverlayPromise;
 }
 
+// ── War-host point lookup ────────────────────────────────────────
+// Which kingdom's TERRITORY contains a (lat,lng)? Used to colour the oversized
+// "war" pin by the hosting kingdom. Reuses the overlay's decoded polygons + the
+// same territory_kingdoms.csv lookups, so it tracks the background map exactly.
+function territoryReady() { return !!_territoryData; }
+function ensureTerritoryIndex() {
+  if (_territoryData) return;
+  // Building the overlay decodes + stashes the polygons (and parses
+  // territory_kingdoms.csv); we don't add it to the map, we just want the data,
+  // then re-render so the war pins pick up their host kingdom.
+  loadKingdomOverlay().then(() => applyFilters()).catch(() => {});
+}
+const _pointKingdomCache = {};
+function kingdomAtPoint(lat, lng) {
+  if (!_territoryData) return null;
+  const key = `${lat.toFixed(3)},${lng.toFixed(3)}`;
+  if (key in _pointKingdomCache) return _pointKingdomCache[key];
+  const pt = [lng, lat];   // GeoJSON coordinates are [lng, lat]
+  let kingdom = null;
+  const cf = featureAt(_territoryData.counties, pt);   // US counties (most specific)
+  if (cf) { const t = territoryForFIPS(String(cf.id || '').padStart(5, '0')); if (t) kingdom = t.parent || t.kingdom; }
+  if (!kingdom) {
+    const df = featureAt(_territoryData.canadaCd, pt);
+    if (df) { const p = df.properties || {}; const t = territoryForCD(p.CDUID, p.PRUID); if (t) kingdom = t.parent || t.kingdom; }
+  }
+  if (!kingdom) {
+    const wf = featureAt(_territoryData.world, pt);
+    if (wf) { const p = wf.properties || {}; kingdom = p.parent || p.kingdom || null; }
+  }
+  return (_pointKingdomCache[key] = kingdom);
+}
+function featureAt(fc, pt) {
+  if (!fc || !fc.features) return null;
+  for (const f of fc.features) if (pointInGeometry(pt, f.geometry)) return f;
+  return null;
+}
+function pointInGeometry(pt, geom) {
+  if (!geom) return false;
+  if (geom.type === 'Polygon') return pointInRings(pt, geom.coordinates);
+  if (geom.type === 'MultiPolygon') return geom.coordinates.some(rings => pointInRings(pt, rings));
+  return false;
+}
+function pointInRings(pt, rings) {
+  if (!rings.length || !pointInRing(pt, rings[0])) return false;          // outside outer ring
+  for (let i = 1; i < rings.length; i++) if (pointInRing(pt, rings[i])) return false;  // inside a hole
+  return true;
+}
+function pointInRing([x, y], ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+    if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+
 // ── Icon factory ─────────────────────────────────────────────────
 const iconCache = {};
-function makeIcon(color) {
-  if (iconCache[color]) return iconCache[color];
+function makeIcon(color, scale = 1) {
+  const key = `${color}|${scale}`;
+  if (iconCache[key]) return iconCache[key];
   // Ensure light-coloured pins get a dark stroke so they're visible
   const stroke = (color === '#f0f0f0' || color === '#d8d8d8' || color === '#e8e0b0' ||
                   color === '#ffd700' || color === '#7fff00')
     ? '#444' : '#fff';
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="24" height="36">
+  // viewBox stays 24×36; width/height scale the rendered pin (war pins are bigger).
+  const w = Math.round(24 * scale), h = Math.round(36 * scale);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="${w}" height="${h}">
     <path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 24 12 24S24 21 24 12C24 5.37 18.63 0 12 0z"
           fill="${color}" stroke="${stroke}" stroke-width="1.8"/>
     <circle cx="12" cy="12" r="4.5" fill="${stroke}" fill-opacity="0.7"/>
   </svg>`;
   const icon = L.divIcon({
     html: svg, className: '',
-    iconSize: [24, 36], iconAnchor: [12, 36], popupAnchor: [0, -34],
+    iconSize: [w, h], iconAnchor: [w / 2, h], popupAnchor: [0, -(h - 2)],
   });
-  iconCache[color] = icon;
+  iconCache[key] = icon;
   return icon;
+}
+
+// A "war" is a multi-day (5+ day) KINGDOM-level event with "war"/"wars" in its
+// title — the big inter-kingdom gatherings (Pennsic, Gulf Wars, Estrella, …) —
+// which we give an oversized pin. Only kingdom-level events qualify ("the
+// hosting kingdom"); a barony's local practice that merely says "war" stays a
+// normal pin. Word-boundary match so "Steward"/"Award"/"Warwick" don't count.
+const WAR_TITLE_RE = /\bwars?\b/i;
+const WAR_PIN_SCALE = 1.6;
+function isWarEvent(ev) {
+  if (ev.calendar_type !== 'kingdom') return false;
+  if (!WAR_TITLE_RE.test(ev.title || '')) return false;
+  const parse = s => new Date(String(s).replace(' ', 'T'));
+  const start = parse(ev.start), end = parse(ev.end || ev.start);
+  if (isNaN(start) || isNaN(end)) return false;
+  return (end - start) / 86400000 >= 5;   // 5+ days long
 }
 
 // ── Date helpers ─────────────────────────────────────────────────
@@ -1499,6 +1578,35 @@ function applyFilters() {
     ];
   }
 
+  // War-host pins: one oversized pin per war SITE, coloured by the kingdom whose
+  // territory the site sits in ("the hosting kingdom"). The same war is often
+  // cross-listed on several kingdom calendars, so we dedupe by location and
+  // enlarge just one. Until the territory polygons load, wars stay normal pins
+  // and we kick off the (lazy) load, which re-renders when it's ready.
+  const warHostColor = {};   // ev._idx -> host colour, set only on the big pins
+  const warSites = new Map();
+  filtered.forEach(ev => {
+    if (!isWarEvent(ev)) return;
+    const wla = parseFloat(ev.lat), wlo = parseFloat(ev.lng);
+    if (isNaN(wla) || isNaN(wlo)) return;
+    const k = `${wla.toFixed(2)},${wlo.toFixed(2)}`;
+    if (!warSites.has(k)) warSites.set(k, []);
+    warSites.get(k).push(ev);
+  });
+  if (warSites.size && !territoryReady()) {
+    ensureTerritoryIndex();   // load polygons in the background, then re-render
+  } else {
+    warSites.forEach((evs, k) => {
+      const [wla, wlo] = k.split(',').map(Number);
+      const host = kingdomAtPoint(wla, wlo);            // effective kingdom name
+      const color = host && KINGDOM_COLORS[host];
+      if (!color) return;                               // unknown land -> no big pin
+      // Attach the big pin to the host kingdom's own listing if present, else the first.
+      const rep = evs.find(e => e.source === host) || evs[0];
+      warHostColor[rep._idx] = color;
+    });
+  }
+
   filtered.forEach((ev, i) => {
     // Online/virtual events never get a map marker (req: "don't ever display a
     // marker for them") — they live in the Online tab and as the teal badge on a
@@ -1508,12 +1616,14 @@ function applyFilters() {
     const lat = parseFloat(ev.lat), lng = parseFloat(ev.lng);
     if (isNaN(lat) || isNaN(lng)) return;
     const [plotLat, plotLng] = spiralOffset(lat, lng);
-    const color = eventColor(ev);
+    const hostColor = warHostColor[ev._idx];   // set only on the one big war pin
+    const color = hostColor || eventColor(ev);
     const marker = L.marker([plotLat, plotLng], {
-      icon: makeIcon(color),
+      icon: makeIcon(color, hostColor ? WAR_PIN_SCALE : 1),
       // filtered is sorted soonest-first, so give the soonest event the highest
       // z-index — it stays on top when pins overlap (esp. with aggregation off).
-      zIndexOffset: filtered.length - i,
+      // The big war pin floats above everything so it isn't buried under small ones.
+      zIndexOffset: (filtered.length - i) + (hostColor ? 1e6 : 0),
     });
     marker.bindPopup(() => buildPopup(ev), { maxWidth: 320, maxHeight: 280 });
     markerLayer.addLayer(marker);
