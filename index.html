@@ -1498,23 +1498,27 @@ function applyFilters() {
   const toDate      = document.getElementById('date-to').value;
   const onlineOnly  = (sidebarMode === "online");
 
+  // Is an event inside the active date window? Hardcoded practices carry no date
+  // and are always "in". Used both by the display filter below AND — crucially —
+  // by the placeholder "is this group already represented?" test, which must NOT
+  // depend on the Kingdom/Baronial display toggles (see the placeholder section).
+  const inDateWindow = ev => {
+    if (ev.is_hardcoded === 'True') return true;
+    if (!fromDate && !toDate) return true;
+    const evStart = (ev.start || '').slice(0, 10);
+    const evEnd   = (ev.end   || ev.start || '').slice(0, 10);
+    if (!evStart) return false;
+    if (fromDate && evEnd && evEnd < fromDate) return false;
+    if (toDate   && evStart > toDate)          return false;
+    return true;
+  };
+
   // Filter
   const filtered = allEvents.filter((ev, i) => {
     ev._idx = i;
-    // Hardcoded practices (hardcoded_events.csv) carry no date — they're
-    // recurring entries placed by hand — so they skip the time-window filter
-    // and always show, subject only to the Baronial + search filters.
-    const isHardcoded = ev.is_hardcoded === 'True';
-    // Date-range filter — applied universally (map AND online). An event is in
-    // range when its window [start, end] overlaps [fromDate, toDate]: drop it
-    // only when it ENDS before the window or STARTS after it.
-    if (!isHardcoded && (fromDate || toDate)) {
-      const evStart = (ev.start || '').slice(0, 10);
-      const evEnd   = (ev.end   || ev.start || '').slice(0, 10);
-      if (!evStart) return false;                                    // no usable date
-      if (fromDate && evEnd && evEnd < fromDate) return false;       // already over
-      if (toDate   && evStart > toDate)          return false;       // starts past window
-    }
+    // Date-range filter — applied universally (map AND online). Hardcoded
+    // practices have no date and always pass (see inDateWindow above).
+    if (!inDateWindow(ev)) return false;
     if (onlineOnly) {
       // Online-only view: virtual events, still honouring the Kingdom/Baronial
       // checkboxes (unchecking Baronial hides baronial business meetings here
@@ -1655,10 +1659,17 @@ function applyFilters() {
   // next render — no manual cleanup needed.
   placeholderLayer.clearLayers();
 
+  // Which groups already have a real, mapped event in the active window? This
+  // deliberately scans ALL events in the date window — NOT the display-filtered
+  // set — so unchecking "Baronial (Practices)" (or "Kingdom") hides those event
+  // markers WITHOUT making their groups look calendar-less. A barony whose
+  // calendar events are merely toggled off must not sprout a "?" pin, and we
+  // skip building those markers entirely (fewer markers to create).
   const sourcesWithMappedEvents = new Set();
   const mappedTitlesLowercase = [];
-  filtered.forEach(ev => {
+  allEvents.forEach(ev => {
     if (ev.is_virtual === 'True') return;   // no marker → doesn't represent a group on the map
+    if (!inDateWindow(ev)) return;          // only events actually in the window count
     const lat = parseFloat(ev.lat), lng = parseFloat(ev.lng);
     if (isNaN(lat) || isNaN(lng)) return;
     sourcesWithMappedEvents.add(ev.source);
@@ -1670,11 +1681,11 @@ function applyFilters() {
     return group.replace(/^(Barony|Shire|Canton|Stronghold|College|Province)\s+of\s+(?:the\s+)?/i, '').toLowerCase();
   }
 
-  // Only render placeholders if baronial filter is on (these are
-  // baronial-level pins by nature) and the user hasn't filtered them out
-  // via the search box. Sort by group-type priority so that when several
-  // groups share a city (e.g. Septentria + four Toronto-area cantons),
-  // the parent barony / principality wins the centred spot at the cluster.
+  // Placeholders render on their own "Show markers for groups without calendars"
+  // toggle (independent of the Baronial filter) and are filtered by the search
+  // box. Sort by group-type priority so that when several groups share a city
+  // (e.g. Septentria + four Toronto-area cantons), the parent barony /
+  // principality wins the centred spot at the cluster.
   const TYPE_PRIORITY = {
     Principality: 0, Barony: 1, Province: 2, College: 3,
     Stronghold: 3, Riding: 3, Shire: 4, Canton: 5,
