@@ -28,6 +28,11 @@ STEPS = [
     # … Event Flyer:") with the real text from the linked event page. Cached, so
     # only new events fetch. Runs before geocoding, which preserves the column.
     ("Enriching placeholder event descriptions",         "enrich_descriptions.py"),
+    # Pin Gleann Abhann's location-less kingdom events (they only carry "MS") to
+    # their hosting group, read from each event page's JSON-LD organizer. Cached
+    # per URL so only new events fetch. Runs before geocoding, which then leaves
+    # them alone (status "ok_organizer").
+    ("Placing Gleann Abhann events by hosting group",    "enrich_gleann_locations.py"),
     ("Geocoding new addresses",                          "geocode_sca_events.py"),
     # Tag multi-day kingdom "wars" with the kingdom whose territory their site
     # sits in (point-in-polygon, once here instead of in every browser), so the

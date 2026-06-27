@@ -376,6 +376,79 @@ def extract_inline_gps(address: str) -> tuple:
     return (lat, lng)
 
 
+# Coordinate pairs a calendar dropped into the location OR description text. We
+# extract them so the pin uses the published spot instead of geocoding a venue name
+# Nominatim only approximates — but free text (descriptions especially) is full of
+# innocent numbers (times, prices, ZIPs, phone numbers), so each form below is
+# deliberately strict and every hit is STILL region-checked by the caller.
+
+def _plausible(lat: float, lng: float) -> bool:
+    return -90 <= lat <= 90 and -180 <= lng <= 180
+
+
+# Google Calendar mangles some West-kingdom location coordinates: the latitude's
+# decimal point becomes a space and the longitude's minus sign becomes '#' — e.g.
+# Teufelberg's "37 71232046276675 #121.87544721303145" means 37.71232, -121.87545.
+GOOGLE_MANGLED_RE = re.compile(r"\b(\d{1,2})[ ](\d{4,})\s*#\s*(\d{1,3}\.\d{3,})")
+
+# A pair written with cardinal directions, e.g. "37.7123 N, 121.8754 W" or
+# "37.71°N 121.88°W" (optionally prefixed "GPS"). The N/S + E/W letters make it
+# unambiguous, so 2+ decimals suffice; a decimal IS required so a street or highway
+# direction ("95 N, 12 W") can't match.
+CARDINAL_RE = re.compile(
+    r"(?:gps[\s:\-]*)?(\d{1,3}\.\d{2,})\s*°?\s*([NS])[\s,]+"
+    r"(\d{1,3}\.\d{2,})\s*°?\s*([EW])", re.IGNORECASE)
+
+# A bare high-precision decimal pair, e.g. "37.71232, -121.87545" or a Google Maps
+# "@40.7211695,-73.9525670" URL tail. Require 4+ decimals on BOTH so a price, time,
+# measurement, or street number can't masquerade as a coordinate (a real published
+# coordinate carries far more precision than any of those), and forbid an adjacent
+# digit/dot so a longer number isn't sliced in half.
+HIGH_PRECISION_PAIR_RE = re.compile(
+    r"(?<![\d.])(-?\d{1,2}\.\d{4,})\s*[,/ ]\s*(-?\d{1,3}\.\d{4,})(?!\d)(?!\.\d)")
+
+
+def extract_published_coords(text: str, source: str = "") -> tuple:
+    """Return (lat, lng) when the text already carries explicit coordinates the
+    calendar published — a 'GPS: lat N, lng W' suffix, a cardinal-direction pair,
+    the Google-mangled 'lat #lng' form, or a bare high-precision decimal pair — so
+    we use them verbatim instead of geocoding a venue name (the reason Teufelberg's
+    pin kept landing off its real site). (None, None) when no plausible pair is
+    present. The result is only trusted after the caller's region check, since an
+    innocent number pair could in principle still parse. `source`, when given,
+    disambiguates the sign of the Google-mangled form (whose '#' replaced a dropped
+    minus) by keeping whichever hemisphere fits that source's region."""
+    if not text:
+        return (None, None)
+    lat, lng = extract_inline_gps(text)            # "GPS: 33.45 N, 84.10 W"
+    if lat is not None:
+        return (lat, lng)
+    m = GOOGLE_MANGLED_RE.search(text)
+    if m:
+        lat, mag = float(f"{m.group(1)}.{m.group(2)}"), float(m.group(3))
+        # '#' replaced a dropped minus, so the longitude is normally western — but
+        # don't force the hemisphere: keep whichever sign fits the source's region
+        # (defends an eastern feed that ever emits this mangled form). With no
+        # source opinion, default to the documented western sign.
+        for cand in (-mag, mag):
+            if _plausible(lat, cand) and (not source or in_source_regions(lat, cand, source)):
+                return (lat, cand)
+        if _plausible(lat, -mag):
+            return (lat, -mag)
+    m = CARDINAL_RE.search(text)
+    if m:
+        lat = float(m.group(1)) * (-1 if m.group(2).upper() == "S" else 1)
+        lng = float(m.group(3)) * (-1 if m.group(4).upper() == "W" else 1)
+        if _plausible(lat, lng):
+            return (lat, lng)
+    m = HIGH_PRECISION_PAIR_RE.search(text)
+    if m:
+        lat, lng = float(m.group(1)), float(m.group(2))
+        if _plausible(lat, lng):
+            return (lat, lng)
+    return (None, None)
+
+
 # SCA-speak "the city/area mundanely known as <place>" prefix.
 _MUNDANE_RE = re.compile(
     r"\bthe\s+(?:city|cities|town|area|region|lands?|shire|barony|canton|province)\s+"
@@ -579,8 +652,11 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
 
 # "override" = a human pinned exact coords in event_overrides.csv; treat it as
 # done/successful so the geocoder never touches it (see clean_sca_events.py
-# apply_event_overrides and EDITING_EVENTS.md).
-SUCCESS_STATUSES = {"ok", "ok_retry", "ok_photon", "cached", "override"}
+# apply_event_overrides and EDITING_EVENTS.md). "ok_organizer" = pinned by
+# enrich_gleann_locations.py to the event's hosting group. "ok_published" = the
+# calendar published coordinates in the location text (see the pre-pass in main).
+SUCCESS_STATUSES = {"ok", "ok_retry", "ok_photon", "cached", "override",
+                    "ok_organizer", "ok_published"}
 
 
 def main(retry_failed: bool = False):
@@ -592,6 +668,33 @@ def main(retry_failed: bool = False):
     for col in ("lat", "lng", "geocode_status"):
         if col not in df.columns:
             df[col] = ""
+
+    # Published-coordinate pre-pass: when an event's location OR description text
+    # already carries explicit coordinates (a "GPS:" suffix, a cardinal pair, the
+    # Google-mangled "lat #lng" form, or a high-precision decimal pair), use them
+    # verbatim. They're authoritative, so they OVERRIDE a prior/carried-forward
+    # geocode (this is what finally pins Teufelberg to its real site) and the
+    # address is never sent to Nominatim. The region check below is the backstop
+    # against an innocent number pair (a price/time can't parse, but a stray
+    # coordinate-shaped pair must still land where this source's events can be).
+    # A human override or an organizer-placed (Gleann) pin is left alone.
+    published = 0
+    for idx in df.index:
+        if str(df.at[idx, "geocode_status"]) in ("override", "ok_organizer"):
+            continue
+        source = str(df.at[idx, "source"] or "")
+        lat, lng = extract_published_coords(str(df.at[idx, "clean_location"] or ""), source)
+        if lat is None:   # fall back to the description, where some organisers paste it
+            lat, lng = extract_published_coords(str(df.at[idx, "description"] or ""), source)
+        if lat is None:
+            continue
+        if in_sca_region(lat, lng) and in_source_regions(lat, lng, source):
+            df.at[idx, "lat"] = str(lat)
+            df.at[idx, "lng"] = str(lng)
+            df.at[idx, "geocode_status"] = "ok_published"
+            published += 1
+    if published:
+        print(f"  Used published coordinates for {published} event(s) (authoritative).")
 
     # Rows considered "done" — successful or deliberately skipped, but NOT failed
     # unless --retry-failed is on
@@ -612,6 +715,9 @@ def main(retry_failed: bool = False):
     print()
 
     if to_geocode.sum() == 0:
+        if published:   # the pre-pass changed rows even though there's nothing to geocode
+            df.to_csv(OUTPUT_FILE, index=False, quoting=csv.QUOTE_ALL)
+            print(f"  Saved {published} published-coordinate update(s).")
         print("Nothing to do — all rows already have geocode_status set.")
         return
 

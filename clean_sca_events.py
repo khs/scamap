@@ -1217,8 +1217,15 @@ def _invalidate_misgeocoded_rows(df: pd.DataFrame) -> int:
 
     Returns the number of rows invalidated.
     """
+    # Human pins (override), published coordinates (ok_published), and organizer-
+    # placed Gleann pins (ok_organizer) are authoritative — set deliberately and
+    # re-applied by later pipeline steps — so the state-bbox heuristic must not
+    # second-guess and churn them (which would flip-flop them to "failed" every run).
+    authoritative = {"override", "ok_published", "ok_organizer"}
     invalidated = 0
     for idx, row in df.iterrows():
+        if str(row.get("geocode_status", "")) in authoritative:
+            continue
         lat_s = str(row.get("lat", ""))
         lng_s = str(row.get("lng", ""))
         loc   = str(row.get("clean_location", ""))
