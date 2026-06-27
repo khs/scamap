@@ -554,7 +554,7 @@
       Show markers for groups without calendars
     </label>
     <label class="check-label">
-      <input type="checkbox" id="chk-aggregate" />
+      <input type="checkbox" id="chk-aggregate" checked />
       Number events in the same location
     </label>
     <label class="check-label kingdom-overlay-toggle">
@@ -636,13 +636,8 @@ function normHex(s) {
 // Fill KINGDOM_COLORS / BARONY_COLORS from colourschemes.csv. Required: throws
 // if the file is missing, unreadable, or yields no usable rows, so the load
 // chain's .catch surfaces it instead of the map rendering silently grey.
-// Cache-bust the data files (they change every refresh) so a returning visitor
-// never sees a stale sca_events_clean.csv — e.g. one from before a new column
-// like war_host existed. One stamp per page load; the big static topojson
-// overlays are left cacheable.
-const DATA_V = '?v=' + Date.now();
 function loadColourSchemes() {
-  return fetch('colourschemes.csv' + DATA_V)
+  return fetch('colourschemes.csv')
     .then(r => { if (!r.ok) throw new Error(`colourschemes.csv HTTP ${r.status}`); return r.text(); })
     .then(text => {
       parseCSV(text).forEach(row => {
@@ -847,7 +842,7 @@ function loadKingdomOverlay() {
     // US state/county -> kingdom lives in territory_kingdoms.csv so it can be
     // edited without touching code; populate the maps before colouring.
     try {
-      const terrResp = await fetch('territory_kingdoms.csv' + DATA_V);
+      const terrResp = await fetch('territory_kingdoms.csv');
       if (terrResp.ok) parseCSV(await terrResp.text()).forEach(r => {
         // Excel strips leading zeros from FIPS ("02"->"2", "06001"->"6001"), so
         // pad on read to match the zero-padded county ids in the topojson.
@@ -1225,9 +1220,10 @@ const CLUSTER_OPTS = { chunkedLoading: true, showCoverageOnHover: false,
                        maxClusterRadius: clusterRadiusPx,
                        iconCreateFunction: makeClusterIcon };
 // Events: clustering is user-toggleable via the "Aggregate events" checkbox.
-// When it's off (the default), maxClusterRadius is 0 so every event renders as
-// its own pin (the spiral-offset below keeps co-located ones individually
-// clickable); when on, events collapse into the usual numbered cluster bubbles.
+// On by default: co-located events collapse into one numbered pin (coloured by
+// dominant kingdom — see makeClusterIcon). When off, maxClusterRadius is 0 so
+// every event renders as its own pin (the spiral-offset below keeps co-located
+// ones individually clickable).
 function eventClusterRadius(zoom) {
   return document.getElementById('chk-aggregate').checked ? clusterRadiusPx(zoom) : 0;
 }
@@ -1891,7 +1887,7 @@ function parseCSV(text) {
 // is built once colours exist. locals.csv / hardcoded_events.csv are optional
 // and load in the next step.
 Promise.all([
-  fetch('sca_events_clean.csv' + DATA_V).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); }),
+  fetch('sca_events_clean.csv').then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); }),
   loadColourSchemes(),
 ])
   .then(([text]) => {
@@ -1900,7 +1896,7 @@ Promise.all([
     // Placeholder "?" pins + source→website come from locals.csv; hand-kept
     // practices for groups whose schedule is only a static webpage come from
     // hardcoded_events.csv. Both are optional — a missing file just renders less.
-    const opt = name => fetch(name + DATA_V).then(r => r.ok ? r.text() : '', () => '');
+    const opt = name => fetch(name).then(r => r.ok ? r.text() : '', () => '');
     return Promise.all([opt('locals.csv'), opt('hardcoded_events.csv')]);
   })
   .then(([pinsText, hardText]) => {
