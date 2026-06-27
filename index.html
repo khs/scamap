@@ -723,17 +723,18 @@ function eventColor(ev) {
 // preferCanvas renders the county-level kingdom overlay (~3000 polygons) on a
 // single <canvas> instead of thousands of SVG/DOM nodes — much smoother pan/
 // zoom when the overlay is on, visually identical.
-// Default to a whole-world view so everyone sees their region on load. The map
-// is painted as THREE world copies — centre, left (−360°), right (+360°) — so
-// panning across the antimeridian stays continuous: markers and the kingdom
-// overlay are drawn on each copy (see WORLD_COPIES) instead of only the centre,
-// where panning off the edge used to reveal blank space. Panning is then capped
-// to exactly those three copies, so it can't drift into the void beyond them —
-// bounded, so we never pay to paint an unlimited number of worlds.
-const HOME_BOUNDS = L.latLngBounds([[-48, -140], [68, 178]]);   // the SCA-populated world
+// Default home view: a normal-size view of the continental US, where the great
+// majority of events are — the user pans out/across to reach Europe, AU/NZ, etc.
+// The map is still painted as THREE world copies — centre, left (−360°), right
+// (+360°) — so panning across the antimeridian stays continuous: markers and the
+// kingdom overlay are drawn on each copy (see WORLD_COPIES) instead of only the
+// centre, where panning off the edge used to reveal blank space. Panning is
+// capped to exactly those three copies, so it can't drift into the void beyond
+// them — bounded, so we never pay to paint an unlimited number of worlds.
+const HOME_BOUNDS = L.latLngBounds([[24, -125], [49, -66]]);   // continental US
 const WORLD_COPIES = [-360, 0, 360];   // longitude offsets of the three painted copies
 const map = L.map('map', {
-  center: [20, 10], zoom: 2, preferCanvas: true,
+  center: [38, -96], zoom: 4, preferCanvas: true,
   worldCopyJump: false,
   maxBounds: [[-85, -540], [85, 540]],   // three world copies wide (centre ±360°)
   maxBoundsViscosity: 1.0,
