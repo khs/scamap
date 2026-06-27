@@ -29,6 +29,11 @@ STEPS = [
     # only new events fetch. Runs before geocoding, which preserves the column.
     ("Enriching placeholder event descriptions",         "enrich_descriptions.py"),
     ("Geocoding new addresses",                          "geocode_sca_events.py"),
+    # Tag multi-day kingdom "wars" with the kingdom whose territory their site
+    # sits in (point-in-polygon, once here instead of in every browser), so the
+    # map can size + colour the oversized war pin straight from the war_host
+    # column. Runs after geocoding because it needs the events' coordinates.
+    ("Tagging war host kingdoms",                        "annotate_war_hosts.py"),
     # NOTE: group placeholder-pin locations now live in locals.csv (the lat/lng
     # columns), hand-maintained rather than geocoded, so build_group_pins.py is
     # no longer part of the pipeline.
