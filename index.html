@@ -1868,6 +1868,10 @@ Promise.all([
     // Append hand-maintained practices AFTER groupKingdom is built (so they pick
     // up their barony's kingdom colour) and BEFORE applyFilters (so they render).
     if (hardText) ingestHardcodedEvents(hardText);
+    // Drop cancelled events entirely — a title containing "cancelled"/"canceled"
+    // (whole word, so "uncancelled" stays) means it isn't happening, so it gets
+    // no marker, list entry, or online badge anywhere.
+    allEvents = allEvents.filter(ev => !/\bcancell?ed\b/i.test(ev.title || ''));
     // First render only once the map container has its settled size — on a fast
     // cache hit applyFilters() can otherwise run before layout, keying the canvas
     // renderer + cluster grid to a 0-size projection so far regions (Asia/Europe)
