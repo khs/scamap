@@ -45,6 +45,29 @@ class TestCleanDescription(unittest.TestCase):
         self.assertNotIn("Autocrat", out)
         self.assertNotIn("Jane", out)
 
+    def test_google_meet_block_stripped_plaintext_form(self):
+        # "Join with Google Meet:" + dial/PIN + "Learn more about Meet at:" — the
+        # block Google auto-appends. Pure noise on an in-person event.
+        desc = ("Join with Google Meet: https://meet.google.com/abc-defg-hij "
+                "Or dial: (US) +1 555-000-1111 PIN: 123456789# "
+                "More phone numbers: https://tel.meet/abc "
+                "Learn more about Meet at: https://support.google.com/a/users/answer/9282720")
+        self.assertEqual(self._text(desc), "")
+
+    def test_google_meet_block_stripped_keeps_prose(self):
+        # The other form ("Join with Google Meet <url>  Join by phone … PIN: …#")
+        # appended to real prose — strip the block, keep the prose.
+        desc = ("Heavy practice in the park, all are welcome! "
+                "Join with Google Meet meet.google.com/ozn-nnyp-ozc "
+                "Join by phone (US) +1 PIN: 626130444#")
+        self.assertEqual(self._text(desc), "Heavy practice in the park, all are welcome!")
+
+    def test_sentence_mentioning_meet_not_stripped(self):
+        # A sentence that merely says "join with Google Meet" with no Meet URL/PIN
+        # must NOT be mistaken for the conferencing block.
+        out = self._text("We will join with Google Meet for the virtual A&S class.")
+        self.assertIn("virtual A&S class", out)
+
     def test_po_box_removed(self):
         self.assertNotIn("Box", self._text("Send checks to P.O. Box 1234, Anytown."))
 

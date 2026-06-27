@@ -511,6 +511,16 @@ _HOSTED_ONLY_RE = re.compile(r"^\s*Hosted\s+by:?\s*[\w'’.&\- ]+$", re.IGNORECA
 _ANTIR_LEVEL_RE = re.compile(r"^\s*This is a Level [^.]*\.\s*", re.IGNORECASE)
 # A West recurring business-meeting description that is only a Zoom invite.
 _ZOOM_ONLY_RE = re.compile(r"is inviting you to a scheduled Zoom meeting", re.IGNORECASE)
+# Google Calendar appends a Meet conferencing block to any event that has a Meet
+# attached, in a couple of formats ("Join with Google Meet: <url>  Or dial: …  PIN:
+# …#  Learn more about Meet at: <url>", or "Join with Google Meet <url>  Join by
+# phone (US)+1 …  PIN: …#"). It's noise on an in-person practice and its links
+# aren't the event's. The block is always appended last, so strip from "Join with
+# Google Meet" to the end — gated on a Meet URL / PIN so a normal sentence that
+# happens to say "join with google meet" can't trigger it.
+_MEET_BLOCK_RE = re.compile(
+    r"\s*Join with Google Meet\b.*?(?:meet\.google\.com|\bPIN:).*$",
+    re.IGNORECASE | re.DOTALL)
 # Ealdormere ALL-CAPS section headers that start the metadata tail.
 _CAPS_HEADER_RE = re.compile(
     r"\b(SCHEDULE|EVENT REGISTRATION|REGISTRATION INFORMATION|SITE INFORMATION|"
@@ -580,6 +590,12 @@ def clean_description(desc: str) -> tuple:
         urls = extract_urls_from_html(desc)
         soup = BeautifulSoup(desc, "lxml")
         desc = soup.get_text(separator=" ")
+
+    # Google auto-appends a Meet conferencing block to events that have a Meet
+    # attached — noise on an in-person practice, and its links aren't the event's.
+    # Strip the whole block (with its URLs) before we extract links or check for
+    # boilerplate below.
+    desc = _MEET_BLOCK_RE.sub(" ", desc)
 
     # Tribe Events Calendar widget boilerplate (Gleann Abhann does this) —
     # the description is the calendar widget's HTML, not event content. The
