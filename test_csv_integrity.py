@@ -70,8 +70,8 @@ class TestTerritoryKingdoms(unittest.TestCase):
 
     def test_type_is_valid(self):
         bad = sorted({r["type"] for r in self.rows
-                      if r["type"] not in {"state", "county", "cd",
-                                           "province", "country", "territory"}})
+                      if r["type"] not in {"state", "county", "cd", "province",
+                                           "country", "territory", "continent"}})
         self.assertEqual(bad, [], f"unknown row types: {bad}")
 
     def test_colour_kingdom_is_known_to_the_map(self):
@@ -105,7 +105,7 @@ class TestTerritoryKingdoms(unittest.TestCase):
                   (t == "county" and re.fullmatch(r"\d{4,5}", i)) or
                   (t == "cd" and re.fullmatch(r"\d{4}", i)) or
                   (t == "province" and re.fullmatch(r"[A-Z]{2}-[A-Z0-9]{2,3}", i)) or
-                  (t in ("country", "territory") and i.strip()))
+                  (t in ("country", "territory", "continent") and i.strip()))
             if not ok:
                 bad.append((t, i))
         self.assertEqual(bad, [], f"malformed type/id rows: {bad}")

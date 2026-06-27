@@ -466,7 +466,11 @@ def promote_virtual_baronials(df, group_locations_path: Path) -> int:
         return 0
 
     def is_baronial(row) -> bool:
-        title = row.get("title") or ""
+        # A title-less event (empty SUMMARY) arrives as NaN (a float, and truthy,
+        # so `or ""` doesn't catch it) — coerce non-strings to "" before matching.
+        title = row.get("title")
+        if not isinstance(title, str):
+            title = ""
         if _BARONIAL_PREFIX_RE.match(title):
             return True
         if _BARONIAL_KEYWORD_RE.search(title):
