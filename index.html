@@ -1066,6 +1066,7 @@ function ingestHardcodedEvents(text) {
       location: row.location || '', clean_location: row.location || '',
       day: row.day || '',
       schedule_url: row.schedule_url || row['schedule url'] || '',
+      location_specificity: (row.location_specificity || row['location specificity'] || '').trim(),
       start: '', end: '', description: '',
     };
     // A virtual hardcoded practice behaves like any other online event: no pin,
@@ -1083,11 +1084,17 @@ function buildHardcodedPopup(ev) {
   const site  = url
     ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(url)}</a>`
     : 'the group’s website';
+  // location_specificity="vague" rows are pinned to an approximate town with no
+  // known street address; warn the reader (verbatim copy from the maintainer) so
+  // nobody drives to a guessed spot. "exact" / blank shows nothing extra.
+  const vague = /^vague$/i.test(ev.location_specificity || '')
+    ? `<p style="margin:0 0 0.5rem;"><strong>This pin is placed in an approximately correct town or city, but we do not know the correct address. Check the correct location before trying to attend the practice.</strong></p>`
+    : '';
   return `<div class="event-popup">
     <h3>${escapeHtml(ev.title)}</h3>
     <span class="source-pill">${escapeHtml(ev.source)}</span>
     <div class="desc" style="margin-top:0.45rem;">
-      EventScout is unable to import this calendar, but we believe this practice is${where}${when}.
+      ${vague}EventScout is unable to import this calendar, but we believe this practice is${where}${when}.
       Please check the website: ${site}.<br>
       Please <a href="https://forms.gle/gcdRyUnVv8FbLqG3A" target="_blank" rel="noopener">let us know</a> if this event information is out of date.
     </div>
