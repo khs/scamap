@@ -30,17 +30,19 @@ SCRIPT_DIR = Path(__file__).parent
 OUTPUT_FILE = SCRIPT_DIR / "world-kingdoms.topojson"
 
 ADMIN1_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_1_states_provinces.geojson"
-COUNTRIES_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson"
+COUNTRIES_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson"
 
-# SCA borders don't follow national ones. France's Natural Earth shape bundles its
-# overseas departments — French Guiana (South America), Guadeloupe/Martinique
-# (Caribbean), Réunion/Mayotte (Indian Ocean) — into one country polygon. They're
-# administratively French but nowhere near Drachenwald, so colouring them by the
-# national border is exactly the wrong call. For the countries below we keep only
-# the polygons inside EUROPE_BBOX; the far-flung departments are left unassigned
-# (a real group there can be added explicitly later from admin-1 data).
-CLIP_TO_EUROPE = {"France"}
-EUROPE_BBOX = (-12.0, 35.0, 30.0, 72.0)   # (min_lng, min_lat, max_lng, max_lat)
+# SCA borders don't follow national ones, and a kingdom doesn't reach across an
+# ocean. Several European countries bundle far-flung islands into their shape:
+# France's overseas departments (French Guiana, Guadeloupe, Martinique, Réunion,
+# Mayotte), Spain's Canary Islands, Portugal's Azores + Madeira, the Netherlands'
+# Caribbean municipalities (Bonaire, Saba, Sint Eustatius), and Norway's
+# Svalbard. Colouring those Drachenwald just because they're administratively
+# European is exactly the wrong call. For the countries below we keep only the
+# polygons inside EUROPE_BBOX, leaving those pieces unassigned while the mainland
+# (+ nearby isles) stays. A real group on one can be added explicitly later.
+CLIP_TO_EUROPE = {"France", "Spain", "Portugal", "Norway", "Netherlands"}
+EUROPE_BBOX = (-12.0, 35.0, 32.0, 72.0)   # (min_lng, min_lat, max_lng, max_lat)
 
 # ---------------------------------------------------------------------------
 # Province (Canada, by ISO 3166-2) + country (by name) -> kingdom assignments

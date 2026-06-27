@@ -225,12 +225,21 @@ Notes:
 - **Excel strips leading zeros** from FIPS (`02`→`2`) when it saves the CSV; the
   code zero-pads on read, so it still works — don't bother re-padding by hand.
 - Canada is now census-division level, so most sub-province splits *can* be
-  drawn via `type=cd`. World countries are still whole-country, with one
-  exception: `build_world_kingdoms.py` clips **France** to its metropolitan-
-  Europe landmass (`CLIP_TO_EUROPE` / `EUROPE_BBOX`), so its overseas departments
-  (French Guiana, Guadeloupe, Martinique, Réunion, Mayotte) are left unassigned
-  rather than coloured Drachenwald across an ocean. If a group ever forms in one,
-  add it explicitly from admin-1 data rather than re-bundling all of France.
+  drawn via `type=cd`. The world layer is whole-country, built by
+  `build_world_kingdoms.py` from Natural Earth **50m** admin-0 (50m follows the
+  coastline closely, so the overlay paints land, not the territorial sea — the
+  coarser 110m used to bleed colour across estuaries like the Thames and the
+  Wadden Sea). Two notes for editing it:
+  - **Overseas pieces are dropped.** `CLIP_TO_EUROPE` (`France`, `Spain`,
+    `Portugal`, `Norway`) keeps only the polygons inside `EUROPE_BBOX`, so
+    far-flung islands — French Guiana / Guadeloupe / Martinique / Réunion /
+    Mayotte, the Canaries, the Azores + Madeira, Svalbard — are left unassigned
+    rather than coloured across an ocean. Add another country to that set if you
+    assign one with similar outliers. A real group on one can be added explicitly
+    from admin-1 data instead.
+  - A handful of estuary/archipelago city *centroids* (e.g. central Stockholm,
+    the Copenhagen waterfront) sit on water at 50m and so read as unassigned;
+    that's correct (it's water) and invisible at the overlay's zoom.
 - The Canada boundaries come from **Statistics Canada's 2021 Census cartographic
   boundary file** (open licence — keep the "Statistics Canada" credit in the map
   attribution). To refresh them (rare — the divisions barely change): download
