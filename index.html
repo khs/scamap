@@ -636,8 +636,13 @@ function normHex(s) {
 // Fill KINGDOM_COLORS / BARONY_COLORS from colourschemes.csv. Required: throws
 // if the file is missing, unreadable, or yields no usable rows, so the load
 // chain's .catch surfaces it instead of the map rendering silently grey.
+// Cache-bust the data files (they change every refresh) so a returning visitor
+// never sees a stale sca_events_clean.csv — e.g. one from before a new column
+// like war_host existed. One stamp per page load; the big static topojson
+// overlays are left cacheable.
+const DATA_V = '?v=' + Date.now();
 function loadColourSchemes() {
-  return fetch('colourschemes.csv')
+  return fetch('colourschemes.csv' + DATA_V)
     .then(r => { if (!r.ok) throw new Error(`colourschemes.csv HTTP ${r.status}`); return r.text(); })
     .then(text => {
       parseCSV(text).forEach(row => {
@@ -842,7 +847,7 @@ function loadKingdomOverlay() {
     // US state/county -> kingdom lives in territory_kingdoms.csv so it can be
     // edited without touching code; populate the maps before colouring.
     try {
-      const terrResp = await fetch('territory_kingdoms.csv');
+      const terrResp = await fetch('territory_kingdoms.csv' + DATA_V);
       if (terrResp.ok) parseCSV(await terrResp.text()).forEach(r => {
         // Excel strips leading zeros from FIPS ("02"->"2", "06001"->"6001"), so
         // pad on read to match the zero-padded county ids in the topojson.
@@ -952,6 +957,41 @@ function makeIcon(color, scale = 1) {
 // the war test and the host are computed at build time (annotate_war_hosts.py)
 // and arrive as the per-event `war_host` column, blank for everything else.
 const WAR_PIN_SCALE = 1.6;
+
+// ── Cluster icon ─────────────────────────────────────────────────
+// When "Aggregate events" collapses co-located markers, draw the count as a map
+// pin (matching the event pins) coloured by the most common kingdom in the
+// group, instead of leaflet.markercluster's default circle.
+function isLightColor(hex) {
+  const m = String(hex || '').replace('#', '');
+  if (m.length < 6) return false;
+  const r = parseInt(m.slice(0, 2), 16), g = parseInt(m.slice(2, 4), 16), b = parseInt(m.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) > 150;   // perceived luminance
+}
+function clusterPinIcon(count, color) {
+  const ink = isLightColor(color) ? '#222' : '#fff';   // contrast the number + outline
+  const fs  = count > 99 ? 8 : (count > 9 ? 10 : 11);
+  const w = 32, h = 46;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="${w}" height="${h}">
+    <path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 24 12 24S24 21 24 12C24 5.37 18.63 0 12 0z"
+          fill="${color}" stroke="${ink}" stroke-width="1.4"/>
+    <text x="12" y="15.6" text-anchor="middle" font-family="-apple-system, system-ui, sans-serif"
+          font-size="${fs}" font-weight="700" fill="${ink}">${count}</text>
+  </svg>`;
+  return L.divIcon({ html: svg, className: '', iconSize: [w, h], iconAnchor: [w / 2, h], popupAnchor: [0, -(h - 2)] });
+}
+function makeClusterIcon(cluster) {
+  // Colour by the dominant kingdom among the clustered markers — each marker
+  // carries its own kingdomColor; fall back to neutral grey if none is set.
+  const tally = {};
+  cluster.getAllChildMarkers().forEach(m => {
+    const c = m.options.kingdomColor;
+    if (c) tally[c] = (tally[c] || 0) + 1;
+  });
+  let color = '#6b7280', best = 0;
+  for (const c in tally) if (tally[c] > best) { best = tally[c]; color = c; }
+  return clusterPinIcon(cluster.getChildCount(), color);
+}
 
 // ── Date helpers ─────────────────────────────────────────────────
 // All displayed dates use ISO YYYY-MM-DD — unambiguous across the US/UK/AU/EU
@@ -1182,7 +1222,8 @@ function clusterRadiusPx(zoom) {
   return Math.max(1, Math.round(150 / metersPerPx));
 }
 const CLUSTER_OPTS = { chunkedLoading: true, showCoverageOnHover: false,
-                       maxClusterRadius: clusterRadiusPx };
+                       maxClusterRadius: clusterRadiusPx,
+                       iconCreateFunction: makeClusterIcon };
 // Events: clustering is user-toggleable via the "Aggregate events" checkbox.
 // When it's off (the default), maxClusterRadius is 0 so every event renders as
 // its own pin (the spiral-offset below keeps co-located ones individually
@@ -1192,6 +1233,10 @@ function eventClusterRadius(zoom) {
 }
 const markerLayer = L.markerClusterGroup(
   { ...CLUSTER_OPTS, maxClusterRadius: eventClusterRadius }).addTo(map);
+// War "host" pins never cluster — they're the headline of the map and should
+// always read as the big pin even with aggregation on, so they live in a plain
+// layer outside the cluster group.
+const warLayer = L.layerGroup().addTo(map);
 // Placeholder "?" pins follow the same "Aggregate events" toggle as events, so
 // when aggregation is off they don't collapse into numbered circles either
 // (several groups can share one best-guess coordinate).
@@ -1500,6 +1545,7 @@ function applyFilters() {
   // shared with the placeholder-pin render below so a barony pin sitting on
   // its own event also gets nudged.
   markerLayer.clearLayers();
+  warLayer.clearLayers();
   markerMap = {};
   const coordCounts = new Map();
   function spiralOffset(lat, lng) {
@@ -1561,13 +1607,15 @@ function applyFilters() {
     const color = hostColor || eventColor(ev);
     const marker = L.marker([plotLat, plotLng], {
       icon: makeIcon(color, hostColor ? WAR_PIN_SCALE : 1),
+      kingdomColor: color,   // read by makeClusterIcon to colour a cluster by dominant kingdom
       // filtered is sorted soonest-first, so give the soonest event the highest
       // z-index — it stays on top when pins overlap (esp. with aggregation off).
       // The big war pin floats above everything so it isn't buried under small ones.
       zIndexOffset: (filtered.length - i) + (hostColor ? 1e6 : 0),
     });
     marker.bindPopup(() => buildPopup(ev), { maxWidth: 320, maxHeight: 280 });
-    markerLayer.addLayer(marker);
+    // War host pins bypass clustering (warLayer) so they always show as the big pin.
+    (hostColor ? warLayer : markerLayer).addLayer(marker);
     markerMap[ev._idx] = marker;
   };
   filtered.forEach((ev, i) => { if (warHostColor[ev._idx]) renderEventMarker(ev, i); });
@@ -1660,6 +1708,7 @@ function applyFilters() {
       const marker = L.marker([plotLat, plotLng], {
         icon: placeholderIconWithBadge(online.length),
         opacity: online.length ? 1 : 0.9,
+        kingdomColor: KINGDOM_COLORS[(pin.kingdom || '').trim()],   // colour a "?" cluster by kingdom
       });
       marker.bindPopup(() => buildPlaceholderPopup(pin, online), { maxWidth: 320, maxHeight: 280 });
       placeholderLayer.addLayer(marker);
@@ -1842,7 +1891,7 @@ function parseCSV(text) {
 // is built once colours exist. locals.csv / hardcoded_events.csv are optional
 // and load in the next step.
 Promise.all([
-  fetch('sca_events_clean.csv').then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); }),
+  fetch('sca_events_clean.csv' + DATA_V).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); }),
   loadColourSchemes(),
 ])
   .then(([text]) => {
@@ -1851,7 +1900,7 @@ Promise.all([
     // Placeholder "?" pins + source→website come from locals.csv; hand-kept
     // practices for groups whose schedule is only a static webpage come from
     // hardcoded_events.csv. Both are optional — a missing file just renders less.
-    const opt = name => fetch(name).then(r => r.ok ? r.text() : '', () => '');
+    const opt = name => fetch(name + DATA_V).then(r => r.ok ? r.text() : '', () => '');
     return Promise.all([opt('locals.csv'), opt('hardcoded_events.csv')]);
   })
   .then(([pinsText, hardText]) => {
