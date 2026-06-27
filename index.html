@@ -514,7 +514,31 @@
       outline: 2px solid var(--blue); outline-offset: 1px;
     }
     .legend-readout { font-style: italic; color: #555; }
+
+    /* ── Embed mode (?embed) ─────────────────────────────────────────
+       Drops the site chrome — header, nav, the event-list sidebar, and the
+       prose — so the map (with its filter controls + colour key) fills the
+       iframe. For embedding the map on a kingdom/barony page. */
+    .embed header,
+    .embed nav,
+    .embed .sidebar,
+    .embed .prose-section,
+    .embed footer { display: none !important; }
+    .embed body { margin: 0; min-height: 0; }
+    .embed main {
+      max-width: none; margin: 0; padding: 0.5rem 0.6rem; height: 100vh;
+      box-sizing: border-box; display: flex; flex-direction: column; gap: 0.45rem;
+    }
+    .embed .map-area { flex: 1 1 auto; height: auto; min-height: 220px; }
+    .embed #map { height: 100%; }
+    .embed .map-legend { margin: 0; }
   </style>
+  <script>
+    // Set the embed class before first paint so there's no flash of the full
+    // page. ?embed (or ?embed=1) on the map URL turns on the chrome-free view.
+    if (new URLSearchParams(location.search).has('embed'))
+      document.documentElement.classList.add('embed');
+  </script>
 </head>
 <body>
 
