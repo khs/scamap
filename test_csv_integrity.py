@@ -144,7 +144,8 @@ class TestLocals(unittest.TestCase):
         # events without adding a second "?" pin (e.g. Barony of Stierbach's main
         # + workshops calendars). What's NOT allowed is the SAME calendar listed
         # twice for a group — an accidental copy-paste that imports duplicates.
-        skip = {"", "no calendar listed", "no calendar available"}
+        skip = {"", "no calendar listed", "no calendar available",
+                "practices added manually"}
         seen, dups = set(), []
         for r in self.rows:
             g = (r.get("group") or "").strip().lower()

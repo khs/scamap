@@ -123,9 +123,12 @@ Google-Calendar or ICS feed:
 - **Local groups → `locals.csv`** — a registry of every local group we know of
   (baronies, shires, cantons, colleges, …), columns
   `kingdom,group,type,calendar_id,website,social,date_last_checked,location,lat,lng`.
-  One row per group; `calendar_id` is its feed, or `No Calendar Listed` (we
-  haven't looked) / `No Calendar Available` (checked, it has none) — both keep
-  the row and still show a "?" pin so you can track it. Put `No location` in
+  One row per group; `calendar_id` is its feed, or one of the recognised "no
+  feed" notes — `No Calendar Listed` (we haven't looked), `No Calendar Available`
+  (checked, it has none), or `Practices Added Manually` (no feed, but you've
+  hand-entered its practices in `hardcoded_events.csv`) — all of which keep the
+  row, skip the import, and still show a "?" pin so you can track it. Put `No
+  location` in
   `calendar_id` on a *secondary* feed for a group to import its events without a
   second pin. `location`/`lat`/`lng` place that "?" pin (the map reads them
   directly — no geocoding). Only `group` + a real `calendar_id` drive the

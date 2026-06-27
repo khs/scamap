@@ -1636,7 +1636,8 @@ function applyFilters() {
       // for groups that actually have a calendar feed. A "no calendar" row is
       // one we deliberately want visible as a "?", so a kingdom event merely
       // held there (e.g. a Crown Tourney) shouldn't hide it.
-      const hasCalendar = pin.calendar_id && !/^\s*no calendar/i.test(pin.calendar_id);
+      const hasCalendar = pin.calendar_id &&
+        !/^\s*(no calendar|practices added manually)/i.test(pin.calendar_id);
       const short = shortName(pin.group);
       if (hasCalendar && short.length >= 4 && mappedTitlesLowercase.some(t => t.includes(short))) return;
       // Respect the search filter — only show placeholders matching the query
