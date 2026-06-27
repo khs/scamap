@@ -932,12 +932,16 @@ function loadKingdomOverlay() {
 // "war" pin by the hosting kingdom. Reuses the overlay's decoded polygons + the
 // same territory_kingdoms.csv lookups, so it tracks the background map exactly.
 function territoryReady() { return !!_territoryData; }
+let _territoryLoading = false;
 function ensureTerritoryIndex() {
-  if (_territoryData) return;
+  if (_territoryData || _territoryLoading) return;   // load once, not once per render
+  _territoryLoading = true;
   // Building the overlay decodes + stashes the polygons (and parses
   // territory_kingdoms.csv); we don't add it to the map, we just want the data,
   // then re-render so the war pins pick up their host kingdom.
-  loadKingdomOverlay().then(() => applyFilters()).catch(() => {});
+  loadKingdomOverlay()
+    .then(() => { _territoryLoading = false; applyFilters(); })
+    .catch(() => { _territoryLoading = false; });
 }
 const _pointKingdomCache = {};
 function kingdomAtPoint(lat, lng) {
@@ -1589,16 +1593,20 @@ function applyFilters() {
     if (!isWarEvent(ev)) return;
     const wla = parseFloat(ev.lat), wlo = parseFloat(ev.lng);
     if (isNaN(wla) || isNaN(wlo)) return;
-    const k = `${wla.toFixed(2)},${wlo.toFixed(2)}`;
+    // Key by location AND year, so the same war in different years (two Gulf
+    // Wars, a future Pennsic surfaced by a widened date filter, …) each keep
+    // their own big pin instead of collapsing into one.
+    const k = `${wla.toFixed(2)},${wlo.toFixed(2)},${(ev.start || '').slice(0, 4)}`;
     if (!warSites.has(k)) warSites.set(k, []);
     warSites.get(k).push(ev);
   });
   if (warSites.size && !territoryReady()) {
     ensureTerritoryIndex();   // load polygons in the background, then re-render
   } else {
-    warSites.forEach((evs, k) => {
-      const [wla, wlo] = k.split(',').map(Number);
-      const host = kingdomAtPoint(wla, wlo);            // effective kingdom name
+    warSites.forEach(evs => {
+      // Resolve the host from a real, full-precision coordinate (not the rounded
+      // bucket key) so a site near a kingdom border isn't mis-assigned.
+      const host = kingdomAtPoint(parseFloat(evs[0].lat), parseFloat(evs[0].lng));
       const color = host && KINGDOM_COLORS[host];
       if (!color) return;                               // unknown land -> no big pin
       // Attach the big pin to the host kingdom's own listing if present, else the first.
@@ -1607,7 +1615,11 @@ function applyFilters() {
     });
   }
 
-  filtered.forEach((ev, i) => {
+  // Render in two passes so each war's oversized "host" pin claims the TRUE
+  // centre of its site (spiralOffset gives the centre to the first marker at a
+  // coordinate) and the cross-listings spiral around it — otherwise the big pin
+  // gets nudged off-centre while a small cross-listing sits on the real spot.
+  const renderEventMarker = (ev, i) => {
     // Online/virtual events never get a map marker (req: "don't ever display a
     // marker for them") — they live in the Online tab and as the teal badge on a
     // group's "?" pin. Some carry stray coordinates (a Zoom meeting geocoded to a
@@ -1628,7 +1640,9 @@ function applyFilters() {
     marker.bindPopup(() => buildPopup(ev), { maxWidth: 320, maxHeight: 280 });
     markerLayer.addLayer(marker);
     markerMap[ev._idx] = marker;
-  });
+  };
+  filtered.forEach((ev, i) => { if (warHostColor[ev._idx]) renderEventMarker(ev, i); });
+  filtered.forEach((ev, i) => { if (!warHostColor[ev._idx]) renderEventMarker(ev, i); });
 
   // (The sidebar list is built by renderSidebarList() at the end of this
   //  function, so it can be re-run on map move without rebuilding markers.)
