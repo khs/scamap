@@ -238,11 +238,11 @@ Kingdom of Drachenwald,Shire of Juneborg,shire,No Calendar Listed,http://junebor
 Kingdom of Drachenwald,Shire of Löghammar,shire,No Calendar Listed,https://loghammar.nordmark.org,,2026-06-22,"Västerås, Sweden",59.611099,16.546368
 Kingdom of Drachenwald,Shire of Mynydd Gwyn,shire,No Calendar Listed,http://www.mynydd-gwyn.org.uk,,2026-06-22,"Cardiff, United Kingdom",51.481655,-3.179193
 Kingdom of Drachenwald,Shire of Polderslot,shire,No Calendar Listed,http://www.polderslot.info,,2026-06-22,Netherlands,52.243498,5.634323
-Kingdom of Drachenwald,Shire of Pont Alarch,shire,No Calendar Listed,https://pontalarch.insulaedraconis.org/about.html,,2026-06-22,UK: central England,51.566699,-1.784741
+Kingdom of Drachenwald,Shire of Pont Alarch,shire,No Calendar Listed,https://pontalarch.insulaedraconis.org/,,2026-06-22,UK: central England,51.566699,-1.784741
 Kingdom of Drachenwald,Shire of Reengarda,shire,No Calendar Listed,https://reengarda.se,,2026-06-22,"Skellefteå, Sweden",64.752019,20.959339
 Kingdom of Drachenwald,Shire of Thamesreach,shire,No Calendar Listed,http://www.thamesreach.org,,2026-06-22,"UK: greater London, England",51.514162,-0.088939
 Kingdom of Drachenwald,Shire of Trivium,shire,No Calendar Listed,https://shireoftrivium.com,,2026-06-22,Belgium,50.640281,4.666715
-Kingdom of Drachenwald,Shire of Ulvberget,shire,No Calendar Listed,,,2026-06-22,"Skövde, Sweden",58.389633,13.845634
+Kingdom of Drachenwald,Shire of Ulvberget,shire,No Calendar Listed,https://www.facebook.com/groups/Ulvberget,,2026-06-22,"Skövde, Sweden",58.389633,13.845634
 Kingdom of Drachenwald,Shire of Uma,shire,No Calendar Listed,http://www.skauma.org,,2026-06-22,Umeå,63.825657,20.263074
 Kingdom of Drachenwald,Shire of West Dragonshire,shire,No Calendar Listed,http://www.westdragonshire.org,,2026-06-22,UK: southern England,51.746151,-1.286259
 Kingdom of Drachenwald,Shire of Örehus,shire,No Calendar Listed,http://orehus.nordmark.org,,2026-06-22,"Helsingborg, Sweden",56.04421,12.703706
@@ -381,10 +381,11 @@ Kingdom of Trimaris,Shire of Sangre del Sol,shire,No Calendar Listed,,,2026-06-2
 Kingdom of Trimaris,Shire of Sea March,shire,No Calendar Listed,,,2026-06-22,Palm Beach County,26.62798,-80.449417
 Kingdom of Trimaris,Shire of Southkeep,shire,No Calendar Listed,,,2026-06-22,Miami-Dade County / Florida Keys,24.67362,-81.498179
 Kingdom of Trimaris,Shire of Tri Os,shire,No Calendar Listed,,,2026-06-22,"Martin, St. Lucie, and Indian Counties",27.067371,-80.399441
-Kingdom of the East,Barony of An Dubhaigeainn,barony,No Calendar Listed,https://andub.eastkingdom.org,,2026-06-22,"Suffolk County, NY",40.883232,-72.857803
-Kingdom of the East,Barony of Bergental,barony,No Calendar Listed,https://bergental.eastkingdom.org,,2026-06-22,Western MA,42.378877,-72.032366
-Kingdom of the East,Barony of Beyond the Mountain,barony,No Calendar Listed,https://bbm.eastkingdom.org,,2026-06-22,"Burlington, Connecticut, USA",41.769,-72.95778
-Kingdom of the East,Barony of Bhakail,barony,No Calendar Listed,https://bhakail.eastkingdom.org,,2026-06-22,"Philadelphia, PA; Delaware and South Chester County, PA Bailiwick of Ivyeinrust - University of PA",40.011454,-75.13265
+Kingdom of the East,Barony of An Dubhaigeainn,barony,https://calendar.google.com/calendar/ical/eastkingdom.org_lungjg3alv04p339umsj3og30s%40group.calendar.google.com/public/basic.ics,https://andub.eastkingdom.org,,2026-06-22,"Suffolk County, NY",40.883232,-72.857803
+Kingdom of the East,Barony of Bergental,barony,No Calendar Available,https://bergental.eastkingdom.org,,2026-06-22,Western MA,42.378877,-72.032366
+Kingdom of the East,Barony of Beyond the Mountain,barony,https://calendar.google.com/calendar/ical/f13a3vbvjqh123cb3c0e2s45mg%40group.calendar.google.com/public/basic.ics,https://bbm.eastkingdom.org,,2026-06-22,"Burlington, Connecticut, USA",41.769,-72.95778
+Kingdom of the East,Barony of Bhakail,barony,https://calendar.google.com/calendar/ical/bhakailweb%40gmail.com/public/basic.ics,https://bhakail.eastkingdom.org,,2026-06-22,"Philadelphia, PA; Delaware and South Chester County, PA",40.011454,-75.13265
+Kingdom of the East,Bailiwick of Ivyeinrust,college,https://calendar.google.com/calendar/ical/eastkingdom.org_b5nuhi5dqkiuttjhjmj8787h94%40group.calendar.google.com/public/basic.ics,https://ivyeinrust.eastkingdom.org/,,,University of Pennsylvania,39.95325,-75.19384
 Kingdom of the East,Barony of Buckland Cross,barony,No Calendar Listed,https://bucklandcross.eastkingdom.org,,2026-06-22,"Southern Bucks County, PA",40.234412,-75.107
 Kingdom of the East,Barony of Carillion,barony,No Calendar Listed,https://carillion.eastkingdom.org,,2026-06-22,"Monmouth, Ocean, S.Middlesex County, NJ",40.135525,-74.24952
 Kingdom of the East,Barony of Carolingia,barony,https://www.google.com/calendar/ical/c_9f2bb029e0685a0401901930b9fe78acf41ca17773ea62c6bb701e5fe17694f7%40group.calendar.google.com/public/basic.ics,https://carolingia.eastkingdom.org,,2026-06-22,"Greater Boston, MA",42.383727,-71.074114
