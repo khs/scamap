@@ -114,15 +114,15 @@ Kingdom of Artemisia,Shire of Silver Keep,shire,No Calendar Listed,https://www.f
 Kingdom of Artemisia,Shire of Stan Wyrm,shire,No Calendar Listed,https://www.facebook.com/groups/shireofstanwyrm/,,2026-06-22,"Great Falls, MT",47.504885,-111.29189
 Kingdom of Artemisia,Shire of Stonegate,shire,No Calendar Listed,https://www.facebook.com/ShireOfStonegate,,2026-06-22,"Pocatello, ID",42.862029,-112.450627
 Kingdom of Artemisia,Shire of Windegate,shire,No Calendar Listed,https://www.facebook.com/groups/391521170049,,2026-06-22,"Shelby, MT",48.5055,-111.856872
-Kingdom of Atenveldt,Barony Of Mons Tonitrus,barony,No Calendar Listed,http://bmmt.org,,2026-06-22,"Sierra Vista, Arizona",31.564769,-110.274299
-Kingdom of Atenveldt,Barony of Atenveldt,barony,No Calendar Listed,http://baronyofatenveldt.org,,2026-06-22,"Phoenix, Arizona",33.448437,-112.074141
-Kingdom of Atenveldt,Barony of Ered Sul,barony,No Calendar Listed,http://baronyoferedsul.org,,2026-06-22,"Flagstaff, Arizona",35.198752,-111.651822
-Kingdom of Atenveldt,Barony of Granite Mountain,barony,No Calendar Listed,http://baronyofgranitemountain.org,,2026-06-22,"Prescott, Arizona",34.539984,-112.468812
-Kingdom of Atenveldt,Barony of Sun Dragon,barony,No Calendar Listed,http://baronyofsundragon.org,,2026-06-22,"Glendale, Arizona",33.538686,-112.185994
-Kingdom of Atenveldt,Barony of Tir Ysgithr,barony,No Calendar Listed,http://btysca.org,,2026-06-22,"Tucson, Arizona",32.222876,-110.974847
-Kingdom of Atenveldt,Barony of Twin Moons,barony,No Calendar Listed,http://baronyoftwinmoons.org,,2026-06-22,"Mesa, Arizona",33.415101,-111.831455
-Kingdom of Atenveldt,Shire of Burning Sands,shire,No Calendar Listed,http://burningsands.atenveldt.org,,2026-06-22,"Yuma, Arizona",32.725422,-114.619809
-Kingdom of Atenveldt,Shire of Windale,shire,No Calendar Listed,http://windale.atenveldt.org,,2026-06-22,"Kingman, Arizona",35.189592,-114.0533
+Kingdom of Atenveldt,Barony Of Mons Tonitrus,barony,https://calendar.google.com/calendar/ical/c_1788594574f5997f5c75eb9cf8e7525e06b5f84f26509effbd85a8943486876b%40group.calendar.google.com/public/basic.ics,http://bmmt.org,,2026-06-22,"Sierra Vista, Arizona",31.564769,-110.274299
+Kingdom of Atenveldt,Barony of Atenveldt,barony,https://calendar.google.com/calendar/ical/calendar%40baronyofatenveldt.org/public/basic.ics,http://baronyofatenveldt.org,,2026-06-22,"Phoenix, Arizona",33.448437,-112.074141
+Kingdom of Atenveldt,Barony of Ered Sul,barony,No Calendar Available,http://baronyoferedsul.org,,2026-06-22,"Flagstaff, Arizona",35.198752,-111.651822
+Kingdom of Atenveldt,Barony of Granite Mountain,barony,No Calendar Available,http://baronyofgranitemountain.org,,2026-06-22,"Prescott, Arizona",34.539984,-112.468812
+Kingdom of Atenveldt,Barony of Sun Dragon,barony,https://calendar.google.com/calendar/ical/chronicler%40baronyofsundragon.org/public/basic.ics,http://baronyofsundragon.org,,2026-06-22,"Glendale, Arizona",33.538686,-112.185994
+Kingdom of Atenveldt,Barony of Tir Ysgithr,barony,https://calendar.google.com/calendar/ical/webmin%40btysca.org/public/basic.ics,http://btysca.org,,2026-06-22,"Tucson, Arizona",32.222876,-110.974847
+Kingdom of Atenveldt,Barony of Twin Moons,barony,No Calendar Available,http://baronyoftwinmoons.org,,2026-06-22,"Mesa, Arizona",33.415101,-111.831455
+Kingdom of Atenveldt,Shire of Burning Sands,shire,https://calendar.google.com/calendar/ical/sp0dd7gvtdoahp4j7gd4rt2qmnk0s8gs%40import.calendar.google.com/public/basic.ics,http://burningsands.atenveldt.org,,2026-06-22,"Yuma, Arizona",32.725422,-114.619809
+Kingdom of Atenveldt,Shire of Windale,shire,No Calendar Available,http://windale.atenveldt.org,,2026-06-22,"Kingman, Arizona",35.189592,-114.0533
 Kingdom of Atlantia,Barony of Black Diamond,barony,https://calendar.google.com/calendar/ical/seneschal%40blackdiamond.atlantia.sca.org/public/basic.ics,https://blackdiamond.atlantia.sca.org/,,2026-06-22,"Cities of Bedford, Covington, Lexington and Lynchburg, Appomattox, Bedford, Campbell, Craig, Floyd, Giles, Montgomery, Pittsylvania, Pulaski, Radford, Roanoke, Rockbridge, Salem, Tazewll, Wise",37.305123,-79.2477
 Kingdom of Atlantia,Barony of Bright Hills,barony,https://calendar.google.com/calendar/ical/2gskgfm3tsnsjmoe6go08lb56o%40group.calendar.google.com/public/basic.ics,http://brighthills.atlantia.sca.org,,2026-06-22,"Baltimore, Carrol, Cecil, Harford",39.522004,-76.297143
 Kingdom of Atlantia,Barony of Caer Mear,barony,https://calendar.google.com/calendar/ical/uk9bjrsu1loit3j4bjai8b07g0%40group.calendar.google.com/public/basic.ics,http://caermear.atlantia.sca.org,,2026-06-22,"Cities of Colonial Heights, Hopewell, Petersburg, and Richmond, Albemarle, Amelia, Caroline, Charles City, Charlotte, Chesterfield, Dinwiddie, Fluvanna, Gloucester, Goochland, Hanover, Henrico, King and Queen , King William, Louisa, Mathews, Middlesex, New Kent, Powhatan, Prince George, Spotsylvania",37.466621,-77.827797
@@ -164,8 +164,8 @@ Kingdom of Atlantia,Canton of Tear-Sea's Shore,canton,No Calendar Listed,http://
 Kingdom of Atlantia,Shire of Border Vale Keep,shire,https://calendar.google.com/calendar/ical/c_7ecc43e3e4bbc838bf6f078f5f19b84395184d5f40a493c1e23e7e921ccf5dd2%40group.calendar.google.com/public/basic.ics,http://bordervalekeep.atlantia.sca.org,,2026-06-22,City of Augusta,37.399255,-79.223117
 Kingdom of Atlantia,Shire of Isenfir,shire,No Calendar Listed,http://isenfir.atlantia.sca.org,,2026-06-22,"Crozet, Virginia, USA",38.067383,-78.700797
 Kingdom of Atlantia,Shire of Roxbury Mill,shire,No Calendar Listed,http://roxburymill.atlantia.sca.org,,2026-06-22,"2200 Baltimore Road, Rockville, MD",39.087313,-77.11614
-Kingdom of Atlantia,Shire of Seareach,shire,No Calendar Listed,https://www.seareach.atlantia.sca.org/,,2026-06-22,"Wilmington, North Carolina",34.237049,-77.979089
-Kingdom of Atlantia,Shire of Spiaggia Levantina,shire,No Calendar Listed,http://www.spiaggia-levantina.org,,2026-06-22,Eastern Shore of Maryland,38.214037,-75.682877
+Kingdom of Atlantia,Shire of Seareach,shire,No Calendar Available,https://www.seareach.atlantia.sca.org/,,2026-06-22,"Wilmington, North Carolina",34.237049,-77.979089
+Kingdom of Atlantia,Shire of Spiaggia Levantina,shire,No Calendar Available,https://www.facebook.com/SpaiggiaLevantina/,,2026-06-22,Eastern Shore of Maryland,38.214037,-75.682877
 Kingdom of Atlantia,Shire of Ursus Bay,shire,https://calendar.google.com/calendar/ical/seneschal%40ursusbay.atlantia.sca.org/public/basic.ics,http://ursus-bay.atlantia.sca.org/,,2026-06-22,Craven County,35.080857,-77.043998
 Kingdom of Avacal,Barony of Borealis,barony,No Calendar Listed,,,2026-06-22,Edmonton,53.546205,-113.491241
 Kingdom of Avacal,Barony of Montengarde,barony,No Calendar Listed,http://www.montengarde.org,,2026-06-22,Calgary,51.045606,-114.057541
