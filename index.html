@@ -774,9 +774,6 @@ function territoryForCD(cduid, pruid) {
 // Lazy-load TopoJSON + topojson-client; convert counties layer to GeoJSON
 let kingdomOverlay = null;
 let kingdomOverlayPromise = null;
-// Decoded territory polygons, stashed once loadKingdomOverlay() has them, so the
-// war-host point lookup (kingdomAtPoint) can reuse them without a second fetch.
-let _territoryData = null;
 
 function loadKingdomOverlay() {
   if (kingdomOverlayPromise) return kingdomOverlayPromise;
@@ -917,7 +914,6 @@ function loadKingdomOverlay() {
       },
     });
 
-    _territoryData = { counties, world, canadaCd };
     kingdomOverlay = L.layerGroup([worldLayer, canadaCdLayer, countiesLayer]);
     return kingdomOverlay;
   })();
@@ -925,66 +921,6 @@ function loadKingdomOverlay() {
   // the next toggle retries instead of leaving the overlay permanently blank.
   kingdomOverlayPromise.catch(() => { kingdomOverlayPromise = null; });
   return kingdomOverlayPromise;
-}
-
-// ── War-host point lookup ────────────────────────────────────────
-// Which kingdom's TERRITORY contains a (lat,lng)? Used to colour the oversized
-// "war" pin by the hosting kingdom. Reuses the overlay's decoded polygons + the
-// same territory_kingdoms.csv lookups, so it tracks the background map exactly.
-function territoryReady() { return !!_territoryData; }
-let _territoryLoading = false;
-function ensureTerritoryIndex() {
-  if (_territoryData || _territoryLoading) return;   // load once, not once per render
-  _territoryLoading = true;
-  // Building the overlay decodes + stashes the polygons (and parses
-  // territory_kingdoms.csv); we don't add it to the map, we just want the data,
-  // then re-render so the war pins pick up their host kingdom.
-  loadKingdomOverlay()
-    .then(() => { _territoryLoading = false; applyFilters(); })
-    .catch(() => { _territoryLoading = false; });
-}
-const _pointKingdomCache = {};
-function kingdomAtPoint(lat, lng) {
-  if (!_territoryData) return null;
-  const key = `${lat.toFixed(3)},${lng.toFixed(3)}`;
-  if (key in _pointKingdomCache) return _pointKingdomCache[key];
-  const pt = [lng, lat];   // GeoJSON coordinates are [lng, lat]
-  let kingdom = null;
-  const cf = featureAt(_territoryData.counties, pt);   // US counties (most specific)
-  if (cf) { const t = territoryForFIPS(String(cf.id || '').padStart(5, '0')); if (t) kingdom = t.parent || t.kingdom; }
-  if (!kingdom) {
-    const df = featureAt(_territoryData.canadaCd, pt);
-    if (df) { const p = df.properties || {}; const t = territoryForCD(p.CDUID, p.PRUID); if (t) kingdom = t.parent || t.kingdom; }
-  }
-  if (!kingdom) {
-    const wf = featureAt(_territoryData.world, pt);
-    if (wf) { const p = wf.properties || {}; kingdom = p.parent || p.kingdom || null; }
-  }
-  return (_pointKingdomCache[key] = kingdom);
-}
-function featureAt(fc, pt) {
-  if (!fc || !fc.features) return null;
-  for (const f of fc.features) if (pointInGeometry(pt, f.geometry)) return f;
-  return null;
-}
-function pointInGeometry(pt, geom) {
-  if (!geom) return false;
-  if (geom.type === 'Polygon') return pointInRings(pt, geom.coordinates);
-  if (geom.type === 'MultiPolygon') return geom.coordinates.some(rings => pointInRings(pt, rings));
-  return false;
-}
-function pointInRings(pt, rings) {
-  if (!rings.length || !pointInRing(pt, rings[0])) return false;          // outside outer ring
-  for (let i = 1; i < rings.length; i++) if (pointInRing(pt, rings[i])) return false;  // inside a hole
-  return true;
-}
-function pointInRing([x, y], ring) {
-  let inside = false;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
-    if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) inside = !inside;
-  }
-  return inside;
 }
 
 // ── Icon factory ─────────────────────────────────────────────────
@@ -1011,21 +947,11 @@ function makeIcon(color, scale = 1) {
   return icon;
 }
 
-// A "war" is a multi-day (5+ day) KINGDOM-level event with "war"/"wars" in its
-// title — the big inter-kingdom gatherings (Pennsic, Gulf Wars, Estrella, …) —
-// which we give an oversized pin. Only kingdom-level events qualify ("the
-// hosting kingdom"); a barony's local practice that merely says "war" stays a
-// normal pin. Word-boundary match so "Steward"/"Award"/"Warwick" don't count.
-const WAR_TITLE_RE = /\bwars?\b/i;
+// Wars (multi-day inter-kingdom gatherings) get an oversized pin coloured by
+// their "hosting kingdom" — the kingdom whose territory the site sits in. Both
+// the war test and the host are computed at build time (annotate_war_hosts.py)
+// and arrive as the per-event `war_host` column, blank for everything else.
 const WAR_PIN_SCALE = 1.6;
-function isWarEvent(ev) {
-  if (ev.calendar_type !== 'kingdom') return false;
-  if (!WAR_TITLE_RE.test(ev.title || '')) return false;
-  const parse = s => new Date(String(s).replace(' ', 'T'));
-  const start = parse(ev.start), end = parse(ev.end || ev.start);
-  if (isNaN(start) || isNaN(end)) return false;
-  return (end - start) / 86400000 >= 5;   // 5+ days long
-}
 
 // ── Date helpers ─────────────────────────────────────────────────
 // All displayed dates use ISO YYYY-MM-DD — unambiguous across the US/UK/AU/EU
@@ -1140,6 +1066,7 @@ function ingestHardcodedEvents(text) {
       location: row.location || '', clean_location: row.location || '',
       day: row.day || '',
       schedule_url: row.schedule_url || row['schedule url'] || '',
+      location_specificity: (row.location_specificity || row['location specificity'] || '').trim(),
       start: '', end: '', description: '',
     };
     // A virtual hardcoded practice behaves like any other online event: no pin,
@@ -1157,11 +1084,17 @@ function buildHardcodedPopup(ev) {
   const site  = url
     ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(url)}</a>`
     : 'the group’s website';
+  // location_specificity="vague" rows are pinned to an approximate town with no
+  // known street address; warn the reader (verbatim copy from the maintainer) so
+  // nobody drives to a guessed spot. "exact" / blank shows nothing extra.
+  const vague = /^vague$/i.test(ev.location_specificity || '')
+    ? `<p style="margin:0 0 0.5rem;"><strong>This pin is placed in an approximately correct town or city, but we do not know the correct address. Check the correct location before trying to attend the practice.</strong></p>`
+    : '';
   return `<div class="event-popup">
     <h3>${escapeHtml(ev.title)}</h3>
     <span class="source-pill">${escapeHtml(ev.source)}</span>
     <div class="desc" style="margin-top:0.45rem;">
-      EventScout is unable to import this calendar, but we believe this practice is${where}${when}.
+      ${vague}EventScout is unable to import this calendar, but we believe this practice is${where}${when}.
       Please check the website: ${site}.<br>
       Please <a href="https://forms.gle/gcdRyUnVv8FbLqG3A" target="_blank" rel="noopener">let us know</a> if this event information is out of date.
     </div>
@@ -1587,33 +1520,29 @@ function applyFilters() {
   // cross-listed on several kingdom calendars, so we dedupe by location and
   // enlarge just one. Until the territory polygons load, wars stay normal pins
   // and we kick off the (lazy) load, which re-renders when it's ready.
+  // War pins: one oversized pin per war SITE+year, coloured by its precomputed
+  // war_host (the kingdom whose territory the site sits in; see
+  // annotate_war_hosts.py). The same war is cross-listed on many kingdom
+  // calendars, so we dedupe by location+year and enlarge just one; the other
+  // listings stay normal-size pins.
   const warHostColor = {};   // ev._idx -> host colour, set only on the big pins
   const warSites = new Map();
   filtered.forEach(ev => {
-    if (!isWarEvent(ev)) return;
+    if (!ev.war_host) return;                           // blank unless a resolved war
     const wla = parseFloat(ev.lat), wlo = parseFloat(ev.lng);
     if (isNaN(wla) || isNaN(wlo)) return;
-    // Key by location AND year, so the same war in different years (two Gulf
-    // Wars, a future Pennsic surfaced by a widened date filter, …) each keep
-    // their own big pin instead of collapsing into one.
     const k = `${wla.toFixed(2)},${wlo.toFixed(2)},${(ev.start || '').slice(0, 4)}`;
     if (!warSites.has(k)) warSites.set(k, []);
     warSites.get(k).push(ev);
   });
-  if (warSites.size && !territoryReady()) {
-    ensureTerritoryIndex();   // load polygons in the background, then re-render
-  } else {
-    warSites.forEach(evs => {
-      // Resolve the host from a real, full-precision coordinate (not the rounded
-      // bucket key) so a site near a kingdom border isn't mis-assigned.
-      const host = kingdomAtPoint(parseFloat(evs[0].lat), parseFloat(evs[0].lng));
-      const color = host && KINGDOM_COLORS[host];
-      if (!color) return;                               // unknown land -> no big pin
-      // Attach the big pin to the host kingdom's own listing if present, else the first.
-      const rep = evs.find(e => e.source === host) || evs[0];
-      warHostColor[rep._idx] = color;
-    });
-  }
+  warSites.forEach(evs => {
+    const host = evs[0].war_host;                       // all listings share the site host
+    const color = KINGDOM_COLORS[host];
+    if (!color) return;                                 // host not in the colour sheet
+    // Attach the big pin to the host kingdom's own listing if present, else the first.
+    const rep = evs.find(e => e.source === host) || evs[0];
+    warHostColor[rep._idx] = color;
+  });
 
   // Render in two passes so each war's oversized "host" pin claims the TRUE
   // centre of its site (spiralOffset gives the centre to the first marker at a
@@ -1714,7 +1643,8 @@ function applyFilters() {
       // for groups that actually have a calendar feed. A "no calendar" row is
       // one we deliberately want visible as a "?", so a kingdom event merely
       // held there (e.g. a Crown Tourney) shouldn't hide it.
-      const hasCalendar = pin.calendar_id && !/^\s*no calendar/i.test(pin.calendar_id);
+      const hasCalendar = pin.calendar_id &&
+        !/^\s*(no calendar|practices added manually)/i.test(pin.calendar_id);
       const short = shortName(pin.group);
       if (hasCalendar && short.length >= 4 && mappedTitlesLowercase.some(t => t.includes(short))) return;
       // Respect the search filter — only show placeholders matching the query
@@ -1938,6 +1868,10 @@ Promise.all([
     // Append hand-maintained practices AFTER groupKingdom is built (so they pick
     // up their barony's kingdom colour) and BEFORE applyFilters (so they render).
     if (hardText) ingestHardcodedEvents(hardText);
+    // Drop cancelled events entirely — a title containing "cancelled"/"canceled"
+    // (whole word, so "uncancelled" stays) means it isn't happening, so it gets
+    // no marker, list entry, or online badge anywhere.
+    allEvents = allEvents.filter(ev => !/\bcancell?ed\b/i.test(ev.title || ''));
     // First render only once the map container has its settled size — on a fast
     // cache hit applyFilters() can otherwise run before layout, keying the canvas
     // renderer + cluster grid to a 0-size projection so far regions (Asia/Europe)

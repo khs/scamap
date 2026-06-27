@@ -117,7 +117,7 @@ def manual_kingdoms() -> set:
 
 
 _NO_CALENDAR = {"", "no calendar listed", "no calendar available",
-                "none", "n/a", "tbd", "-"}
+                "none", "n/a", "tbd", "-", "practices added manually"}
 
 
 def configured_locals() -> list:

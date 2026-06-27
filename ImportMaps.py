@@ -111,7 +111,7 @@ def load_local_calendars(filepath: Path) -> list[dict]:
     load_calendars (all local groups fetch on the baronial cadence), so the two
     lists concatenate."""
     NO_CALENDAR = {"", "no calendar listed", "no calendar available",
-                   "none", "n/a", "tbd", "-"}
+                   "none", "n/a", "tbd", "-", "practices added manually"}
     if not filepath.exists():
         print(f"  (no {filepath.name} — skipping local-group feeds)\n")
         return []
