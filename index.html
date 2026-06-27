@@ -204,6 +204,7 @@
     #map {
       flex: 1 1 auto;
       min-width: 0;
+      background: #aad3df;   /* OSM ocean tone, so the world-view margins read as sea, not void */
     }
 
     /* ── Sidebar ───────────────────────────────────────────────── */
@@ -722,10 +723,21 @@ function eventColor(ev) {
 // preferCanvas renders the county-level kingdom overlay (~3000 polygons) on a
 // single <canvas> instead of thousands of SVG/DOM nodes — much smoother pan/
 // zoom when the overlay is on, visually identical.
-const map = L.map('map', { center: [38, -96], zoom: 4, preferCanvas: true });
+// Default to a whole-world view so everyone sees their region on load, and cap
+// panning to a single world copy. Markers + the kingdom overlay don't repeat
+// across copies, so panning past the edge used to reveal blank space with no
+// data — capping the bounds fixes that and is lighter than rendering true
+// infinite copies.
+const HOME_BOUNDS = L.latLngBounds([[-48, -140], [68, 178]]);   // the SCA-populated world
+const map = L.map('map', {
+  center: [20, 10], zoom: 2, preferCanvas: true,
+  worldCopyJump: false,
+  maxBounds: [[-85, -180], [85, 180]],
+  maxBoundsViscosity: 1.0,
+});
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors · Canada CD boundaries adapted from Statistics Canada, 2021 Census',
-  maxZoom: 19,
+  maxZoom: 19, noWrap: true,   // single world; don't render repeated copies
 }).addTo(map);
 
 // ── Kingdom overlay (county-level) ───────────────────────────────
@@ -949,19 +961,25 @@ function loadKingdomOverlay() {
 
 // ── Icon factory ─────────────────────────────────────────────────
 const iconCache = {};
-function makeIcon(color, scale = 1) {
-  const key = `${color}|${scale}`;
+function makeIcon(color, scale = 1, count = null) {
+  const key = `${color}|${scale}|${count == null ? '' : count}`;
   if (iconCache[key]) return iconCache[key];
-  // Ensure light-coloured pins get a dark stroke so they're visible
-  const stroke = (color === '#f0f0f0' || color === '#d8d8d8' || color === '#e8e0b0' ||
-                  color === '#ffd700' || color === '#7fff00')
-    ? '#444' : '#fff';
+  // Light pins get a dark outline + ink, dark pins white — luminance-based so the
+  // edge (and any cluster count) always reads, and every pin is consistent.
+  const ink = isLightColor(color) ? '#333' : '#fff';
   // viewBox stays 24×36; width/height scale the rendered pin (war pins are bigger).
   const w = Math.round(24 * scale), h = Math.round(36 * scale);
+  // A single-event pin shows a small dot; a cluster pin shows the event count in
+  // its place — the ONLY difference, so clusters read as same-size, same-outline
+  // pins rather than a separate style.
+  const inner = count == null
+    ? `<circle cx="12" cy="12" r="4.5" fill="${ink}" fill-opacity="0.7"/>`
+    : `<text x="12" y="15.8" text-anchor="middle" font-family="-apple-system, system-ui, sans-serif"
+             font-size="${count > 99 ? 9 : 11}" font-weight="700" fill="${ink}">${count}</text>`;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="${w}" height="${h}">
     <path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 24 12 24S24 21 24 12C24 5.37 18.63 0 12 0z"
-          fill="${color}" stroke="${stroke}" stroke-width="1.8"/>
-    <circle cx="12" cy="12" r="4.5" fill="${stroke}" fill-opacity="0.7"/>
+          fill="${color}" stroke="${ink}" stroke-width="1.8"/>
+    ${inner}
   </svg>`;
   const icon = L.divIcon({
     html: svg, className: '',
@@ -978,26 +996,15 @@ function makeIcon(color, scale = 1) {
 const WAR_PIN_SCALE = 1.6;
 
 // ── Cluster icon ─────────────────────────────────────────────────
-// When "Aggregate events" collapses co-located markers, draw the count as a map
-// pin (matching the event pins) coloured by the most common kingdom in the
-// group, instead of leaflet.markercluster's default circle.
+// "Number events in the same location" collapses co-located markers into one
+// pin showing the count, drawn as a normal event pin (same size + outline) and
+// coloured by the most common kingdom in the group — so the only difference from
+// a single-event pin is the number in the centre.
 function isLightColor(hex) {
   const m = String(hex || '').replace('#', '');
   if (m.length < 6) return false;
   const r = parseInt(m.slice(0, 2), 16), g = parseInt(m.slice(2, 4), 16), b = parseInt(m.slice(4, 6), 16);
   return (0.299 * r + 0.587 * g + 0.114 * b) > 150;   // perceived luminance
-}
-function clusterPinIcon(count, color) {
-  const ink = isLightColor(color) ? '#222' : '#fff';   // contrast the number + outline
-  const fs  = count > 99 ? 8 : (count > 9 ? 10 : 11);
-  const w = 32, h = 46;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="${w}" height="${h}">
-    <path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 24 12 24S24 21 24 12C24 5.37 18.63 0 12 0z"
-          fill="${color}" stroke="${ink}" stroke-width="1.4"/>
-    <text x="12" y="15.6" text-anchor="middle" font-family="-apple-system, system-ui, sans-serif"
-          font-size="${fs}" font-weight="700" fill="${ink}">${count}</text>
-  </svg>`;
-  return L.divIcon({ html: svg, className: '', iconSize: [w, h], iconAnchor: [w / 2, h], popupAnchor: [0, -(h - 2)] });
 }
 function makeClusterIcon(cluster) {
   // Colour by the dominant kingdom among the clustered markers — each marker
@@ -1009,7 +1016,7 @@ function makeClusterIcon(cluster) {
   });
   let color = '#6b7280', best = 0;
   for (const c in tally) if (tally[c] > best) { best = tally[c]; color = c; }
-  return clusterPinIcon(cluster.getChildCount(), color);
+  return makeIcon(color, 1, cluster.getChildCount());   // a normal pin + a count
 }
 
 // ── Date helpers ─────────────────────────────────────────────────
@@ -1236,20 +1243,20 @@ let markerMap   = {};   // index → Leaflet marker
 // at wide zoom covers whole metros; instead we convert a fixed ~150m ground
 // distance to pixels at the current zoom (Web Mercator, ~lat 39N), floored at
 // 1px. Bump the 150 if you want slightly looser grouping.
-function clusterRadiusPx(zoom) {
-  const metersPerPx = 156543.03 * Math.cos(39 * Math.PI / 180) / Math.pow(2, zoom);
-  return Math.max(1, Math.round(150 / metersPerPx));
-}
+// Cluster markers within ~a pin-width of each other in SCREEN pixels, so
+// overlapping pins collapse into a count and separate only once you've zoomed in
+// far enough that they'd no longer visually overlap. A fixed pixel radius (not a
+// ground distance) so it tracks what actually looks cluttered at any zoom.
+const CLUSTER_RADIUS_PX = 34;
 const CLUSTER_OPTS = { chunkedLoading: true, showCoverageOnHover: false,
-                       maxClusterRadius: clusterRadiusPx,
+                       maxClusterRadius: CLUSTER_RADIUS_PX,
                        iconCreateFunction: makeClusterIcon };
-// Events: clustering is user-toggleable via the "Aggregate events" checkbox.
-// On by default: co-located events collapse into one numbered pin (coloured by
-// dominant kingdom — see makeClusterIcon). When off, maxClusterRadius is 0 so
-// every event renders as its own pin (the spiral-offset below keeps co-located
-// ones individually clickable).
+// Events: clustering is user-toggleable via the "Number events in the same
+// location" checkbox (on by default). When off, maxClusterRadius is 0 so every
+// event renders as its own pin (the spiral-offset below keeps co-located ones
+// individually clickable).
 function eventClusterRadius(zoom) {
-  return document.getElementById('chk-aggregate').checked ? clusterRadiusPx(zoom) : 0;
+  return document.getElementById('chk-aggregate').checked ? CLUSTER_RADIUS_PX : 0;
 }
 const markerLayer = L.markerClusterGroup(
   { ...CLUSTER_OPTS, maxClusterRadius: eventClusterRadius }).addTo(map);
@@ -1956,7 +1963,7 @@ Promise.all([
     // cache hit applyFilters() can otherwise run before layout, keying the canvas
     // renderer + cluster grid to a 0-size projection so far regions (Asia/Europe)
     // stay unpainted until a redraw (the "no events until refresh" symptom).
-    map.whenReady(() => { map.invalidateSize(); applyFilters(); });
+    map.whenReady(() => { map.invalidateSize(); map.fitBounds(HOME_BOUNDS); applyFilters(); });
   })
   .catch(err => {
     document.getElementById('sidebar-list').innerHTML =
@@ -2053,7 +2060,7 @@ document.querySelectorAll('.sidebar-tab').forEach(btn => {
       // into a region, since the sidebar list is scoped to the visible area.
       // (fit-to-all-markers would jump to a whole-world view, since events
       // span Lochac/Drachenwald; the home view is the familiar starting point.)
-      if (mode === 'map') map.setView([38, -96], 4);
+      if (mode === 'map') map.fitBounds(HOME_BOUNDS);
       return;
     }
     sidebarMode = mode;
