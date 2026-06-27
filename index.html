@@ -723,21 +723,24 @@ function eventColor(ev) {
 // preferCanvas renders the county-level kingdom overlay (~3000 polygons) on a
 // single <canvas> instead of thousands of SVG/DOM nodes — much smoother pan/
 // zoom when the overlay is on, visually identical.
-// Default to a whole-world view so everyone sees their region on load, and cap
-// panning to a single world copy. Markers + the kingdom overlay don't repeat
-// across copies, so panning past the edge used to reveal blank space with no
-// data — capping the bounds fixes that and is lighter than rendering true
-// infinite copies.
+// Default to a whole-world view so everyone sees their region on load. The map
+// is painted as THREE world copies — centre, left (−360°), right (+360°) — so
+// panning across the antimeridian stays continuous: markers and the kingdom
+// overlay are drawn on each copy (see WORLD_COPIES) instead of only the centre,
+// where panning off the edge used to reveal blank space. Panning is then capped
+// to exactly those three copies, so it can't drift into the void beyond them —
+// bounded, so we never pay to paint an unlimited number of worlds.
 const HOME_BOUNDS = L.latLngBounds([[-48, -140], [68, 178]]);   // the SCA-populated world
+const WORLD_COPIES = [-360, 0, 360];   // longitude offsets of the three painted copies
 const map = L.map('map', {
   center: [20, 10], zoom: 2, preferCanvas: true,
   worldCopyJump: false,
-  maxBounds: [[-85, -180], [85, 180]],
+  maxBounds: [[-85, -540], [85, 540]],   // three world copies wide (centre ±360°)
   maxBoundsViscosity: 1.0,
 });
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors · Canada CD boundaries adapted from Statistics Canada, 2021 Census',
-  maxZoom: 19, noWrap: true,   // single world; don't render repeated copies
+  maxZoom: 19,   // tiles wrap freely to fill all three copies
 }).addTo(map);
 
 // ── Kingdom overlay (county-level) ───────────────────────────────
@@ -890,8 +893,18 @@ function loadKingdomOverlay() {
       });
     } catch (e) { /* no CSV -> US counties render uncoloured */ }
 
-    const countiesLayer = L.geoJSON(counties, {
-      style: feature => {
+    // Paint the overlay on each of the three world copies (±360°) so the kingdom
+    // tint follows you across the antimeridian just like the markers. coordsToLatLng
+    // shifts a copy's longitude; Leaflet's canvas clips to the viewport, so the
+    // off-screen copies cost almost nothing per frame — only a one-off build.
+    const offsetGeoJSON = (data, style, onEachFeature) =>
+      WORLD_COPIES.map(dx => L.geoJSON(data, {
+        coordsToLatLng: c => L.latLng(c[1], c[0] + dx),
+        style, onEachFeature,
+      }));
+
+    const countiesLayers = offsetGeoJSON(counties,
+      feature => {
         const fips = String(feature.id || '').padStart(5, '0');
         return {
           color: '#222',         // border
@@ -901,17 +914,16 @@ function loadKingdomOverlay() {
           interactive: true,
         };
       },
-      onEachFeature: (feature, layer) => {
+      (feature, layer) => {
         layer.on('mouseover mousemove', (e) => {
           const fips = String(feature.id || '').padStart(5, '0');
           showOverlayTooltip(e, overlayLabel(territoryForFIPS(fips)));
         });
         layer.on('mouseout', closeOverlayTooltip);
-      },
-    });
+      });
 
-    const worldLayer = L.geoJSON(world, {
-      style: feature => {
+    const worldLayers = offsetGeoJSON(world,
+      feature => {
         const p = feature.properties || {};
         return {
           color: '#222',
@@ -921,17 +933,16 @@ function loadKingdomOverlay() {
           interactive: true,
         };
       },
-      onEachFeature: (feature, layer) => {
+      (feature, layer) => {
         layer.on('mouseover mousemove', (e) => {
           const p = feature.properties || {};
           showOverlayTooltip(e, overlayLabel({ kingdom: p.kingdom, parent: p.parent }));
         });
         layer.on('mouseout', closeOverlayTooltip);
-      },
-    });
+      });
 
-    const canadaCdLayer = L.geoJSON(canadaCd, {
-      style: feature => {
+    const canadaCdLayers = offsetGeoJSON(canadaCd,
+      feature => {
         const p = feature.properties || {};
         return {
           color: '#222',
@@ -941,16 +952,15 @@ function loadKingdomOverlay() {
           interactive: true,
         };
       },
-      onEachFeature: (feature, layer) => {
+      (feature, layer) => {
         layer.on('mouseover mousemove', (e) => {
           const p = feature.properties || {};
           showOverlayTooltip(e, overlayLabel(territoryForCD(p.CDUID, p.PRUID)));
         });
         layer.on('mouseout', closeOverlayTooltip);
-      },
-    });
+      });
 
-    kingdomOverlay = L.layerGroup([worldLayer, canadaCdLayer, countiesLayer]);
+    kingdomOverlay = L.layerGroup([...worldLayers, ...canadaCdLayers, ...countiesLayers]);
     return kingdomOverlay;
   })();
   // Don't cache a rejection forever (a flaky CDN script or fetch): clear it so
@@ -1636,18 +1646,26 @@ function applyFilters() {
     const [plotLat, plotLng] = spiralOffset(lat, lng);
     const hostColor = warHostColor[ev._idx];   // set only on the one big war pin
     const color = hostColor || eventColor(ev);
-    const marker = L.marker([plotLat, plotLng], {
-      icon: makeIcon(color, hostColor ? WAR_PIN_SCALE : 1),
-      kingdomColor: color,   // read by makeClusterIcon to colour a cluster by dominant kingdom
-      // filtered is sorted soonest-first, so give the soonest event the highest
-      // z-index — it stays on top when pins overlap (esp. with aggregation off).
-      // The big war pin floats above everything so it isn't buried under small ones.
-      zIndexOffset: (filtered.length - i) + (hostColor ? 1e6 : 0),
-    });
-    marker.bindPopup(() => buildPopup(ev), { maxWidth: 320, maxHeight: 280 });
+    const icon = makeIcon(color, hostColor ? WAR_PIN_SCALE : 1);
+    // filtered is sorted soonest-first, so give the soonest event the highest
+    // z-index — it stays on top when pins overlap (esp. with aggregation off).
+    // The big war pin floats above everything so it isn't buried under small ones.
+    const z = (filtered.length - i) + (hostColor ? 1e6 : 0);
     // War host pins bypass clustering (warLayer) so they always show as the big pin.
-    (hostColor ? warLayer : markerLayer).addLayer(marker);
-    markerMap[ev._idx] = marker;
+    const layer = hostColor ? warLayer : markerLayer;
+    // Paint the pin on all three world copies (±360°) so it's visible whichever
+    // copy you've panned to; the centre copy is the canonical one markerMap (and
+    // thus the sidebar + the "mapped" count) points at.
+    WORLD_COPIES.forEach(dx => {
+      const marker = L.marker([plotLat, plotLng + dx], {
+        icon,
+        kingdomColor: color,   // read by makeClusterIcon to colour a cluster by dominant kingdom
+        zIndexOffset: z,
+      });
+      marker.bindPopup(() => buildPopup(ev), { maxWidth: 320, maxHeight: 280 });
+      layer.addLayer(marker);
+      if (dx === 0) markerMap[ev._idx] = marker;
+    });
   };
   filtered.forEach((ev, i) => { if (warHostColor[ev._idx]) renderEventMarker(ev, i); });
   filtered.forEach((ev, i) => { if (!warHostColor[ev._idx]) renderEventMarker(ev, i); });
@@ -1743,13 +1761,18 @@ function applyFilters() {
       // Use the same spiral so a barony pin lands beside any event already
       // pinned at that exact coord (Delftwood + its own Syracuse event etc.).
       const [plotLat, plotLng] = spiralOffset(lat, lng);
-      const marker = L.marker([plotLat, plotLng], {
-        icon: placeholderIconWithBadge(online.length),
-        opacity: online.length ? 1 : 0.9,
-        kingdomColor: KINGDOM_COLORS[(pin.kingdom || '').trim()],   // colour a "?" cluster by kingdom
+      const phIcon = placeholderIconWithBadge(online.length);
+      const phColor = KINGDOM_COLORS[(pin.kingdom || '').trim()];   // colour a "?" cluster by kingdom
+      // Paint the "?" pin on all three world copies (±360°), matching the events.
+      WORLD_COPIES.forEach(dx => {
+        const marker = L.marker([plotLat, plotLng + dx], {
+          icon: phIcon,
+          opacity: online.length ? 1 : 0.9,
+          kingdomColor: phColor,
+        });
+        marker.bindPopup(() => buildPlaceholderPopup(pin, online), { maxWidth: 320, maxHeight: 280 });
+        placeholderLayer.addLayer(marker);
       });
-      marker.bindPopup(() => buildPlaceholderPopup(pin, online), { maxWidth: 320, maxHeight: 280 });
-      placeholderLayer.addLayer(marker);
     });
   }
 
@@ -1776,7 +1799,16 @@ function renderSidebarList() {
 
   ensureVirtualParents();
   const inMapMode = (sidebarMode === 'map');
-  const bounds = map.getBounds();
+  // Markers + group coords live on the CENTRE copy, but the view may be panned to
+  // a side copy (±360°). Shift the view bounds back by whole copies so "in view"
+  // is judged against the canonical centre-copy coordinates.
+  const rawBounds = map.getBounds();
+  const copyShift = Math.round(map.getCenter().lng / 360) * 360;
+  const bounds = copyShift
+    ? L.latLngBounds(
+        [rawBounds.getSouth(), rawBounds.getWest() - copyShift],
+        [rawBounds.getNorth(), rawBounds.getEast() - copyShift])
+    : rawBounds;
   const shown = inMapMode
     ? lastFiltered.filter(ev => {
         const marker = markerMap[ev._idx];
@@ -1850,7 +1882,18 @@ function renderSidebarList() {
           return;
         }
         const marker = markerMap[ev._idx];
-        if (marker) markerLayer.zoomToShowLayer(marker, () => marker.openPopup());
+        if (marker) {
+          // markerMap holds the centre-copy marker. If the user has panned onto a
+          // side copy (±360°), snap back to the centre copy first — a whole-world
+          // shift is seamless because every copy is painted identically — so we
+          // don't fly the view a full world sideways before zooming to the pin.
+          const copyShift = Math.round(map.getCenter().lng / 360) * 360;
+          if (copyShift) {
+            const c = map.getCenter();
+            map.setView([c.lat, c.lng - copyShift], map.getZoom(), { animate: false });
+          }
+          markerLayer.zoomToShowLayer(marker, () => marker.openPopup());
+        }
       };
       item.tabIndex = 0;
       item.setAttribute('role', 'button');
@@ -1866,7 +1909,7 @@ function renderSidebarList() {
   }
 
   const mapCount = Object.keys(markerMap).length;
-  const placeholderCount = placeholderLayer.getLayers().length;
+  const placeholderCount = placeholderLayer.getLayers().length / WORLD_COPIES.length;   // 3 copies per group
   const placeholderSuffix = placeholderCount ? ` · ${placeholderCount} barony pins` : '';
   document.getElementById('sidebar-count').textContent = inMapMode
     ? `${shown.length} in view · ${mapCount} mapped${placeholderSuffix}`
