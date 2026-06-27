@@ -32,6 +32,16 @@ OUTPUT_FILE = SCRIPT_DIR / "world-kingdoms.topojson"
 ADMIN1_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_1_states_provinces.geojson"
 COUNTRIES_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson"
 
+# SCA borders don't follow national ones. France's Natural Earth shape bundles its
+# overseas departments — French Guiana (South America), Guadeloupe/Martinique
+# (Caribbean), Réunion/Mayotte (Indian Ocean) — into one country polygon. They're
+# administratively French but nowhere near Drachenwald, so colouring them by the
+# national border is exactly the wrong call. For the countries below we keep only
+# the polygons inside EUROPE_BBOX; the far-flung departments are left unassigned
+# (a real group there can be added explicitly later from admin-1 data).
+CLIP_TO_EUROPE = {"France"}
+EUROPE_BBOX = (-12.0, 35.0, 30.0, 72.0)   # (min_lng, min_lat, max_lng, max_lat)
+
 # ---------------------------------------------------------------------------
 # Province (Canada, by ISO 3166-2) + country (by name) -> kingdom assignments
 # live in territory_kingdoms.csv, the single editable territory registry (which
@@ -59,6 +69,33 @@ def load_territory():
             elif t == "country":
                 country[(r.get("id") or "").strip()] = (kingdom, parent)
     return canada, country
+
+
+def _bbox_of(ring):
+    xs = [p[0] for p in ring]
+    ys = [p[1] for p in ring]
+    return min(xs), min(ys), max(xs), max(ys)
+
+
+def _intersects(a, b):
+    return not (a[2] < b[0] or a[0] > b[2] or a[3] < b[1] or a[1] > b[3])
+
+
+def clip_to_bbox(geom, bbox):
+    """Drop the constituent polygons of a (Multi)Polygon whose bounding box lies
+    wholly outside `bbox` — used to strip a country's far-flung overseas pieces.
+    Returns the trimmed geometry, or None if nothing is left."""
+    if geom["type"] == "Polygon":
+        return geom if _intersects(_bbox_of(geom["coordinates"][0]), bbox) else None
+    if geom["type"] == "MultiPolygon":
+        kept = [poly for poly in geom["coordinates"]
+                if _intersects(_bbox_of(poly[0]), bbox)]
+        if not kept:
+            return None
+        if len(kept) == 1:
+            return {"type": "Polygon", "coordinates": kept[0]}
+        return {"type": "MultiPolygon", "coordinates": kept}
+    return geom
 
 
 def main():
@@ -95,6 +132,11 @@ def main():
         }
         if parent:
             f["properties"]["parent"] = parent
+        if name in CLIP_TO_EUROPE:
+            clipped = clip_to_bbox(f["geometry"], EUROPE_BBOX)
+            if clipped is None:
+                continue
+            f["geometry"] = clipped
         out_features.append(f)
 
     fc = {"type": "FeatureCollection", "features": out_features}

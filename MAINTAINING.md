@@ -225,8 +225,12 @@ Notes:
 - **Excel strips leading zeros** from FIPS (`02`→`2`) when it saves the CSV; the
   code zero-pads on read, so it still works — don't bother re-padding by hand.
 - Canada is now census-division level, so most sub-province splits *can* be
-  drawn via `type=cd`. The main remaining country-level limit is France
-  (whole-country, so no French Guiana split).
+  drawn via `type=cd`. World countries are still whole-country, with one
+  exception: `build_world_kingdoms.py` clips **France** to its metropolitan-
+  Europe landmass (`CLIP_TO_EUROPE` / `EUROPE_BBOX`), so its overseas departments
+  (French Guiana, Guadeloupe, Martinique, Réunion, Mayotte) are left unassigned
+  rather than coloured Drachenwald across an ocean. If a group ever forms in one,
+  add it explicitly from admin-1 data rather than re-bundling all of France.
 - The Canada boundaries come from **Statistics Canada's 2021 Census cartographic
   boundary file** (open licence — keep the "Statistics Canada" credit in the map
   attribution). To refresh them (rare — the divisions barely change): download
