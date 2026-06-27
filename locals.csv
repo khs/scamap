@@ -1,7 +1,7 @@
 kingdom,group,type,calendar_id,website,social,date_last_checked,location,lat,lng
 Kingdom of AEthelmearc,Barony of Blackstone Mountain,barony,https://calendar.google.com/calendar/ical/c_d6453db8285ea1492aab076fe4949bcacfb84af6b4ac35188ca7b0e1bbeba2f2%40group.calendar.google.com/public/basic.ics,https://blackstonemountain.aethelmearc.org/index.html,,2026-06-22,"South-Central, WV",39.34563,-81.522901
 Kingdom of AEthelmearc,Barony of Delftwood,barony,https://calendar.google.com/calendar/ical/bni344ah5mpqqut0m4b3gsshos%40group.calendar.google.com/public/basic.ics,http://delftwood.aethelmearc.org/,,2026-06-22,"Syracuse, NY",43.048122,-76.147424
-Kingdom of AEthelmearc,Barony of Endless Hills,barony,No Calendar Listed,http://endlesshills.aethelmearc.org/,,2026-06-22,"Northeastern, PA",40.064833,-76.715664
+Kingdom of AEthelmearc,Barony of Endless Hills,barony,No Calendar Available,http://endlesshills.aethelmearc.org/,,2026-06-22,"Northeastern, PA",40.064833,-76.715664
 Kingdom of AEthelmearc,Barony of Rhydderich Hael,barony,https://calendar.google.com/calendar/ical/c_hk52o44q9htpbnme5lrhh07cms%40group.calendar.google.com/public/basic.ics,http://hael.aethelmearc.org/,,2026-06-22,"Niagara Frontier, NY",42.919431,-78.830998
 Kingdom of AEthelmearc,Barony of St. Swithin’s Bog,barony,https://calendar.google.com/calendar/ical/c_8d6a8f3d25875c3a684c1b9d9183385297df27a629a58cf35e5df3ca84929486%40group.calendar.google.com/public/basic.ics,http://stswithinsbog.aethelmearc.org/,,2026-06-22,"Cambria, Somerset, Bedford and Westmoreland Co, PA",40.24118,-78.880202
 Kingdom of AEthelmearc,Barony of Thescorre,barony,https://calendar.google.com/calendar/ical/thescorre%40aethelmearc.org/public/basic.ics,http://thescorre.aethelmearc.org/,,2026-06-22,"Rochester, NY",43.157285,-77.615214
@@ -29,9 +29,9 @@ Kingdom of AEthelmearc,Shire of Sylvan Glen,shire,https://calendar.google.com/ca
 Kingdom of AEthelmearc,Shire of Wyntersett,shire,No Calendar Listed,https://wyntersett.aethelmearc.org/,,2026-06-22,"Watertown and Fort Drum, NY",43.974784,-75.910757
 Kingdom of AEthelmearc,Barony-Marche of the Debatable Lands,barony,https://calendar.google.com/calendar/ical/ibb4efj077r3gc9kkqvgcik39s%40group.calendar.google.com/public/basic.ics,https://debatablelands.aethelmearc.org/,,,,,
 Kingdom of AEthelmearc,Dominion of Myrkfaelinn,barony,https://calendar.google.com/calendar/ical/qa1439mm9bjl7qeki5au9rn8muiqoj8r%40import.calendar.google.com/public/basic.ics,https://myrkfaelinn.aethelmearc.org/,,,,,
-Kingdom of An Tir,Barony of Adiantum,barony,No Calendar Listed,http://adiantum.antir.sca.org/,,2026-06-22,"Eugene, OR",44.050505,-123.095051
-Kingdom of An Tir,Barony of Aquaterra,barony,No Calendar Listed,http://aquaterra.antir.sca.org/,,2026-06-22,"Bremerton, WA",47.565366,-122.624684
-Kingdom of An Tir,Barony of Blatha an Oir,barony,No Calendar Listed,http://blathaanoir.antir.sca.org/,,2026-06-22,"Whitefish, MT",48.410802,-114.334624
+Kingdom of An Tir,Barony of Adiantum,barony,https://calendar.google.com/calendar/ical/quh9m8e51pjkq2vls3of2keif46lvfb5%40import.calendar.google.com/public/basic.ics,http://adiantum.antir.sca.org/,,2026-06-22,"Eugene, OR",44.050505,-123.095051
+Kingdom of An Tir,Barony of Aquaterra,barony,https://aquaterra.antir.org/my-calendar/?vcal=845,http://aquaterra.antir.sca.org/,,2026-06-22,"Bremerton, WA",47.565366,-122.624684
+Kingdom of An Tir,Barony of Blatha an Oir,barony,https://calendar.google.com/calendar/ical/06khlsejmr1dl0pc5nrqa2oojuvj82mt%40import.calendar.google.com/public/basic.ics,http://blathaanoir.antir.sca.org/,,2026-06-22,"Whitefish, MT",48.410802,-114.334624
 Kingdom of An Tir,Barony of Dragon's Mist,barony,No Calendar Listed,http://dragonsmist.antir.sca.org/,,2026-06-22,"Hillsboro, OR",45.522894,-122.989827
 Kingdom of An Tir,Barony of Dragons Laire,barony,No Calendar Listed,https://dragonslaire.antir.org/wordpress/,,2026-06-22,"Silverdale, WA",47.659409,-122.676632
 Kingdom of An Tir,Barony of Glymm Mere,barony,No Calendar Listed,https://glymmmere.antir.org/,,2026-06-22,"Olympia, WA",47.045102,-122.895008
@@ -260,32 +260,32 @@ Kingdom of Ealdormere,Canton of Caldrithig,canton,No Calendar Available,https://
 Kingdom of Ealdormere,Canton of Monadh,canton,No Calendar Available,https://ealdormere.ca/canton-of-monadh,,2026-06-22,"Almonte, Ontario, Canada",45.226049,-76.194528
 Kingdom of Ealdormere,Canton of Northgeatham,canton,No Calendar Available,https://ealdormere.ca/canton-of-northgeatham/,,2026-06-22,"Aurora, Ontario, Canada",43.99973,-79.467545
 Kingdom of Ealdormere,Canton of Petrea Thule,canton,No Calendar Listed,https://ealdormere.ca/petrea-thule,,2026-06-22,"Sault Ste. Marie, Ontario, Canada",46.512655,-84.33303
-Kingdom of Ealdormere,Canton of Skeldergate,canton,No Calendar Listed,,,2026-06-22,"Etobicoke, Ontario, Canada",43.643556,-79.565633
-Kingdom of Ealdormere,Canton of Vest Yorvik,canton,No Calendar Listed,,,2026-06-22,"Newmarket, Ontario, Canada",44.056258,-79.461708
-Kingdom of Ealdormere,Shire of Bastille du Lac,shire,No Calendar Listed,https://ealdormere.ca/bastille-du-lac,,2026-06-22,"Sarnia, Ontario, Canada",42.974382,-82.403533
+Kingdom of Ealdormere,Canton of Skeldergate,canton,No Calendar Listed,https://www.facebook.com/cantonofskeldergate/,,2026-06-22,"Etobicoke, Ontario, Canada",43.643556,-79.565633
+Kingdom of Ealdormere,Canton of Vest Yorvik,canton,https://calendar.google.com/calendar/ical/p24dbs9bp1hmk22nf0urd2rhhg%40group.calendar.google.com/public/basic.ics,https://vywebminister.wixsite.com/vestyorvik,,2026-06-22,"Newmarket, Ontario, Canada",44.056258,-79.461708
+Kingdom of Ealdormere,Shire of Bastille du Lac,shire,No Calendar Available,https://ealdormere.ca/bastille-du-lac,,2026-06-22,"Sarnia, Ontario, Canada",42.974382,-82.403533
 Kingdom of Ealdormere,Shire of Champcorbeau,shire,No Calendar Listed,https://www.ealdormere.ca/champcorbeau/,,2026-06-22,"Sault Ste. Marie, Ontario, Canada",46.512655,-84.33303
-Kingdom of Ealdormere,Shire of Trinovantia Nova,shire,No Calendar Listed,https://ealdormere.ca/trinovantia-nova,,2026-06-22,"London, Ontario, Canada",42.983675,-81.249607
-Kingdom of Ealdormere,Shire of Ulfheim,shire,No Calendar Listed,,,2026-06-22,"Sudbury, Ontario, Canada",46.49272,-80.991211
-Kingdom of Ealdormere,Stronghold of Greyfells,stronghold,No Calendar Listed,http://skraelingalthing.com/wp/greyfells/,,2026-06-22,"Pembroke, Ontario, Canada",45.820974,-77.111543
-Kingdom of Ealdormere,Stronghold of Tor Brant,stronghold,No Calendar Listed,http://www.skraelingalthing.com/wp/torbrant/,,2026-06-22,"Arnprior, Ontario, Canada",45.433515,-76.354369
-Kingdom of Gleann Abhann,Barony of Axemoor,barony,No Calendar Listed,http://www.axemoor.net/,,2026-06-22,"New Orleans, LA Area south of Lake Pontchartrain",30.042537,-90.027783
-Kingdom of Gleann Abhann,Barony of Grey Niche,barony,No Calendar Listed,http://www.greyniche.net/,,2026-06-22,"Memphis, TN and surrounding area",33.136514,-88.297534
-Kingdom of Gleann Abhann,Barony of Seleone,barony,No Calendar Listed,http://seleone.org,,2026-06-22,"Gulfport/Biloxi, MS and surrounding area",30.36742,-89.092816
-Kingdom of Gleann Abhann,Barony of Small Gray Bear,barony,No Calendar Listed,http://www.smallgraybear.org/,,2026-06-22,"Central Arkansas including Little Rock, North Little Rock, Sherwood, Jacksonville, Pine Bluff and surrounding areas",30.554227,-91.036717
+Kingdom of Ealdormere,Shire of Trinovantia Nova,shire,No Calendar Available,https://ealdormere.ca/trinovantia-nova,,2026-06-22,"London, Ontario, Canada",42.983675,-81.249607
+Kingdom of Ealdormere,Shire of Ulfheim,shire,No Calendar Available,https://shireofulfheim.com/,,2026-06-22,"Sudbury, Ontario, Canada",46.49272,-80.991211
+Kingdom of Ealdormere,Stronghold of Greyfells,stronghold,No Calendar Available,http://skraelingalthing.com/wp/greyfells/,,2026-06-22,"Pembroke, Ontario, Canada",45.820974,-77.111543
+Kingdom of Ealdormere,Stronghold of Tor Brant,stronghold,No Calendar Available,http://www.skraelingalthing.com/wp/torbrant/,,2026-06-22,"Arnprior, Ontario, Canada",45.433515,-76.354369
+Kingdom of Gleann Abhann,Barony of Axemoor,barony,https://calendar.google.com/calendar/ical/ei9bk3lu1hnderkk8jcecms73g%40group.calendar.google.com/public/basic.ics,http://www.axemoor.net/,https://www.facebook.com/groups/103470807512,2026-06-22,"New Orleans, LA Area south of Lake Pontchartrain",30.042537,-90.027783
+Kingdom of Gleann Abhann,Barony of Grey Niche,barony,No Calendar Available,http://www.greyniche.net/,,2026-06-22,"Memphis, TN and surrounding area",33.136514,-88.297534
+Kingdom of Gleann Abhann,Barony of Seleone,barony,No Calendar Available,http://seleone.org,https://www.facebook.com/groups/175414189142977,2026-06-22,"Gulfport/Biloxi, MS and surrounding area",30.36742,-89.092816
+Kingdom of Gleann Abhann,Barony of Small Gray Bear,barony,No Calendar Listed,http://www.smallgraybear.org/,https://www.facebook.com/groups/smallgraybear,2026-06-22,"Central Arkansas including Little Rock, North Little Rock, Sherwood, Jacksonville, Pine Bluff and surrounding areas",30.554227,-91.036717
 Kingdom of Gleann Abhann,Province of Lagerdamm,province,No Calendar Listed,http://www.lagerdamm.org/,,2026-06-22,"Conway, AR and surrounding Areas",35.2522,-92.688894
-Kingdom of Gleann Abhann,Shire of Ardanroe,shire,No Calendar Listed,,,2026-06-22,"Shreveport, LA and surrounding area",32.513536,-93.747784
-Kingdom of Gleann Abhann,Shire of Blackmoor Keep,shire,No Calendar Listed,,,2026-06-22,"Lake Charles, LA and surrounding area",30.379032,-92.190491
-Kingdom of Gleann Abhann,Shire of Caer Dun,shire,No Calendar Listed,http://caerdun.net,,2026-06-22,"Southeast, MS (east of the Barony of Seleone)",34.088288,-117.534267
-Kingdom of Gleann Abhann,Shire of Coill Fhionnabhann,shire,No Calendar Listed,,,2026-06-22,"Searcy, AR",35.901899,-92.709874
-Kingdom of Gleann Abhann,Shire of Dragoun’s Weal,shire,No Calendar Listed,,,2026-06-22,"Laurel/Hattiesburg, MS and surrounding area",31.694051,-89.130612
-Kingdom of Gleann Abhann,Shire of Iron Ox,shire,No Calendar Listed,http://ironox.org/,,2026-06-22,"Jackson, MS and surrounding area",35.577089,-91.196742
-Kingdom of Gleann Abhann,Shire of Loch Bais,shire,No Calendar Listed,,,2026-06-22,"Natchitoches, LA and surrounding area",31.760673,-93.086021
-Kingdom of Gleann Abhann,Shire of Ravenshold,shire,No Calendar Listed,,,2026-06-22,"Jonesboro, AR",35.834809,-90.70453
-Kingdom of Gleann Abhann,Shire of Smythkepe,shire,No Calendar Listed,,,2026-06-22,"Fort Smith, AR and surrounding areas",35.388034,-94.426501
-Kingdom of Gleann Abhann,Shire of Tor An Riogh,shire,No Calendar Listed,,,2026-06-22,"Starkville/Columbus/Tupelo, MS and surrounding area",33.463875,-88.815207
-Kingdom of Gleann Abhann,Shire of Troll Fen,shire,No Calendar Listed,http://troll-fen.org,,2026-06-22,"Lafayette, LA and surrounding area",33.182148,-93.597246
-Kingdom of Gleann Abhann,Shire of Vogelburg,shire,No Calendar Listed,,,2026-06-22,"Alexandria, LA and surrounding area",31.311946,-92.445356
-Kingdom of Gleann Abhann,Shire of Wyrmgeist,shire,No Calendar Listed,http://www.wyrmgeist.org/,,2026-06-22,"Baton Rouge, LA and surrounding area",30.449416,-91.186966
+Kingdom of Gleann Abhann,Shire of Ardanroe,shire,No Calendar Available,https://www.facebook.com/groups/301178219171/,,2026-06-22,"Shreveport, LA and surrounding area",32.513536,-93.747784
+Kingdom of Gleann Abhann,Shire of Blackmoor Keep,shire,No Calendar Listed,https://www.unclejohns.com/blackmoor/,https://www.facebook.com/blackmoorkeep,2026-06-22,"Lake Charles, LA and surrounding area",30.379032,-92.190491
+Kingdom of Gleann Abhann,Shire of Caer Dun,shire,No Calendar Listed,https://www.facebook.com/groups/495612934246396/,,2026-06-22,"Southeast, MS (east of the Barony of Seleone)",34.088288,-117.534267
+Kingdom of Gleann Abhann,Shire of Coill Fhionnabhann,shire,No Calendar Listed,https://coillfhionnabhann.gleannabhann.net/,,2026-06-22,"Searcy, AR",35.901899,-92.709874
+Kingdom of Gleann Abhann,Shire of Dragoun’s Weal,shire,No Calendar Available,https://dragounsweal.gleannabhann.net/wp/,,2026-06-22,"Laurel/Hattiesburg, MS and surrounding area",31.694051,-89.130612
+Kingdom of Gleann Abhann,Shire of Iron Ox,shire,No Calendar Listed,http://ironox.org/,https://www.facebook.com/ShireofIronOx,2026-06-22,"Jackson, MS and surrounding area",35.577089,-91.196742
+Kingdom of Gleann Abhann,Shire of Loch Bais,shire,No Calendar Listed,https://www.facebook.com/ShireofLochBais,,2026-06-22,"Natchitoches, LA and surrounding area",31.760673,-93.086021
+Kingdom of Gleann Abhann,Shire of Ravenshold,shire,No Calendar Listed,https://www.facebook.com/groups/ravenshold,,2026-06-22,"Jonesboro, AR",35.834809,-90.70453
+Kingdom of Gleann Abhann,Shire of Smythkepe,shire,No Calendar Available,https://www.facebook.com/Smythkepe,,2026-06-22,"Fort Smith, AR and surrounding areas",35.388034,-94.426501
+Kingdom of Gleann Abhann,Shire of Tor An Riogh,shire,No Calendar Listed,https://toranriogh.gleannabhann.net/,,2026-06-22,"Starkville/Columbus/Tupelo, MS and surrounding area",33.463875,-88.815207
+Kingdom of Gleann Abhann,Shire of Troll Fen,shire,No Calendar Listed,http://troll-fen.org,https://www.facebook.com/profile.php?id=100081319014431,2026-06-22,"Lafayette, LA and surrounding area",33.182148,-93.597246
+Kingdom of Gleann Abhann,Shire of Vogelburg,shire,No Calendar Listed,http://vogelburg.gleannabhann.net/,https://www.facebook.com/groups/TheShireofVogelburg,2026-06-22,"Alexandria, LA and surrounding area",31.311946,-92.445356
+Kingdom of Gleann Abhann,Shire of Wyrmgeist,shire,No Calendar Listed,http://www.wyrmgeist.org/,https://www.facebook.com/Wyrmgeist,2026-06-22,"Baton Rouge, LA and surrounding area",30.449416,-91.186966
 Kingdom of Lochac,Barony of Aneala,barony,No Calendar Listed,https://aneala.lochac.sca.org/,,2026-06-22,"Perth, Western Australia",-31.955897,115.860578
 Kingdom of Lochac,Barony of Ildhafn,barony,https://calendar.google.com/calendar/ical/ildhafn%40gmail.com/public/basic.ics,https://ildhafn.lochac.sca.org/,,2026-06-22,"Auckland, New Zealand",-36.852095,174.76318
 Kingdom of Lochac,Barony of Innilgard,barony,https://calendar.google.com/calendar/ical/innilgardwebminister%40gmail.com/public/basic.ics,https://innilgard.lochac.sca.org/,,2026-06-22,"Adelaide, South Australia",-34.928181,138.599931
@@ -439,30 +439,30 @@ Kingdom of the East,Shire of Owlsherst,shire,https://www.google.com/calendar/ica
 Kingdom of the East,Shire of Panther Vale,shire,No Calendar Listed,https://panthervale.eastkingdom.org,,2026-06-22,Northeastern Vermont,44.445887,-72.009973
 Kingdom of the East,Shire of Quintavia,shire,https://www.google.com/calendar/ical/013sn8fvdtsbvs6f12ngnkhtbs%40group.calendar.google.com/public/basic.ics,https://quintavia.eastkingdom.org,,2026-06-22,"Worcester County, MA",42.370578,-71.867724
 Kingdom of the East,Shire of Rusted Woodlands,shire,No Calendar Listed,https://rustedwoodlands.eastkingdom.org,,2026-06-22,"Bergen, Sussex, Passaic County, NJ",41.050603,-74.374682
-Kingdom of the Middle,Barony of Andelcrag,barony,No Calendar Listed,https://andelcrag.midrealm.org/,,2026-06-22,"Grand Rapids, Michigan",42.963242,-85.667864
+Kingdom of the Middle,Barony of Andelcrag,barony,No Calendar Available,https://andelcrag.midrealm.org/,,2026-06-22,"Grand Rapids, Michigan",42.963242,-85.667864
 Kingdom of the Middle,Barony of Ayreton,barony,No Calendar Listed,https://ayreton.midrealm.org/,,2026-06-22,"Chicago, Illinois",41.875562,-87.624421
-Kingdom of the Middle,Barony of Brendoken,barony,No Calendar Listed,https://brendoken.midrealm.org/,,2026-06-22,"Akron, Ohio",41.083064,-81.518485
-Kingdom of the Middle,Barony of Carraig Ban,barony,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"DeKalb, Illinois",41.890345,-88.771395
-Kingdom of the Middle,Barony of Cynnabar,barony,No Calendar Listed,https://cynnabar.midrealm.org/,,2026-06-22,"Ann Arbor, Michigan",42.281372,-83.748462
-Kingdom of the Middle,Barony of Fenix,barony,No Calendar Listed,https://fenix.midrealm.org/,,2026-06-22,"Cincinnati, Ohio",39.101281,-84.512741
-Kingdom of the Middle,Barony of Flaming Gryphon,barony,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Dayton, Ohio",39.758948,-84.191607
-Kingdom of the Middle,Barony of Illiton,barony,No Calendar Listed,https://illiton.midrealm.org/,,2026-06-22,"Peoria, Illinois",40.693861,-89.589101
-Kingdom of the Middle,Barony of Northwoods,barony,No Calendar Listed,https://northwoods.midrealm.org/,,2026-06-22,"Lansing, Michigan",42.733825,-84.55463
-Kingdom of the Middle,Barony of Red Spears,barony,No Calendar Listed,https://redspears.midrealm.org/,,2026-06-22,"Toledo, Ohio",41.652914,-83.537817
+Kingdom of the Middle,Barony of Brendoken,barony,https://calendar.google.com/calendar/ical/brendoken.socialmedia%40midrealm.org/public/basic.ics,https://www.brendoken.org/,,2026-06-22,"Akron, Ohio",41.083064,-81.518485
+Kingdom of the Middle,Barony of Carraig Ban,barony,https://calendar.google.com/calendar/ical/carraigban.baron%40midrealm.org/public/basic.ics,https://carraigban.midrealm.org/,,2026-06-22,"DeKalb, Illinois",41.890345,-88.771395
+Kingdom of the Middle,Barony of Cynnabar,barony,No Calendar Available,https://cynnabar.midrealm.org/,,2026-06-22,"Ann Arbor, Michigan",42.281372,-83.748462
+Kingdom of the Middle,Barony of Fenix,barony,No Calendar Available,https://fenix.midrealm.org/,,2026-06-22,"Cincinnati, Ohio",39.101281,-84.512741
+Kingdom of the Middle,Barony of Flaming Gryphon,barony,No Calendar Available,,https://www.facebook.com/groups/TheGryphon/,2026-06-22,"Dayton, Ohio",39.758948,-84.191607
+Kingdom of the Middle,Barony of Illiton,barony,https://calendar.google.com/calendar/ical/illiton.webminister%40midrealm.org/public/basic.ics,https://illiton.midrealm.org/,,2026-06-22,"Peoria, Illinois",40.693861,-89.589101
+Kingdom of the Middle,Barony of Northwoods,barony,No Calendar Available,https://northwoods.midrealm.org/,,2026-06-22,"Lansing, Michigan",42.733825,-84.55463
+Kingdom of the Middle,Barony of Red Spears,barony,No Calendar Available,https://redspears.midrealm.org/calendar/,,2026-06-22,"Toledo, Ohio",41.652914,-83.537817
 Kingdom of the Middle,Barony of Rivenstar,barony,No Calendar Listed,https://rivenstar.midrealm.org/,,2026-06-22,"Lafayette, Indiana",40.419123,-86.891901
-Kingdom of the Middle,Barony of Roaring Wastes,barony,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Detroit, Michigan",42.331551,-83.04664
-Kingdom of the Middle,Barony of Shattered Crystal,barony,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Belleville, Illinois",38.513581,-89.984163
-Kingdom of the Middle,Barony of Sternfeld,barony,No Calendar Listed,https://sternfeld.midrealm.org/,,2026-06-22,"Indianapolis, Indiana",39.768333,-86.15835
-Kingdom of the Middle,Barony of the Cleftlands,barony,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Cleveland, Ohio",41.499657,-81.693677
-Kingdom of the Middle,Barony of the Flame,barony,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Louisville, Kentucky",38.254238,-85.759407
-Kingdom of the Middle,Canton of Ealdnordwuda,canton,No Calendar Listed,https://ealdnordwuda.midrealm.org/,,2026-06-22,"East Lansing, Michigan",42.732031,-84.472168
-Kingdom of the Middle,Canton of Hrothgeirsfjordr,canton,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Toledo, Ohio",41.652914,-83.537817
-Kingdom of the Middle,Canton of Pferdestadt,canton,No Calendar Listed,https://pferdestadt.midrealm.org/,,2026-06-22,"Delaware, Ohio",40.231769,-82.965104
-Kingdom of the Middle,Canton of Rimsholt,canton,No Calendar Listed,https://rimsholt.midrealm.org/,,2026-06-22,"Grand Rapids, Michigan",42.963242,-85.667864
-Kingdom of the Middle,Canton of Vanished Wood,canton,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Chicago, Illinois",41.875562,-87.624421
-Kingdom of the Middle,Province of Tree-Girt-Sea,province,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Chicago, Illinois",41.875562,-87.624421
-Kingdom of the Middle,Riding of Hawkland Moor,riding,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Rochester Hills, Michigan",42.658366,-83.149932
-Kingdom of the Middle,Shire of Dark River,shire,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Moline, Illinois",41.505834,-90.513664
+Kingdom of the Middle,Barony of Roaring Wastes,barony,No Calendar Listed,https://roaringwastes.org/baronial-calendar-of-events/,,2026-06-22,"Detroit, Michigan",42.331551,-83.04664
+Kingdom of the Middle,Barony of Shattered Crystal,barony,No Calendar Available,https://shatteredcrystal.midrealm.org/calendar/,,2026-06-22,"Belleville, Illinois",38.513581,-89.984163
+Kingdom of the Middle,Barony of Sternfeld,barony,https://calendar.google.com/calendar/ical/sternfeld.org_a7ne6gf7q9jfrcov5ieev68o5g%40group.calendar.google.com/public/basic.ics,https://sternfeld.midrealm.org/,,2026-06-22,"Indianapolis, Indiana",39.768333,-86.15835
+Kingdom of the Middle,Barony of the Cleftlands,barony,No Calendar Available,https://events.cleftlands.org/,,2026-06-22,"Cleveland, Ohio",41.499657,-81.693677
+Kingdom of the Middle,Barony of the Flame,barony,https://calendar.google.com/calendar/ical/baronyoftheflame%40gmail.com/public/basic.ics,https://baronyoftheflame.org/,,2026-06-22,"Louisville, Kentucky",38.254238,-85.759407
+Kingdom of the Middle,Canton of Ealdnordwuda,canton,No Calendar Available,https://ealdnordwuda.midrealm.org/,,2026-06-22,"East Lansing, Michigan",42.732031,-84.472168
+Kingdom of the Middle,Canton of Hrothgeirsfjordr,canton,No Calendar Listed,https://hrodgeirsfjordr.midrealm.org/,,2026-06-22,"Toledo, Ohio",41.652914,-83.537817
+Kingdom of the Middle,Canton of Pferdestadt,canton,No Calendar Listed,https://pferdestadt.midrealm.org/,https://www.facebook.com/groups/177617509247698,2026-06-22,"Delaware, Ohio",40.231769,-82.965104
+Kingdom of the Middle,Canton of Rimsholt,canton,No Calendar Available,https://rimsholt.midrealm.org/,,2026-06-22,"Grand Rapids, Michigan",42.963242,-85.667864
+Kingdom of the Middle,Canton of Vanished Wood,canton,No Calendar Available,https://vanishedwood.midrealm.org/,,2026-06-22,"Chicago, Illinois",41.875562,-87.624421
+Kingdom of the Middle,Canton of Tree-Girt-Sea,province,No Calendar Available,https://treegirtsea.midrealm.org/,,2026-06-22,"Chicago, Illinois",41.875562,-87.624421
+Kingdom of the Middle,Riding of Hawkland Moor,riding,No Calendar Available,https://hawklandmoor.midrealm.org/,,2026-06-22,"Rochester Hills, Michigan",42.658366,-83.149932
+Kingdom of the Middle,Shire of Dark River,shire,No Calendar Listed,https://darkriver.midrealm.org/,,2026-06-22,"Moline, Illinois",41.505834,-90.513664
 Kingdom of the Middle,Shire of Dernehealde,shire,No Calendar Listed,https://dernehealde.midrealm.org/,,2026-06-22,"Athens, Ohio",39.324178,-82.101565
 Kingdom of the Middle,Shire of Donnershafen,shire,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Traverse City, Michigan",44.760648,-85.616598
 Kingdom of the Middle,Shire of Dragonsmark,shire,No Calendar Listed,https://dragonsmark.midrealm.org/,,2026-06-22,"Lexington, Kentucky",40.641424,-88.7834
@@ -471,27 +471,25 @@ Kingdom of the Middle,Shire of Lochmorrow,shire,No Calendar Listed,https://www.m
 Kingdom of the Middle,Shire of Mugmort,shire,No Calendar Listed,https://mugmort.midrealm.org/,,2026-06-22,"Lancaster, Ohio",39.713675,-82.599329
 Kingdom of the Middle,Shire of Mynydd Seren,shire,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Bloomington, Indiana",39.16704,-86.534288
 Kingdom of the Middle,Shire of Narrental,shire,No Calendar Listed,https://narrental.midrealm.org/,,2026-06-22,"Logansport, Indiana",40.754238,-86.362519
-Kingdom of the Middle,Shire of Ravenslake,shire,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Crystal Lake, Illinois",42.241134,-88.316197
-Kingdom of the Middle,Shire of Rivenvale,shire,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Youngstown, Ohio",41.103579,-80.652016
+Kingdom of the Middle,Shire of Ravenslake,shire,No Calendar Listed,https://ravenslake.org/,,2026-06-22,"Crystal Lake, Illinois",42.241134,-88.316197
+Kingdom of the Middle,Shire of Rivenvale,shire,https://calendar.google.com/calendar/ical/k2dnert6nh5067snq5h57e8vm4%40group.calendar.google.com/public/basic.ics,https://rivenvale.org/,,2026-06-22,"Youngstown, Ohio",41.103579,-80.652016
 Kingdom of the Middle,Shire of Rokkehealden,shire,No Calendar Listed,https://rokkehealden.midrealm.org/,,2026-06-22,"Chicago, Illinois",41.875562,-87.624421
-Kingdom of the Middle,Shire of Shadowed Stars,shire,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Fort Wayne, Indiana",41.07999,-85.138601
-Kingdom of the Middle,Shire of Stormvale,shire,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Flint, Michigan",43.016169,-83.690021
-Kingdom of the Middle,Shire of Swordcliff,shire,No Calendar Listed,https://swordcliff.midrealm.org/,,2026-06-22,"Springfield, Illinois",39.799017,-89.643957
-Kingdom of the Middle,Shire of Tirnewydd,shire,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Columbus, Ohio",39.96226,-83.000707
+Kingdom of the Middle,Barony of Shadowed Stars,barony,https://calendar.google.com/calendar/ical/c_393f54bd20f4bf28a35be583eb88a317afe5418d277d25f296b2ca4327446e50%40group.calendar.google.com/public/basic.ics,https://shadowedstars.midrealm.org/,,2026-06-22,"Fort Wayne, Indiana",41.07999,-85.138601
+Kingdom of the Middle,Shire of Swordcliff,shire,No Calendar Available,https://swordcliff.midrealm.org/,,2026-06-22,"Springfield, Illinois",39.799017,-89.643957
+Kingdom of the Middle,Marche of Tirnewydd,shire,No Calendar Available,https://tirnewydd.midrealm.org/,,2026-06-22,"Columbus, OH",39.96226,-83.000707
 Kingdom of the Outlands,Barony of Aarquelle,barony,https://www.google.com/calendar/ical/aarquelle%40gmail.com/public/basic.ics,https://aarquelle.outlands.org,,2026-06-22,"Pueblo, CO",38.263995,-104.614187
-Kingdom of the Outlands,Barony of Caer Galen,barony,No Calendar Listed,https://caergalen.outlands.org,,2026-06-22,"Boulder, CO",40.014986,-105.270545
-Kingdom of the Outlands,Barony of Caerthe,barony,No Calendar Listed,https://caerthe.outlands.org,,2026-06-22,"Denver, CO",39.739236,-104.984862
-Kingdom of the Outlands,Barony of Dragonsspine,barony,No Calendar Listed,https://dragonsspine.outlands.org,,2026-06-22,"Colorado Springs, CO",38.833958,-104.825348
+Kingdom of the Outlands,Barony of Caer Galen,barony,https://calendar.google.com/calendar/ical/caergalen.org_9ligefbmldnohvbm86fmththt0%40group.calendar.google.com/public/basic.ics,https://caergalen.outlands.org,,2026-06-22,"Boulder, CO",40.014986,-105.270545
+Kingdom of the Outlands,Barony of Caerthe,barony,https://calendar.google.com/calendar/ical/caerthe-sca.org_3gm1rj15ppu5i5jlebl8742pig%40group.calendar.google.com/public/basic.ics,https://caerthe.outlands.org,,2026-06-22,"Denver, CO",39.739236,-104.984862
+Kingdom of the Outlands,Barony of Dragonsspine,barony,https://calendar.google.com/calendar/ical/s3no443j3h09b97u4kns5mdasg%40group.calendar.google.com/public/basic.ics,https://dragonsspine.outlands.org,,2026-06-22,"Colorado Springs, CO",38.833958,-104.825348
 Kingdom of the Outlands,Barony of Unser Hafen,barony,https://calendar.google.com/calendar/ical/5pb6cnjq95h42r903klmf27sqk%40group.calendar.google.com/public/basic.ics,https://unserhafen.outlands.org,,2026-06-22,"Fort Collins, CO",40.587178,-105.077011
-Kingdom of the Outlands,Barony of al-Barran,barony,No Calendar Listed,https://al-barran.outlands.org/,,2026-06-22,"Albuquerque, NM",35.084103,-106.650985
+Kingdom of the Outlands,Barony of al-Barran,barony,No Calendar Available,https://al-barran.outlands.org/,,2026-06-22,"Albuquerque, NM",35.084103,-106.650985
 Kingdom of the Outlands,College of Blaiddwyn,college,No Calendar Listed,https://blaiddwyn.unm.edu/,,2026-06-22,"UNM, Albuquerque, NM",35.086633,-106.620209
 Kingdom of the Outlands,College of St. Golias,college,No Calendar Listed,http://www.saintgolias.outlands.org/,,2026-06-22,"Socorro, NM",34.057286,-106.89308
-Kingdom of the Outlands,Shire of Blackwater Keep,shire,No Calendar Listed,,,2026-06-22,"Portales & Clovis, NM",34.197353,-103.324197
 Kingdom of the Outlands,Shire of Bryngolau,shire,No Calendar Listed,https://bryngolau.outlands.org,,2026-06-22,"Los Alamos & Espanola, NM",35.984931,-106.080661
 Kingdom of the Outlands,Shire of Draca Mor,shire,No Calendar Listed,https://dracamor.outlands.org,,2026-06-22,"Grand Junction, CO",39.067257,-108.56448
 Kingdom of the Outlands,Shire of Drygestan,shire,No Calendar Listed,https://drygestan.outlands.org,,2026-06-22,"Santa Fe & Las Vegas, NM",35.593444,-105.230217
 Kingdom of the Outlands,Shire of Fontaine dans Sable,shire,No Calendar Listed,https://fontaine.outlands.org,,2026-06-22,"Farmington, NM",36.729115,-108.205445
-Kingdom of the Outlands,Shire of Nahrun Kabirun,shire,No Calendar Listed,,,2026-06-22,"Las Cruces, NM",32.314035,-106.779807
+Kingdom of the Outlands,Shire of Nahrun Kabirun,shire,No Calendar Available,https://nahrun.outlands.org/activities-calendar/,,2026-06-22,"Las Cruces, NM",32.314035,-106.779807
 Kingdom of the Outlands,Shire of Rio de las Animas,shire,No Calendar Listed,https://riodelasanimas.wordpress.com/,,2026-06-22,"Durango, CO",37.276948,-107.8766
 Kingdom of the Outlands,Shire of White Mountain,shire,https://whitemountain.outlands.org/?ical=1,https://whitemountain.outlands.org,,2026-06-22,"White Sands & Alamogordo, NM",32.838706,-105.989136
 Kingdom of the Outlands,Shire of Windkeep,shire,No Calendar Listed,https://windkeep.outlands.org,,2026-06-22,"Cheyenne, WY",41.139981,-104.820246
