@@ -1614,16 +1614,24 @@ function applyFilters() {
   // calendars, so we dedupe by location+year and enlarge just one; the other
   // listings stay normal-size pins.
   const warHostColor = {};   // ev._idx -> host colour, set only on the big pins
-  const warSites = new Map();
+  // Group cross-listings of the same war by PROXIMITY + year. The same war is
+  // cross-posted to many kingdom calendars, and those listings often geocode a few
+  // km apart from one another — so a fixed lat/lng grid can split one war across two
+  // cells, which then wrongly promotes a non-host listing to its own big pin (this
+  // is exactly why a Northshield listing of the An Tir/West War rendered An
+  // Tir-coloured). Merge anything within ~25 km of the same year into one war.
+  const warGroups = [];   // [{ lat, lng, year, evs: [] }]
   filtered.forEach(ev => {
     if (!ev.war_host) return;                           // blank unless a resolved war
     const wla = parseFloat(ev.lat), wlo = parseFloat(ev.lng);
     if (isNaN(wla) || isNaN(wlo)) return;
-    const k = `${wla.toFixed(2)},${wlo.toFixed(2)},${(ev.start || '').slice(0, 4)}`;
-    if (!warSites.has(k)) warSites.set(k, []);
-    warSites.get(k).push(ev);
+    const year = (ev.start || '').slice(0, 4);
+    let g = warGroups.find(grp => grp.year === year &&
+      Math.hypot(grp.lat - wla, (grp.lng - wlo) * Math.cos(wla * Math.PI / 180)) < 0.25);  // ~25 km
+    if (!g) { g = { lat: wla, lng: wlo, year, evs: [] }; warGroups.push(g); }
+    g.evs.push(ev);
   });
-  warSites.forEach(evs => {
+  warGroups.forEach(({ evs }) => {
     const host = evs[0].war_host;                       // all listings share the site host
     const color = KINGDOM_COLORS[host];
     if (!color) return;                                 // host not in the colour sheet
