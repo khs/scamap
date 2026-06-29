@@ -186,11 +186,11 @@ Kingdom of Caid,Barony of Dreiburgen,barony,No Calendar Available,https://dreibu
 Kingdom of Caid,Barony of Dun Or,barony,No Calendar Available,https://dunor.sca-caid.org/,,2026-06-22,"Lancaster, California",34.698106,-118.136615
 Kingdom of Caid,Barony of Gyldenholt,barony,https://calendar.google.com/calendar/ical/gyldenholt.calendar%40gyldenholt.sca-caid.org/public/basic.ics ,http://places.sca-caid.org/Gyldenholt,,2026-06-22,"Santa Ana, California",33.749495,-117.873221
 Kingdom of Caid,Barony of Lyondemere,barony,https://calendar.google.com/calendar/ical/9r2n0qvt5de644ur3ojf890g48%40group.calendar.google.com/public/basic.ics,https://lyondemere.sca-caid.org/,,2026-06-22,"Long Beach, California",33.769016,-118.191604
-Kingdom of Caid,Barony of Naevehjem,barony,No Calendar Listed,http://places.sca-caid.org/naevehjem,,2026-06-22,"Ridgecrest, California",35.620692,-117.672097
-Kingdom of Caid,Barony of Nordwache,barony,No Calendar Listed,http://places.sca-caid.org/nordwache,,2026-06-22,"Fresno, California",36.739442,-119.78483
-Kingdom of Caid,Barony of Starkhafn,barony,No Calendar Listed,https://starkhafn.sca-caid.org/,,2026-06-22,"Las Vegas, Nevada",36.167426,-115.148413
-Kingdom of Caid,Barony of Western Seas,barony,No Calendar Listed,https://westernseas.sca-caid.org/,,2026-06-22,"Honolulu, Hawaii",21.304547,-157.855676
-Kingdom of Caid,Barony of Wintermist,barony,No Calendar Listed,https://places.sca-caid.org/wintermist/,,2026-06-22,"Bakersfield, California",35.373871,-119.019463
+Kingdom of Caid,Barony of Naevehjem,barony,https://calendar.google.com/calendar/ical/c_eba5552a07c2dc90220cc48f097db4ecfdd14de97b5b22e98ff961557c1a43d7%40group.calendar.google.com/public/basic.ics,http://places.sca-caid.org/naevehjem,,2026-06-22,"Ridgecrest, California",35.620692,-117.672097
+Kingdom of Caid,Barony of Nordwache,barony,https://calendar.google.com/calendar/ical/webwright.officer%40nordwache.sca-caid.org/public/basic.ics,http://places.sca-caid.org/nordwache,,2026-06-22,"Fresno, California",36.739442,-119.78483
+Kingdom of Caid,Barony of Starkhafn,barony,No Calendar Available,https://starkhafn.sca-caid.org/,,2026-06-22,"Las Vegas, Nevada",36.167426,-115.148413
+Kingdom of Caid,Barony of Western Seas,barony,https://calendar.google.com/calendar/ical/7lfrh3khtcgf183pqdltc5m7c4%40group.calendar.google.com/public/basic.ics,https://westernseas.sca-caid.org/,,2026-06-22,"Honolulu, Hawaii",21.304547,-157.855676
+Kingdom of Caid,Barony of Wintermist,barony,No Calendar Available,https://places.sca-caid.org/wintermist/,,2026-06-22,"Bakersfield, California",35.373871,-119.019463
 Kingdom of Caid,Barony of the Angels,barony,https://calendar.google.com/calendar/ical/baronyofangels%40gmail.com/public/basic.ics,http://places.sca-caid.org/angels,,2026-06-22,"Los Angeles, California",34.053691,-118.242766
 Kingdom of Caid,Shire Of Carreg Wen,shire,No Calendar Listed,https://carreg-wen.sca-caid.org/,,2026-06-22,"Lompoc, California",34.63915,-120.457901
 Kingdom of Caid,Shire of Al-Sahid,shire,No Calendar Listed,http://places.sca-caid.org/alsahid/,,2026-06-22,"Victorville, California",34.536107,-117.291156
@@ -376,15 +376,17 @@ Kingdom of Northshield,Shire of Skerjastrond,shire,No Calendar Listed,https://pa
 Kingdom of Northshield,Shire of Trewint,shire,https://calendar.google.com/calendar/ical/aauhvdlm2rpngeghv219d0s4rk%40group.calendar.google.com/public/basic.ics,https://sites.google.com/view/trewint/home,,2026-06-22,"Aberdeen, South Dakota",45.464981,-98.487813
 Kingdom of Northshield,Shire of Vilku Urvas,shire,No Calendar Listed,https://sca-northshield.org/vilkuurvas/,,2026-06-22,"Grand Rapids, Minnesota",47.237166,-93.530214
 Kingdom of Trimaris,Barony of An Crosaire,barony,https://calendar.google.com/calendar/ical/webminister%40ancrosaire.org/public/basic.ics,https://www.ancrosaire.org/,,2026-06-22,Gainesville / Alachua County,29.651968,-82.324985
-Kingdom of Trimaris,Barony of Castlemere,barony,No Calendar Listed,https://www.castlemere.org/,,2026-06-22,Jacksonville / Orange Park,30.186817,-81.705541
-Kingdom of Trimaris,Barony of Darkwater,barony,No Calendar Listed,https://www.baronyofdarkwater.org/,,2026-06-22,"Orange, Osceola, Seminole, and Lake County",28.420708,-81.230096
-Kingdom of Trimaris,Barony of Oldenfeld,barony,No Calendar Listed,https://www.oldenfeld.org/,,2026-06-22,"Tallahassee, Gadsden, Wakulla",30.370869,-84.496672
+Kingdom of Trimaris,Barony of Castlemere,barony,https://calendar.google.com/calendar/ical/baronyofcastlemere%40gmail.com/public/basic.ics,https://www.castlemere.org/,,2026-06-22,Jacksonville / Orange Park,30.186817,-81.705541
+Kingdom of Trimaris,Barony of Darkwater,barony,https://calendar.google.com/calendar/ical/webminister%40baronyofdarkwater.org/public/basic.ics,https://www.baronyofdarkwater.org/,,2026-06-22,"Orange, Osceola, Seminole, and Lake County",28.420708,-81.230096
+Kingdom of Trimaris,Barony of Oldenfeld,barony,https://calendar.google.com/calendar/ical/oldenfeld%40gmail.com/public/basic.ics,https://www.oldenfeld.org/,,2026-06-22,"Tallahassee, Gadsden, Wakulla",30.370869,-84.496672
 Kingdom of Trimaris,Canton Of Brymmestreme (An Crosaire),canton,No Calendar Listed,https://brymmestreme.ancrosaire.org/home,,2026-06-22,"Columbia, Hamilton, Madison and Suwannee Counties",30.366486,-82.801358
 Kingdom of Trimaris,Canton of Amurgorod (An Crosaire),canton,No Calendar Listed,https://www.ocalasca.com/home,,2026-06-22,Levy & Marion County,29.300863,-82.782459
-Kingdom of Trimaris,Shire of Sangre del Sol,shire,No Calendar Listed,,,2026-06-22,Ft. Lauderdale / Boca Raton,30.679978,-86.21886
-Kingdom of Trimaris,Shire of Sea March,shire,No Calendar Listed,,,2026-06-22,Palm Beach County,26.62798,-80.449417
-Kingdom of Trimaris,Shire of Southkeep,shire,No Calendar Listed,,,2026-06-22,Miami-Dade County / Florida Keys,24.67362,-81.498179
-Kingdom of Trimaris,Shire of Tri Os,shire,No Calendar Listed,,,2026-06-22,"Martin, St. Lucie, and Indian Counties",27.067371,-80.399441
+Kingdom of Trimaris,Shire of Sangre del Sol,shire,No Calendar Listed,,https://www.facebook.com/groups/sangre.del.sol/,2026-06-22,Broward County Florida,30.679978,-86.21886
+Kingdom of Trimaris,Shire of Sea March,shire,No Calendar Listed,https://www.sea-march.com/,,2026-06-22,Palm Beach County,26.62798,-80.449417
+Kingdom of Trimaris,Shire of Southkeep,shire,No Calendar Listed,https://southkeep.trimaris.org/,,2026-06-22,Miami-Dade County / Florida Keys,24.67362,-81.498179
+Kingdom of Trimaris,Shire of Tri Os,shire,No Calendar Listed,https://trios.trimaris.org/,,2026-06-22,"Martin, St. Lucie, and Indian Counties",27.067371,-80.399441
+Kingdom of Trimaris,Shire of Sudrholt,shire,https://calendar.google.com/calendar/ical/sudrholt.org_d1adj1c6repb9ls22u6jq3lqb4%40group.calendar.google.com/public/basic.ics,https://www.sudrholt.org/events,,,"Clay County, Florida",,
+Kingdom of Trimaris,Barony of Marcaster,barony,https://calendar.google.com/calendar/ical/c_4536d12b6f9bfcd89abfce77744e5afc95ae8b8be6b463a48afb56f94bebc35c%40group.calendar.google.com/public/basic.ics,https://www.marcaster.com/,,,"Pinellas County, Florida",,
 Kingdom of the East,Barony of An Dubhaigeainn,barony,https://calendar.google.com/calendar/ical/eastkingdom.org_lungjg3alv04p339umsj3og30s%40group.calendar.google.com/public/basic.ics,https://andub.eastkingdom.org,,2026-06-22,"Suffolk County, NY",40.883232,-72.857803
 Kingdom of the East,Barony of Bergental,barony,No Calendar Available,https://bergental.eastkingdom.org,,2026-06-22,Western MA,42.378877,-72.032366
 Kingdom of the East,Barony of Beyond the Mountain,barony,https://calendar.google.com/calendar/ical/f13a3vbvjqh123cb3c0e2s45mg%40group.calendar.google.com/public/basic.ics,https://bbm.eastkingdom.org,,2026-06-22,"Burlington, Connecticut, USA",41.769,-72.95778
