@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import time
 import unittest
+from unittest import mock
 
 import geocoder as gc
 import geocode_sca_events as g
@@ -184,6 +185,48 @@ class TestCoordStateAndResultInState(unittest.TestCase):
     def test_result_in_state_unknown_state_accepts(self):
         # Unknown state code: don't reject (returns True).
         self.assertTrue(g.result_in_state(0.0, 0.0, "ZZ"))
+
+
+class TestAcceptableStatesOverseas(unittest.TestCase):
+    """The region guard must not constrain a branch that sits OUTSIDE its
+    kingdom's US states — a Canadian shire under a US kingdom, or an overseas
+    exclave like the West's Barony of the Far West (Asia). Decided from the
+    branch's own locals.csv home coordinates (SOURCE_HOME_COORDS)."""
+
+    def _patch(self, coords):
+        # A test branch under the (US) Kingdom of the West — whose real
+        # KINGDOM_HOME_STATES include CA — with a controllable home location.
+        return mock.patch.multiple(
+            g,
+            SOURCE_KINGDOM={"TestBranch": "Kingdom of the West"},
+            SOURCE_HOME_COORDS=({"TestBranch": coords} if coords else {}),
+        )
+
+    def test_overseas_branch_drops_guard(self):
+        with self._patch((13.85, 100.42)):          # Bangkok — no bounding box
+            self.assertIsNone(g.acceptable_states_for_source("TestBranch"))
+
+    def test_overseas_coords_then_validate_accepts(self):
+        with self._patch((13.85, 100.42)):
+            acc = g.acceptable_states_for_source("TestBranch")
+            self.assertTrue(g._validate(13.85, 100.42, None, acc, "TestBranch"))
+
+    def test_canadian_exclave_adds_its_province(self):
+        with self._patch((49.26, -123.11)):         # Vancouver, BC
+            acc = g.acceptable_states_for_source("TestBranch")
+            self.assertIsNotNone(acc)
+            self.assertIn("BC", acc)
+            self.assertTrue(g._validate(49.26, -123.11, None, acc, "TestBranch"))
+
+    def test_in_footprint_branch_keeps_kingdom_guard(self):
+        with self._patch((34.0, -118.0)):           # Los Angeles, CA — in the West
+            self.assertIn("CA", g.acceptable_states_for_source("TestBranch"))
+
+    def test_no_home_coords_keeps_kingdom_guard(self):
+        with self._patch(None):
+            acc = g.acceptable_states_for_source("TestBranch")
+            self.assertIsNotNone(acc)
+            self.assertIn("CA", acc)
 
 
 if __name__ == "__main__":

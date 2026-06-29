@@ -176,6 +176,30 @@ def _load_source_kingdom() -> dict:
 SOURCE_KINGDOM = _load_source_kingdom()
 
 
+# source -> (lat, lng) from locals.csv, so acceptable_states_for_source can tell
+# when a branch sits OUTSIDE its kingdom's US footprint — an overseas exclave like
+# the Kingdom of the West's Barony of the Far West (South Korea / Thailand), whose
+# events must not be constrained to the West's US states.
+def _load_source_home_coords() -> dict:
+    out = {}
+    path = Path(__file__).parent / "locals.csv"
+    if path.exists():
+        with open(path, encoding="utf-8", newline="") as f:
+            for r in csv.DictReader(f):
+                group = (r.get("group") or "").strip()
+                try:
+                    coords = (float((r.get("lat") or "").strip()),
+                              float((r.get("lng") or "").strip()))
+                except ValueError:
+                    continue
+                if group:
+                    out.setdefault(group, coords)
+    return out
+
+
+SOURCE_HOME_COORDS = _load_source_home_coords()
+
+
 def _strip_source_tag(source: str) -> str:
     """Drop a trailing "(Workshops)"-style tag so "Barony of X (Practices)"
     matches the "Barony of X" row in locals.csv."""
@@ -198,6 +222,20 @@ def acceptable_states_for_source(source: str) -> set | None:
     acceptable = set(home)
     for state in home:
         acceptable |= US_STATE_ADJACENT.get(state, set())
+    # A branch can sit OUTSIDE its kingdom's US states — a Canadian shire under a
+    # US kingdom (An Tir in BC, the East in QC), or an overseas exclave (the West's
+    # Barony of the Far West in Asia). Constraining those to the kingdom's US states
+    # rejects their every correct coordinate. Use the branch's own locals.csv home:
+    coords = (SOURCE_HOME_COORDS.get(source)
+              or SOURCE_HOME_COORDS.get(_strip_source_tag(source)))
+    if coords:
+        home_region = coord_state(*coords)
+        if home_region is None:
+            return None   # overseas, no bounding box to guard with (e.g. Asia)
+        # Widen the guard to the branch's own province/state (+ its neighbours) so
+        # local coordinates pass, while still catching a far misgeocode.
+        acceptable.add(home_region)
+        acceptable |= US_STATE_ADJACENT.get(home_region, set())
     return acceptable
 
 
