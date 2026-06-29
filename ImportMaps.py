@@ -48,8 +48,14 @@ from scrapers import maybe_scrape, is_scraper_source
 # ---------------------------------------------------------------------------
 
 TODAY      = date.today()
-FAR_END    = TODAY + timedelta(days=730)   # ~2 years  — Kingdom calendars
-NEAR_END   = TODAY + timedelta(days=60)    # ~2 months — Baronial calendars
+# Kingdom calendars fetch ~13 months forward (1 year + 1 month) so the date filter
+# has data when a user expands it out to the next year, without pulling the sparse
+# far-future tail (the old 2-year window) that made the late months look dead.
+# Baronial calendars stay at ~2 months: they are dominated by weekly recurring
+# practices, which merge to their nearest occurrence and so show regardless of how
+# far the window reaches — widening it only multiplies recurrence expansion.
+FAR_END    = TODAY + timedelta(days=395)   # ~13 months — Kingdom calendars
+NEAR_END   = TODAY + timedelta(days=60)    # ~2 months  — Baronial calendars
 
 # Paths relative to this script's location
 SCRIPT_DIR      = Path(__file__).parent
