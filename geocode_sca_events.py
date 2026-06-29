@@ -655,8 +655,10 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
 # apply_event_overrides and EDITING_EVENTS.md). "ok_organizer" = pinned by
 # enrich_gleann_locations.py to the event's hosting group. "ok_published" = the
 # calendar published coordinates in the location text (see the pre-pass in main).
+# "ok_fallback" = a baronial no-address event pinned at its barony's own coords by
+# clean_sca_events.apply_baronial_coords.
 SUCCESS_STATUSES = {"ok", "ok_retry", "ok_photon", "cached", "override",
-                    "ok_organizer", "ok_published"}
+                    "ok_organizer", "ok_published", "ok_fallback"}
 
 
 def main(retry_failed: bool = False):

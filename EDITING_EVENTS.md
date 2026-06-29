@@ -145,11 +145,61 @@ Watch the run log for these `WARNING` lines after you push a change.
 
 ---
 
+## Fixing many events at once by keyword — `location_corrections.csv`
+
+`event_overrides.csv` fixes **one event**. When a *whole recurring series* on a
+calendar always lands in the wrong place — e.g. a barony's weekly "…Practice"
+that the feed gives no address for, or that geocodes to the wrong spot — use
+**`location_corrections.csv`** instead of adding a row per occurrence.
+
+It pins **every event from a given calendar whose title contains a keyword** at
+fixed coordinates, while still importing those events live (so cancellations and
+time changes still flow through):
+
+| Column | Purpose |
+| --- | --- |
+| `source` | The calendar's name, exactly as it appears in the `source` column of `sca_events_clean.csv` — usually the group name, e.g. `Province of the Mists` or `Barony of Bright Hills`. |
+| `keywords` | A word/phrase matched **case-insensitively as a substring of the title**. `practice` matches "Archery Practice" and "Fighter Practices"; `Rockridge Bart` matches "Rockridge BART Fighter Practice". |
+| `lat`, `lng` | The exact coordinates to pin matching events at (same as Google-Maps right-click coords). |
+
+Example rows (the two seeded corrections):
+
+| source | keywords | lat | lng |
+| --- | --- | --- | --- |
+| Barony of Bright Hills | practice | 39.416485 | -76.505546 |
+| Province of the Mists | Rockridge Bart | 37.844514 | -122.252972 |
+
+- Matching events are pinned and marked `geocode_status = override`, so the
+  geocoder leaves them alone — identical handling to an `event_overrides` pin.
+- Because the match is **title keyword + source**, a virtual event (which lacks
+  the physical practice's title keyword, or carries "online"/"zoom"/etc.) won't
+  be pulled to the physical coordinates.
+- Use `event_overrides.csv` for a single named event; use this file when the
+  same fix should ride along with *every* matching event on a calendar.
+
+Applied by `clean_sca_events.py` → `apply_location_corrections()` as **Step 6d**
+(right after `event_overrides`). Tests: `test_location_corrections.py`.
+
+### Automatic fallback for address-less baronial events
+
+Separately, and with **no file to edit**: if a baronial event has no findable
+address and doesn't look virtual, the pipeline pins it at that barony's own
+coordinates (the same spot as its "?" placeholder pin) rather than dropping it or
+flinging it to a state centroid. Such pins are marked `geocode_status =
+ok_fallback` and `location_specificity = vague`, and the map shows a "we placed
+this approximately — check with locals" note on the popup. A precise
+`location_corrections` / `event_overrides` pin always wins over this fallback.
+
+---
+
 ## Quick reference for the maintainer
 
 - File to edit: **`event_overrides.csv`** (committed; never auto-modified by the
-  refresh job).
-- Code that applies it: `clean_sca_events.py` → `apply_event_overrides()` /
-  `_override_matches()` (Step 6c).
-- Tests: `test_event_overrides.py`.
-- A `geocode_status` of `override` means "human-pinned — do not geocode."
+  refresh job) — one row per event.
+- Bulk-by-keyword file: **`location_corrections.csv`** (`source`, `keywords`,
+  `lat`, `lng`) — one row fixes every matching event on a calendar.
+- Code that applies them: `clean_sca_events.py` → `apply_event_overrides()` /
+  `_override_matches()` (Step 6c) and `apply_location_corrections()` (Step 6d).
+- Tests: `test_event_overrides.py`, `test_location_corrections.py`.
+- A `geocode_status` of `override` means "human-pinned — do not geocode";
+  `ok_fallback` means "auto-pinned at the barony's coords, location approximate."

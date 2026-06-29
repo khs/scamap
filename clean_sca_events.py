@@ -74,12 +74,11 @@ NON_EVENT_PATTERNS = [
     r"^cancelled\b",
 ]
 
-# Titles containing these indicate the event was cancelled — remove entirely
-CANCELLED_PATTERNS = [
-    r"^cancelled\b",
-    r"^\[cancelled\]",
-    r"^canceled\b",
-]
+# "cancelled" / "canceled" as a whole word — a real cancellation marker. Matched
+# anywhere in the TITLE, but only in the first couple of words of the DESCRIPTION
+# (a leading "Cancelled - …" note), so a "cancelled" buried in a sentence — e.g.
+# "we'll move if the other site is cancelled" — doesn't wrongly drop the event.
+CANCELLED_WORD_RE = re.compile(r"\bcancell?ed\b", re.IGNORECASE)
 
 # Descriptions matching any of these are placeholder text — blank them out
 PLACEHOLDER_DESC_PATTERNS = [
@@ -214,14 +213,32 @@ def is_non_event(title: str) -> bool:
     return False
 
 
-def is_cancelled(title: str) -> bool:
-    """Return True if the event is explicitly marked as cancelled."""
-    if not isinstance(title, str):
-        return False
-    for pattern in CANCELLED_PATTERNS:
-        if re.search(pattern, title.strip(), re.IGNORECASE):
+def is_cancelled(title, description="") -> bool:
+    """True if the event is explicitly marked cancelled: 'cancelled'/'canceled'
+    anywhere in the title, or in the first two words of the description (a leading
+    cancellation note). A 'cancelled' deeper in a description sentence does NOT
+    count, so 'we'll move if X is cancelled' still displays."""
+    if isinstance(title, str) and CANCELLED_WORD_RE.search(title):
+        return True
+    if isinstance(description, str) and description.strip():
+        head = " ".join(description.strip().split()[:2])
+        if CANCELLED_WORD_RE.search(head):
             return True
     return False
+
+
+# Substrings that mark an event as virtual/online — checked against title+desc
+# before we fall a no-address baronial event back to its barony's coordinates, so
+# a video-call event never gets a physical pin. Mirrors the spec: the word
+# "virtual"/"online", a Zoom link, or a Google Meet link.
+_VIRTUAL_HINTS = ("virtual", "online", "zoom", "meet.google.com", "google meet")
+
+
+def _looks_virtual(title, description) -> bool:
+    t = title if isinstance(title, str) else ""
+    d = description if isinstance(description, str) else ""
+    text = f"{t} {d}".lower()
+    return any(h in text for h in _VIRTUAL_HINTS)
 
 
 # ---------------------------------------------------------------------------
@@ -1180,9 +1197,14 @@ def merge_recurring(df: pd.DataFrame) -> pd.DataFrame:
 
         # Merge into one row
         base = group.sort_values("_start_dt").iloc[0].copy()
-        date_strs = ", ".join(
-            d.strftime("%d %b %Y").lstrip("0") for d in sorted(dates)
-        )
+        sorted_dates = sorted(dates)
+        # Cap the listed dates so a 13-month weekly practice doesn't dump ~56 dates
+        # into the popup — show the next several, then summarise the rest.
+        shown = sorted_dates[:8]
+        date_strs = ", ".join(d.strftime("%d %b %Y").lstrip("0") for d in shown)
+        if len(sorted_dates) > len(shown):
+            date_strs += (f", … {len(sorted_dates) - len(shown)} more through "
+                          f"{sorted_dates[-1].strftime('%d %b %Y').lstrip('0')}")
         base["title"]       = base["title"] + " (RECURRING)"
         base["description"] = str(base["description"]).rstrip() + \
                               f" [RECURRING — also on: {date_strs}]"
@@ -1241,7 +1263,7 @@ def _invalidate_misgeocoded_rows(df: pd.DataFrame) -> int:
     # placed Gleann pins (ok_organizer) are authoritative — set deliberately and
     # re-applied by later pipeline steps — so the state-bbox heuristic must not
     # second-guess and churn them (which would flip-flop them to "failed" every run).
-    authoritative = {"override", "ok_published", "ok_organizer"}
+    authoritative = {"override", "ok_published", "ok_organizer", "ok_fallback"}
     invalidated = 0
     for idx, row in df.iterrows():
         if str(row.get("geocode_status", "")) in authoritative:
@@ -1477,6 +1499,101 @@ def apply_event_overrides(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _load_source_coords() -> dict:
+    """source (local group name) -> (lat, lng, location_label) from locals.csv —
+    the same coordinates the map uses for a group's "?" placeholder pin. Used to
+    pin baronial events we can't find an address for at the barony's own spot."""
+    path = SCRIPT_DIR / "locals.csv"
+    out = {}
+    if not path.exists():
+        return out
+    try:
+        with open(path, encoding="utf-8", newline="") as f:
+            for r in csv.DictReader(f):
+                group = (r.get("group") or "").strip()
+                coords = _valid_override_coords((r.get("lat") or "").strip(),
+                                                (r.get("lng") or "").strip())
+                if group and group not in out and coords:
+                    out[group] = (coords[0], coords[1], (r.get("location") or "").strip())
+    except Exception as e:
+        print(f"  WARNING: could not read locals.csv for source coords: {e}")
+    return out
+
+
+def apply_location_corrections(df: pd.DataFrame) -> pd.DataFrame:
+    """location_corrections.csv: per-(source calendar, title keyword) coordinate
+    fixes. When an event from the named source has the keyword somewhere in its
+    title, pin it at the given lat/lng and mark geocode_status="override" so the
+    geocoder leaves it alone. For calendars that import fine but geocode wrong (the
+    Mists' Rockridge BART practice lands in Oakland) or carry no usable address
+    (Bright Hills practices) — without hard-coding the whole event, so cancellations
+    and time changes still flow from the live calendar. Virtual events, lacking the
+    physical practice's title keyword, simply don't match."""
+    path = SCRIPT_DIR / "location_corrections.csv"
+    if not path.exists():
+        return df
+    corrections = []
+    try:
+        with open(path, encoding="utf-8", newline="") as f:
+            for r in csv.DictReader(f):
+                src = (r.get("source") or "").strip()
+                kw  = (r.get("keywords") or "").strip().lower()
+                coords = _valid_override_coords((r.get("lat") or "").strip(),
+                                                (r.get("lng") or "").strip())
+                if src and kw and coords:
+                    corrections.append((src, kw, coords))
+    except Exception as e:
+        print(f"  WARNING: could not read location_corrections.csv: {e}")
+        return df
+    if not corrections:
+        return df
+    applied = 0
+    for idx in df.index:
+        src = str(df.at[idx, "source"]).strip()
+        title = str(df.at[idx, "title"]).lower()
+        for c_src, kw, coords in corrections:
+            if src == c_src and kw in title:
+                df.at[idx, "lat"] = coords[0]
+                df.at[idx, "lng"] = coords[1]
+                df.at[idx, "geocode_status"] = "override"
+                if "location_specificity" in df.columns:
+                    df.at[idx, "location_specificity"] = ""   # a precise fix, not vague
+                applied += 1
+                break
+    if applied:
+        print(f"  Applied {applied} location correction(s) from location_corrections.csv.")
+    return df
+
+
+def apply_baronial_coords(df: pd.DataFrame) -> pd.DataFrame:
+    """Pin the baronial no-address events flagged 'vague' in Step 3 at their
+    barony's own coordinates (its "?"-pin spot) and set geocode_status so the
+    geocoder leaves them alone. Runs after the geocode merge + overrides +
+    corrections, so a human or precise-correction pin always wins."""
+    if "location_specificity" not in df.columns:
+        return df
+    coords_by_source = _load_source_coords()
+    pinned = 0
+    for idx in df.index:
+        if str(df.at[idx, "location_specificity"]).strip().lower() != "vague":
+            continue
+        if str(df.at[idx, "geocode_status"]).strip() == "override":
+            continue   # already placed by an override / location correction
+        coords = coords_by_source.get(str(df.at[idx, "source"]).strip())
+        if not coords:
+            df.at[idx, "location_specificity"] = ""   # no barony coords -> no claim
+            continue
+        df.at[idx, "lat"] = coords[0]
+        df.at[idx, "lng"] = coords[1]
+        df.at[idx, "geocode_status"] = "ok_fallback"
+        if not str(df.at[idx, "clean_location"]).strip():
+            df.at[idx, "clean_location"] = coords[2]
+        pinned += 1
+    if pinned:
+        print(f"  Pinned {pinned} baronial no-address event(s) at their barony's coords.")
+    return df
+
+
 # ---------------------------------------------------------------------------
 # Per-kingdom URL backfill from their public REST APIs
 # ---------------------------------------------------------------------------
@@ -1607,7 +1724,7 @@ def main():
     print("Step 1: Removing non-events, cancelled events, and past events ...")
     before = len(df)
     df = df[~df["title"].apply(is_non_event)]
-    df = df[~df["title"].apply(is_cancelled)]
+    df = df[~df.apply(lambda r: is_cancelled(r["title"], r.get("description", "")), axis=1)]
     removed_filter = before - len(df)
 
     # Drop events whose END date is in the past. Fall back to start date if
@@ -1687,6 +1804,7 @@ def main():
 
     # Step 3: Clean locations; fall back to description extraction if empty
     print("Step 3: Cleaning locations ...")
+    df["location_specificity"] = ""   # "vague" marks approximate barony-coord pins
     cleaned = df["location"].apply(clean_location)
     df["clean_location"]     = cleaned.apply(lambda x: x[0])
     df["address_confidence"] = cleaned.apply(lambda x: x[1])
@@ -1715,6 +1833,21 @@ def main():
         df.loc[still_empty, "address_confidence"] = via_group.apply(lambda x: x[1])
     pulled_from_group = (df.loc[still_empty, "address_confidence"] != "empty").sum()
     print(f"  recovered {pulled_from_group} addresses from group_locations.csv")
+
+    # Baronial events still without an address: if we know the barony's own coords
+    # (its "?"-pin spot) and the event doesn't look virtual, flag it to be pinned
+    # there (set after the geocode merge by apply_baronial_coords) and marked
+    # approximate — better than the coarse state centroid the next fallback gives.
+    _src_coords = _load_source_coords()
+    baronial_fb = (df["address_confidence"] == "empty") & \
+        (df["calendar_type"] == "baronial") & \
+        df["source"].apply(lambda s: str(s).strip() in _src_coords) & \
+        ~df.apply(lambda r: _looks_virtual(r.get("title"), r.get("description")), axis=1)
+    df.loc[baronial_fb, "location_specificity"] = "vague"
+    df.loc[baronial_fb, "address_confidence"]   = "low"
+    n_baronial_fb = int(baronial_fb.sum())
+    if n_baronial_fb:
+        print(f"  flagged {n_baronial_fb} baronial no-address events for barony-coord pins")
 
     # Last-resort fallback: bare state codes ("LA") and bare kingdom names
     # ("Kingdom of Northshield") get expanded to a state/region marker.
@@ -1784,6 +1917,17 @@ def main():
     print("Step 6c: Applying event_overrides.csv corrections ...")
     df = apply_event_overrides(df)
 
+    # Step 6d: per-(source, title-keyword) coordinate fixes from
+    # location_corrections.csv — precise pins for specific events on calendars we
+    # otherwise auto-import in full.
+    print("Step 6d: Applying location_corrections.csv ...")
+    df = apply_location_corrections(df)
+
+    # Step 6e: baronial events still without an address (flagged 'vague' in Step 3)
+    # get pinned at their barony's own coordinates, skipping the geocoder.
+    print("Step 6e: Pinning baronial no-address events at barony coords ...")
+    df = apply_baronial_coords(df)
+
     # Step 7: For kingdoms whose calendars import from a Google Calendar
     # (and therefore lose the original WordPress event URL), backfill the
     # event_url field from the kingdom site's Tribe Events REST API.
@@ -1802,7 +1946,7 @@ def main():
         "title", "start", "end", "location", "clean_location",
         "address_confidence", "description", "event_url", "facebook_url",
         "source", "calendar_type", "is_virtual",
-        "lat", "lng", "geocode_status",
+        "lat", "lng", "geocode_status", "location_specificity",
     ]
     df = df[[c for c in col_order if c in df.columns]]
 
