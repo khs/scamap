@@ -474,17 +474,17 @@ Kingdom of the Middle,Canton of Vanished Wood,canton,No Calendar Available,https
 Kingdom of the Middle,Canton of Tree-Girt-Sea,province,No Calendar Available,https://treegirtsea.midrealm.org/,,2026-06-22,"Chicago, Illinois",41.875562,-87.624421
 Kingdom of the Middle,Riding of Hawkland Moor,riding,No Calendar Available,https://hawklandmoor.midrealm.org/,,2026-06-22,"Rochester Hills, Michigan",42.658366,-83.149932
 Kingdom of the Middle,Shire of Dark River,shire,Practices added manually,https://darkriver.midrealm.org/,,2026-06-22,"Moline, Illinois",41.505834,-90.513664
-Kingdom of the Middle,Shire of Dernehealde,shire,No Calendar Listed,https://dernehealde.midrealm.org/,,2026-06-22,"Athens, Ohio",39.324178,-82.101565
-Kingdom of the Middle,Shire of Donnershafen,shire,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Traverse City, Michigan",44.760648,-85.616598
-Kingdom of the Middle,Shire of Dragonsmark,shire,No Calendar Listed,https://dragonsmark.midrealm.org/,,2026-06-22,"Lexington, Kentucky",38.046407,-84.497039
-Kingdom of the Middle,Shire of Falcon's Quarry,shire,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Elyria, Ohio",41.367319,-82.107358
-Kingdom of the Middle,Shire of Lochmorrow,shire,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Peoria, Illinois",40.693861,-89.589101
-Kingdom of the Middle,Shire of Mugmort,shire,No Calendar Listed,https://mugmort.midrealm.org/,,2026-06-22,"Lancaster, Ohio",39.713675,-82.599329
-Kingdom of the Middle,Shire of Mynydd Seren,shire,No Calendar Listed,https://www.midrealm.org/,,2026-06-22,"Bloomington, Indiana",39.16704,-86.534288
-Kingdom of the Middle,Shire of Narrental,shire,No Calendar Listed,https://narrental.midrealm.org/,,2026-06-22,"Logansport, Indiana",40.754238,-86.362519
-Kingdom of the Middle,Shire of Ravenslake,shire,No Calendar Listed,https://ravenslake.org/,,2026-06-22,"Crystal Lake, Illinois",42.241134,-88.316197
+Kingdom of the Middle,Shire of Dernehealde,shire,No Calendar Available,https://dernehealde.midrealm.org/,,2026-06-22,"Athens, Ohio",39.324178,-82.101565
+Kingdom of the Middle,Shire of Donnershafen,shire,No Calendar Available,https://www.donnershafen.com/,,2026-06-22,"Traverse City, Michigan",44.760648,-85.616598
+Kingdom of the Middle,Shire of Dragonsmark,shire,No Calendar Available,https://dragonsmark.midrealm.org/,,2026-06-22,"Lexington, Kentucky",38.046407,-84.497039
+Kingdom of the Middle,Shire of Falcon's Quarry,shire,https://calendar.google.com/calendar/ical/falconsquarry.webminister%40midrealm.org/public/basic.ics,https://falconsquarry.midrealm.org/,,2026-06-22,"Elyria, Ohio",41.367319,-82.107358
+Kingdom of the Middle,Canton of Lochmorrow,canton,No Calendar Available,https://illiton.midrealm.org/lochmorrow/,,2026-06-22,"Peoria, Illinois",40.693861,-89.589101
+Kingdom of the Middle,Shire of Mugmort,shire,No Calendar Available,https://mugmort.midrealm.org/,,2026-06-22,"Lancaster, Ohio",39.713675,-82.599329
+Kingdom of the Middle,Shire of Mynydd Seren,shire,https://calendar.google.com/calendar/ical/mynyddseren.seneschal%40midrealm.org/public/basic.ics,https://mynyddseren.midrealm.org/,,2026-06-22,"Bloomington, Indiana",39.16704,-86.534288
+Kingdom of the Middle,Shire of Narrental,shire,No Calendar Available,https://narrental.midrealm.org/,,2026-06-22,"Logansport, Indiana",40.754238,-86.362519
+Kingdom of the Middle,Shire of Ravenslake,shire,No Calendar Available,https://ravenslake.org/,,2026-06-22,"Crystal Lake, Illinois",42.241134,-88.316197
 Kingdom of the Middle,Shire of Rivenvale,shire,https://calendar.google.com/calendar/ical/k2dnert6nh5067snq5h57e8vm4%40group.calendar.google.com/public/basic.ics,https://rivenvale.org/,,2026-06-22,"Youngstown, Ohio",41.103579,-80.652016
-Kingdom of the Middle,Shire of Rokkehealden,shire,No Calendar Listed,https://rokkehealden.midrealm.org/,,2026-06-22,"Chicago, Illinois",41.875562,-87.624421
+Kingdom of the Middle,Shire of Rokkehealden,shire,No Calendar Available,https://rokkehealden.midrealm.org/,,2026-06-22,"Chicago, Illinois",41.875562,-87.624421
 Kingdom of the Middle,Barony of Shadowed Stars,barony,https://calendar.google.com/calendar/ical/c_393f54bd20f4bf28a35be583eb88a317afe5418d277d25f296b2ca4327446e50%40group.calendar.google.com/public/basic.ics,https://shadowedstars.midrealm.org/,,2026-06-22,"Fort Wayne, Indiana",41.07999,-85.138601
 Kingdom of the Middle,Shire of Swordcliff,shire,No Calendar Available,https://swordcliff.midrealm.org/,,2026-06-22,"Springfield, Illinois",39.799017,-89.643957
 Kingdom of the Middle,Marche of Tirnewydd,shire,No Calendar Available,https://tirnewydd.midrealm.org/,,2026-06-22,"Columbus, OH",39.96226,-83.000707
@@ -495,9 +495,9 @@ Kingdom of the Outlands,Barony of Caerthe,barony,https://calendar.google.com/cal
 Kingdom of the Outlands,Barony of Dragonsspine,barony,https://calendar.google.com/calendar/ical/s3no443j3h09b97u4kns5mdasg%40group.calendar.google.com/public/basic.ics,https://dragonsspine.outlands.org,,2026-06-22,"Colorado Springs, CO",38.833958,-104.825348
 Kingdom of the Outlands,Barony of Unser Hafen,barony,https://calendar.google.com/calendar/ical/5pb6cnjq95h42r903klmf27sqk%40group.calendar.google.com/public/basic.ics,https://unserhafen.outlands.org,,2026-06-22,"Fort Collins, CO",40.587178,-105.077011
 Kingdom of the Outlands,Barony of al-Barran,barony,Practices added manually,https://al-barran.outlands.org/,,2026-06-22,"Albuquerque, NM",35.084103,-106.650985
-Kingdom of the Outlands,College of Blaiddwyn,college,No Calendar Listed,https://blaiddwyn.unm.edu/,,2026-06-22,"UNM, Albuquerque, NM",35.086633,-106.620209
-Kingdom of the Outlands,College of St. Golias,college,No Calendar Listed,http://www.saintgolias.outlands.org/,,2026-06-22,"Socorro, NM",34.057286,-106.89308
-Kingdom of the Outlands,Shire of Bryngolau,shire,No Calendar Listed,https://bryngolau.outlands.org,,2026-06-22,"Los Alamos & Espanola, NM",35.984931,-106.080661
+Kingdom of the Outlands,College of Blaiddwyn,college,No Calendar Available,https://blaiddwyn.unm.edu/,,2026-06-22,"UNM, Albuquerque, NM",35.086633,-106.620209
+Kingdom of the Outlands,College of St. Golias,college,No Calendar Available,http://www.saintgolias.outlands.org/,,2026-06-22,"Socorro, NM",34.057286,-106.89308
+Kingdom of the Outlands,Shire of Bryngolau,shire,No Calendar Available,https://bryngolau.outlands.org,,2026-06-22,"Los Alamos & Espanola, NM",35.984931,-106.080661
 Kingdom of the Outlands,Shire of Draca Mor,shire,No Calendar Listed,https://dracamor.outlands.org,,2026-06-22,"Grand Junction, CO",39.067257,-108.56448
 Kingdom of the Outlands,Shire of Drygestan,shire,No Calendar Listed,https://drygestan.outlands.org,,2026-06-22,"Santa Fe & Las Vegas, NM",35.593444,-105.230217
 Kingdom of the Outlands,Shire of Fontaine dans Sable,shire,No Calendar Listed,https://fontaine.outlands.org,,2026-06-22,"Farmington, NM",36.729115,-108.205445
