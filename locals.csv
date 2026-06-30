@@ -103,15 +103,15 @@ Kingdom of Ansteorra,Shire of the Shadowlands,shire,No Calendar Listed,https://a
 Kingdom of Ansteorra,Stronghold of Hellsgate,stronghold,No Calendar Listed,https://ansteorra.org/hellsgate,,2026-06-22,"Killeen, Texas",31.117144,-97.727796
 Kingdom of Artemisia,Barony of Arn Hold,barony,No Calendar Listed,https://www.facebook.com/groups/baronyarnhold/,,2026-06-22,"Boise, ID and Nampa, ID",43.987352,-115.739019
 Kingdom of Artemisia,Barony of Bronzehelm,barony,No Calendar Listed,http://www.bronzehelm.org,,2026-06-22,"Billings, MT",45.787496,-108.49607
-Kingdom of Artemisia,Barony of Gryphon's Lair,barony,No Calendar Listed,https://www.facebook.com/groups/gryphonslair/,,2026-06-22,"Ogden, UT",41.223005,-111.973843
+Kingdom of Artemisia,Barony of Gryphon's Lair,barony,Practices added manually,https://www.facebook.com/groups/gryphonslair/,,2026-06-22,"Ogden, UT",41.223005,-111.973843
 Kingdom of Artemisia,Barony of Loch Salann,barony,https://calendar.google.com/calendar/ical/baronyoflochsalann%40gmail.com/public/basic.ics,http://www.lochsalann.org,,2026-06-22,"Salt Lake City, UT",40.75962,-111.886797
 Kingdom of Artemisia,Barony of One Thousand Eyes,barony,https://calendar.google.com/calendar/ical/baronyofonethousandeyes%40gmail.com/public/basic.ics,https://www.onethousandeyes.org/,,2026-06-22,"Idaho Falls, ID",43.488791,-112.03628
 Kingdom of Artemisia,Barony of Sentinels' Keep,barony,https://calendar.google.com/calendar/ical/bskwebminister%40gmail.com/public/basic.ics,https://www.sentinels-keep.org,,2026-06-22,"Missoula/Butte, MT",46.022804,-112.552147
 Kingdom of Artemisia,Shire of Arrow's Flight,shire,https://calendar.google.com/calendar/ical/0ca3c8b767cb096f3070e786decb69d900d93ce28e74af8411e87178eb04fca2%40group.calendar.google.com/public/basic.ics,http://arrowsflight.org/,,2026-06-22,"Provo, UT",40.233729,-111.658709
-Kingdom of Artemisia,Shire of Cote du Ciel,shire,No Calendar Listed,https://www.facebook.com/groups/372899743885/,,2026-06-22,"Logan/Willard/Brigham City , UT",41.731306,-111.834914
-Kingdom of Artemisia,Shire of River Serponnde,shire,No Calendar Listed,https://www.facebook.com/groups/shireriverserpent,,2026-06-22,"Twin Falls, ID",42.555854,-114.470068
-Kingdom of Artemisia,Shire of Silver Keep,shire,No Calendar Listed,https://www.facebook.com/groups/366020795445/,,2026-06-22,Bozeman. MT,45.679429,-111.044047
-Kingdom of Artemisia,Shire of Stan Wyrm,shire,No Calendar Listed,https://www.facebook.com/groups/shireofstanwyrm/,,2026-06-22,"Great Falls, MT",47.504885,-111.29189
+Kingdom of Artemisia,Shire of Cote du Ciel,shire,https://calendar.google.com/calendar/ical/c_c9cd2de1e1bd71f73366590732355029f5b441f16ff040cb65c3fd4d892da24d%40group.calendar.google.com/public/basic.ics,https://coteduciel.artemisia.sca.org/,https://www.facebook.com/groups/372899743885/,2026-06-22,"Logan/Willard/Brigham City , UT",41.731306,-111.834914
+Kingdom of Artemisia,Shire of River Serponnde,shire,https://calendar.google.com/calendar/ical/c_0b967444af19d484b410128e9e7bec9f6c4044aaf2d05ba1bd0c4fe7edda5f92%40group.calendar.google.com/public/basic.ics,https://sites.google.com/artemisia.sca.org/riverserponnde/home?authuser=0,https://www.facebook.com/groups/shireriverserpent,2026-06-22,"Twin Falls, ID",42.555854,-114.470068
+Kingdom of Artemisia,Shire of Silver Keep,shire,No Calendar Available,https://sites.google.com/artemisia.sca.org/shireofsilverkeep,https://www.facebook.com/groups/366020795445/,2026-06-22,Bozeman. MT,45.679429,-111.044047
+Kingdom of Artemisia,Shire of Stan Wyrm,shire,No Calendar Available,https://sites.google.com/artemisia.sca.org/stan-wyrm,https://www.facebook.com/groups/shireofstanwyrm/,2026-06-22,"Great Falls, MT",47.504885,-111.29189
 Kingdom of Artemisia,Shire of Stonegate,shire,https://calendar.google.com/calendar/ical/c_36b878cf4097295090f605e572af29095c917a9be1452e16be9c6840608b3d42%40group.calendar.google.com/public/basic.ics ,https://www.facebook.com/ShireOfStonegate,,2026-06-22,"Pocatello, ID",42.862029,-112.450627
 Kingdom of Artemisia,Shire of Windegate,shire,No Calendar Listed,https://www.facebook.com/groups/391521170049,,2026-06-22,"Shelby, MT",48.5055,-111.856872
 Kingdom of Atenveldt,Barony Of Mons Tonitrus,barony,https://calendar.google.com/calendar/ical/c_1788594574f5997f5c75eb9cf8e7525e06b5f84f26509effbd85a8943486876b%40group.calendar.google.com/public/basic.ics,http://bmmt.org,,2026-06-22,"Sierra Vista, Arizona",31.564769,-110.274299
@@ -381,12 +381,13 @@ Kingdom of Trimaris,Barony of Darkwater,barony,https://calendar.google.com/calen
 Kingdom of Trimaris,Barony of Oldenfeld,barony,https://calendar.google.com/calendar/ical/oldenfeld%40gmail.com/public/basic.ics,https://www.oldenfeld.org/,,2026-06-22,"Tallahassee, Gadsden, Wakulla",30.370869,-84.496672
 Kingdom of Trimaris,Canton Of Brymmestreme (An Crosaire),canton,Practices added manually,https://brymmestreme.ancrosaire.org/home,,2026-06-22,"Columbia, Hamilton, Madison and Suwannee Counties",30.366486,-82.801358
 Kingdom of Trimaris,Canton of Amurgorod (An Crosaire),canton,No Calendar Listed,https://www.ocalasca.com/home,,2026-06-22,Levy & Marion County,29.300863,-82.782459
-Kingdom of Trimaris,Shire of Sangre del Sol,shire,No Calendar Listed,,https://www.facebook.com/groups/sangre.del.sol/,2026-06-22,Broward County Florida,30.679978,-86.21886
-Kingdom of Trimaris,Shire of Sea March,shire,No Calendar Listed,https://www.sea-march.com/,,2026-06-22,Palm Beach County,26.62798,-80.449417
+Kingdom of Trimaris,Shire of Sangre del Sol,shire,No Calendar Available,,https://www.facebook.com/groups/sangre.del.sol/,2026-06-22,Broward County Florida,30.679978,-86.21886
+Kingdom of Trimaris,Shire of Sea March,shire,No Calendar Available,,https://www.facebook.com/groups/SeaMarchPopulace/,2026-06-22,Palm Beach County,26.62798,-80.449417
 Kingdom of Trimaris,Shire of Southkeep,shire,No Calendar Listed,https://southkeep.trimaris.org/,,2026-06-22,Miami-Dade County / Florida Keys,24.67362,-81.498179
 Kingdom of Trimaris,Shire of Tri Os,shire,No Calendar Listed,https://trios.trimaris.org/,,2026-06-22,"Martin, St. Lucie, and Indian Counties",27.067371,-80.399441
 Kingdom of Trimaris,Shire of Sudrholt,shire,https://calendar.google.com/calendar/ical/sudrholt.org_d1adj1c6repb9ls22u6jq3lqb4%40group.calendar.google.com/public/basic.ics,https://www.sudrholt.org/events,,,"Clay County, Florida",,
 Kingdom of Trimaris,Barony of Marcaster,barony,https://calendar.google.com/calendar/ical/c_4536d12b6f9bfcd89abfce77744e5afc95ae8b8be6b463a48afb56f94bebc35c%40group.calendar.google.com/public/basic.ics,https://www.marcaster.com/,,,"Pinellas County, Florida",,
+Kingdom of Trimaris,Canton of Loch Gryffyn,canton,https://calendar.google.com/calendar/ical/webminister%40lochgryffyn.org/public/basic.ics,https://www.lochgryffyn.org/,,,"Lake County, Florida",,
 Kingdom of the East,Barony of An Dubhaigeainn,barony,https://calendar.google.com/calendar/ical/eastkingdom.org_lungjg3alv04p339umsj3og30s%40group.calendar.google.com/public/basic.ics,https://andub.eastkingdom.org,,2026-06-22,"Suffolk County, NY",40.883232,-72.857803
 Kingdom of the East,Barony of Bergental,barony,No Calendar Available,https://bergental.eastkingdom.org,,2026-06-22,Western MA,42.378877,-72.032366
 Kingdom of the East,Barony of Beyond the Mountain,barony,https://calendar.google.com/calendar/ical/f13a3vbvjqh123cb3c0e2s45mg%40group.calendar.google.com/public/basic.ics,https://bbm.eastkingdom.org,,2026-06-22,"Burlington, Connecticut, USA",41.769,-72.95778
@@ -397,13 +398,13 @@ Kingdom of the East,Barony of Carillion,barony,https://calendar.google.com/calen
 Kingdom of the East,Barony of Carolingia,barony,https://www.google.com/calendar/ical/c_9f2bb029e0685a0401901930b9fe78acf41ca17773ea62c6bb701e5fe17694f7%40group.calendar.google.com/public/basic.ics,https://carolingia.eastkingdom.org,,2026-06-22,"Greater Boston, MA",42.383727,-71.074114
 Kingdom of the East,Barony of Concordia of the Snows,barony,https://www.google.com/calendar/ical/ab1ck2oprvq27pcknmug57mhu0%40group.calendar.google.com/public/basic.ics,https://concordia.eastkingdom.org,,2026-06-22,"Albany, NY",42.651167,-73.754968
 Kingdom of the East,Barony of Dragonship Haven,barony,https://www.google.com/calendar/ical/c_532d7ba214e09e0cfa6859eaa2535363fca6a18854266d9e0179ae3724075fd8%40group.calendar.google.com/public/basic.ics,https://dragonshiphaven.eastkingdom.org,,2026-06-22,Southwestern CT,41.513465,-73.465732
-Kingdom of the East,Barony of Endewearde,barony,No Calendar Listed,https://endewearde.eastkingdom.org,,2026-06-22,Central and Northern Maine,44.801626,-68.771329
-Kingdom of the East,Barony of Havre des Glaces,barony,No Calendar Listed,https://havredesglaces.eastkingdom.org,,2026-06-22,NE Quebec Province,41.795781,-72.678929
+Kingdom of the East,Barony of Endewearde,barony,No Calendar Available,https://endewearde.eastkingdom.org,,2026-06-22,Central and Northern Maine,44.801626,-68.771329
+Kingdom of the East,Barony of Havre des Glaces,barony,Practices added manually,https://havredesglaces.eastkingdom.org,,2026-06-22,NE Quebec Province,41.795781,-72.678929
 Kingdom of the East,Barony of Iron Bog,barony,No Calendar Listed,https://ironbog.eastkingdom.org,,2026-06-22,"Camden,Gloucester, S. Burlington, NJ",39.764101,-75.061045
 Kingdom of the East,Barony of Ruantallan,barony,https://ruantallan.eastkingdom.org/?ical=1,https://ruantallan.eastkingdom.org,,2026-06-22,"NS & PEI, Canada",46.288542,-63.144594
-Kingdom of the East,Barony of Settmour Swamp,barony,No Calendar Listed,https://settmourswamp.eastkingdom.org,,2026-06-22,"Somerset, Morris County, NJ",40.74074,-74.394867
-Kingdom of the East,Barony of Smoking Rocks,barony,No Calendar Listed,https://smokingrocks.eastkingdom.org,,2026-06-22,Southeast MA,42.378877,-72.032366
-Kingdom of the East,Barony of Stonemarche,barony,No Calendar Listed,https://stonemarche.eastkingdom.org,,2026-06-22,New Hampshire,43.484913,-71.655399
+Kingdom of the East,Barony of Settmour Swamp,barony,No Calendar Available,https://settmourswamp.eastkingdom.org,,2026-06-22,"Somerset, Morris County, NJ",40.74074,-74.394867
+Kingdom of the East,Barony of Smoking Rocks,barony,Practices added manually,https://smokingrocks.eastkingdom.org,https://www.facebook.com/groups/PALSCAPRACTICE/ ,2026-06-22,Southeast MA,42.378877,-72.032366
+Kingdom of the East,Barony of Stonemarche,barony,https://calendar.google.com/calendar/ical/eastkingdom.org_jm0ccb37dbh96rl2bi5fuj243k%40group.calendar.google.com/public/basic.ics,https://stonemarche.eastkingdom.org,,2026-06-22,New Hampshire,43.484913,-71.655399
 Kingdom of the East,Barony of the Bridge,barony,No Calendar Listed,https://baronyofthebridge.eastkingdom.org,,2026-06-22,RI State,40.760781,-73.950722
 Kingdom of the East,Canton of Appleholm,canton,No Calendar Listed,https://appleholm.eastkingdom.org,,2026-06-22,"Manhattan, NYC",40.757955,-73.985532
 Kingdom of the East,Canton of Basingestoches,canton,No Calendar Listed,https://basingestoches.eastkingdom.org/,,2026-06-22,Endewearde,,
