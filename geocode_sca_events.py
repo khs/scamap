@@ -662,7 +662,10 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
     # 5b. If we have an expected kingdom/state list, try appending each one to
     #     the address. Catches cases like "Greater Savannah area" (Meridies)
     #     where Photon returns Belize because the address is too vague.
-    if source_states:
+    #     BUT: if the address already contains an explicit 2-letter state abbreviation
+    #     (capitalized), the state is already clear — skip the hints.
+    has_explicit_state = bool(re.search(r'\b[A-Z]{2}\b', address))
+    if source_states and not has_explicit_state:
         for state in sorted(source_states):
             query = f"{address}, {state}, USA"
             print(f"           → retrying with state hint: {query[:70]}")
