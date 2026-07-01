@@ -114,3 +114,34 @@ article a:hover { color: var(--sky-blue); }
   nav a { padding: 0 0.8rem; font-size: 0.78rem; }
   main { padding: 1.2rem 1rem 2.5rem; }
 }
+
+/* "Choosing Your First Event" formatting — a rule under each section title, the
+   section bodies as click-to-collapse <details>, and a fleur-de-lys marker on
+   each labelled paragraph. Scoped to .fe-section / .section-rule so about.html
+   and how-to-help.html (which use neither class) are untouched. */
+.section-rule {
+  border: 0;
+  border-top: 1px solid var(--sky-blue);
+  margin: 0.3rem 0 1.2rem;
+  opacity: 0.55;
+}
+details.fe-section { margin-bottom: 0.2rem; }
+details.fe-section > summary {
+  list-style: none;
+  cursor: pointer;
+}
+details.fe-section > summary::-webkit-details-marker { display: none; }
+details.fe-section > summary > h3 { display: inline; }
+details.fe-section > summary::after {
+  content: '\25B8';                 /* ▸ when collapsed */
+  color: var(--sky-blue);
+  margin-left: 0.45em;
+  font-size: 0.8em;
+}
+details.fe-section[open] > summary::after { content: '\25BE'; }   /* ▾ when open */
+details.fe-section > p > strong:first-child::before {
+  content: '\269C';                 /* ⚜ fleur-de-lys before each label */
+  color: var(--sky-blue);
+  margin-right: 0.4em;
+  font-size: 0.9em;
+}

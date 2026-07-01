@@ -137,6 +137,24 @@ def extract_state_from_address(address: str) -> str | None:
     return None
 
 
+# Canadian postal code: letter-digit-letter [space] digit-letter-digit. Excludes
+# D, F, I, O, Q, U (never used) and W, Z (never lead). Used to give a rural
+# Canadian address a precise OSM hit when the civic street number doesn't match,
+# and to pre-empt the "PROVINCE, <partial postal>, Canada" comma-tail query, which
+# Nominatim resolves to a single generic province-centre point.
+CA_POSTAL_RE = re.compile(
+    r"\b([ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z])\s*(\d[ABCEGHJ-NPRSTV-Z]\d)\b",
+    re.IGNORECASE,
+)
+
+
+def extract_ca_postal(address: str) -> str | None:
+    """Return a normalised Canadian postal code ('V9A 7N2') found in the address,
+    or None."""
+    m = CA_POSTAL_RE.search(address or "")
+    return f"{m.group(1)} {m.group(2)}".upper() if m else None
+
+
 # ---------------------------------------------------------------------------
 # Per-barony state validation
 # ---------------------------------------------------------------------------
@@ -593,6 +611,21 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
     lat, lng = nominatim_geocode(address, session)
     if _validate(lat, lng, expected_state, source_states, source):
         return (lat, lng, "ok")
+
+    # 1b. Canadian postal code. A rural civic address ("17317 Larch Rd, Telkwa,
+    #     BC, V0J 2X2, Canada") often misses in Nominatim, and the comma-tail
+    #     retry below ("BC, V0J 2X2, Canada") resolves to one generic southern-BC
+    #     point that the province-sized bbox wrongly accepts (the An Tir mis-land).
+    #     The full postal code geocodes precisely; query it scoped to Canada first,
+    #     falling back to the FSA (first 3 chars) for the right region.
+    ca_postal = extract_ca_postal(address)
+    if ca_postal:
+        print(f"           → CA postal: {ca_postal}")
+        lat, lng = geocoder.nominatim(f"{ca_postal}, Canada", session, countrycodes="ca")
+        if not _validate(lat, lng, expected_state, source_states, source):
+            lat, lng = geocoder.nominatim(f"{ca_postal[:3]}, Canada", session, countrycodes="ca")
+        if _validate(lat, lng, expected_state, source_states, source):
+            return (lat, lng, "ok_retry")
 
     # 2. Strip embedded venue prefix from the street part
     stripped = strip_venue_prefix(address)

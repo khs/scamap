@@ -1170,7 +1170,18 @@ def is_recurring(dates: list) -> bool:
     tol = 2 if base < 20 else 3
     skips_ok = (6 <= base <= 32) and all(
         any(abs(g - base * m) <= tol for m in (1, 2, 3)) for g in gaps)
-    return consistent or skips_ok
+    # A frequent same-title/same-place series — twice-weekly, or weekly with the odd
+    # week cancelled/changed/replaced (e.g. Adiantum's archery+thrown practice that
+    # swaps to siege some weeks) — is still ONE recurring practice even when the
+    # combined dates fit no single clean cadence. Require 3+ distinct dates, a
+    # typical (median) gap of a few days to a couple of weeks, and no enormous gap
+    # (which would mean two unrelated clusters, e.g. an annual event sharing a title).
+    frequent = False
+    if len(sorted_dates) >= 3:
+        ordered = sorted(gaps)
+        median_gap = ordered[len(ordered) // 2]
+        frequent = (2 <= median_gap <= 16) and (max(gaps) <= 35)
+    return consistent or skips_ok or frequent
 
 
 def merge_recurring(df: pd.DataFrame) -> pd.DataFrame:
@@ -1550,9 +1561,16 @@ def apply_location_corrections(df: pd.DataFrame) -> pd.DataFrame:
     applied = 0
     for idx in df.index:
         src = str(df.at[idx, "source"]).strip()
-        title = str(df.at[idx, "title"]).lower()
+        # Match the keyword against the title AND the event's location text: some
+        # venues (e.g. a barony's "the roost") are named only in the LOCATION
+        # field, not the title, so a title-only match would never fire.
+        haystack = " ".join((
+            str(df.at[idx, "title"]),
+            str(df.at[idx, "location"]),
+            str(df.at[idx, "clean_location"]),
+        )).lower()
         for c_src, kw, coords in corrections:
-            if src == c_src and kw in title:
+            if src == c_src and kw in haystack:
                 df.at[idx, "lat"] = coords[0]
                 df.at[idx, "lng"] = coords[1]
                 df.at[idx, "geocode_status"] = "override"

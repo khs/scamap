@@ -127,6 +127,19 @@ class TestLocationCorrections(_TmpDirMixin):
         out = clean.apply_location_corrections(df)
         self.assertAlmostEqual(float(out.iloc[0]["lat"]), 39.416485, places=5)
 
+    def test_keyword_matches_location_field(self):
+        # The venue is named in the LOCATION field, not the title — the correction
+        # must still fire (the Caer Anterth Mawr "the roost" case).
+        self._corrections([{"source": "Barony of Caer Anterth Mawr", "keywords": "roost",
+                            "lat": "42.887382", "lng": "-88.286"}])
+        df = _df([{"title": "Thursday Fighter Practice",
+                   "source": "Barony of Caer Anterth Mawr",
+                   "location": "The Roost, 123 Main St, Town WI",
+                   "clean_location": "123 Main St, Town WI"}])
+        out = clean.apply_location_corrections(df)
+        self.assertAlmostEqual(float(out.iloc[0]["lat"]), 42.887382, places=5)
+        self.assertEqual(out.iloc[0]["geocode_status"], "override")
+
     def test_clears_vague_flag_on_precise_fix(self):
         self._corrections([{"source": "Barony of Bright Hills", "keywords": "practice",
                             "lat": "39.416485", "lng": "-76.505546"}])

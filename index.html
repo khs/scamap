@@ -555,6 +555,7 @@
 
 <nav aria-label="Main navigation">
   <ul>
+    <li><a href="index.html" aria-current="page">Home</a></li>
     <li><a href="about.html">About</a></li>
     <li><a href="how-to-help.html">How to Help</a></li>
     <li><a href="first-event.html">Choosing Your First Event</a></li>
@@ -590,7 +591,7 @@
       Number events in the same location
     </label>
     <label class="check-label kingdom-overlay-toggle">
-      <input type="checkbox" id="chk-overlay" />
+      <input type="checkbox" id="chk-overlay" checked />
       Colour background by kingdom
     </label>
   </div>
@@ -658,6 +659,18 @@
 // principality). A missing/garbled sheet is a loud load error, not a grey map.
 let KINGDOM_COLORS = {};   // "Kingdom of X" -> kingdom-event hex (#rrggbb)
 let BARONY_COLORS  = {};   // "Kingdom of X" -> baronial/practice hex (#rrggbb)
+// Same colours keyed by a NORMALISED kingdom name, so a calendar that writes
+// Æthelmearc with the Æ ligature (or odd casing) still resolves to the
+// "Kingdom of AEthelmearc" colour instead of falling back to generic blue.
+let KINGDOM_COLORS_NORM = {};
+let BARONY_COLORS_NORM  = {};
+// Fold the Æ/æ ligature to ASCII and lowercase so "AEthelmearc" / "Aethelmearc" /
+// "Æthelmearc" all collapse to one key.
+function normKingdom(name) {
+  return String(name || '')
+    .replace(/Æ/g, 'AE').replace(/æ/g, 'ae')
+    .trim().toLowerCase();
+}
 
 // Accept "#rrggbb" / "rrggbb" / "#rgb" / "rgb"; return "#rrggbb" lower-case or null.
 function normHex(s) {
@@ -677,8 +690,8 @@ function loadColourSchemes() {
         const k = (row.kingdom || '').trim();
         if (!k) return;
         const ev = normHex(row.event_color), ba = normHex(row.practice_color);
-        if (ev) KINGDOM_COLORS[k] = ev;
-        if (ba) BARONY_COLORS[k] = ba;
+        if (ev) { KINGDOM_COLORS[k] = ev; KINGDOM_COLORS_NORM[normKingdom(k)] = ev; }
+        if (ba) { BARONY_COLORS[k] = ba; BARONY_COLORS_NORM[normKingdom(k)] = ba; }
       });
       if (!Object.keys(KINGDOM_COLORS).length)
         throw new Error('colourschemes.csv had no usable colour rows');
@@ -690,7 +703,7 @@ const VIRTUAL_COLOR   = "#777777";
 const FALLBACK_COLOR  = "#666666";
 
 function kingdomColor(source) {
-  return KINGDOM_COLORS[source] || FALLBACK_COLOR;
+  return KINGDOM_COLORS[source] || KINGDOM_COLORS_NORM[normKingdom(source)] || FALLBACK_COLOR;
 }
 
 // Mute a kingdom colour toward its own grey. Baronial events now get an explicit
@@ -719,9 +732,9 @@ function eventColor(ev) {
     // Explicit baronial/practice colour from colourschemes.csv; fall back to a
     // desaturated kingdom colour if a row left practice blank, then to the
     // generic baronial shade if the kingdom itself is unknown.
-    const explicit = kingdom && BARONY_COLORS[kingdom];
+    const explicit = kingdom && (BARONY_COLORS[kingdom] || BARONY_COLORS_NORM[normKingdom(kingdom)]);
     if (explicit) return explicit;
-    const base = kingdom && KINGDOM_COLORS[kingdom];
+    const base = kingdom && (KINGDOM_COLORS[kingdom] || KINGDOM_COLORS_NORM[normKingdom(kingdom)]);
     return base ? desaturate(base) : BARONIAL_COLOR;
   }
   return kingdomColor(ev.source);
@@ -1001,6 +1014,10 @@ function makeIcon(color, scale = 1, count = null) {
 // the war test and the host are computed at build time (annotate_war_hosts.py)
 // and arrive as the per-event `war_host` column, blank for everything else.
 const WAR_PIN_SCALE = 1.6;
+// An event cross-listed on this many separate calendars also gets the oversized
+// pin (like a war), coloured by its hosting kingdom (host_kingdom = the territory
+// it sits in; precomputed in annotate_war_hosts.py).
+const BIG_PIN_MIN_CALENDARS = 5;
 
 // ── Cluster icon ─────────────────────────────────────────────────
 // "Number events in the same location" collapses co-located markers into one
@@ -1014,15 +1031,21 @@ function isLightColor(hex) {
   return (0.299 * r + 0.587 * g + 0.114 * b) > 150;   // perceived luminance
 }
 function makeClusterIcon(cluster) {
-  // Colour by the dominant kingdom among the clustered markers — each marker
-  // carries its own kingdomColor; fall back to neutral grey if none is set.
-  const tally = {};
+  // Colour an aggregated cluster by the HOSTING kingdom (the territory the
+  // co-located events sit in) when any child knows it — so a stack of events from
+  // many kingdoms' calendars reads as the kingdom whose land they're on. Fall back
+  // to the dominant source-kingdom colour, then neutral grey.
+  const tally = {}, hostTally = {};
   cluster.getAllChildMarkers().forEach(m => {
-    const c = m.options.kingdomColor;
-    if (c) tally[c] = (tally[c] || 0) + 1;
+    if (m.options.kingdomColor) tally[m.options.kingdomColor] = (tally[m.options.kingdomColor] || 0) + 1;
+    if (m.options.hostColor)    hostTally[m.options.hostColor] = (hostTally[m.options.hostColor] || 0) + 1;
   });
-  let color = '#6b7280', best = 0;
-  for (const c in tally) if (tally[c] > best) { best = tally[c]; color = c; }
+  const dominant = obj => {
+    let color = null, best = 0;
+    for (const c in obj) if (obj[c] > best) { best = obj[c]; color = c; }
+    return color;
+  };
+  const color = dominant(hostTally) || dominant(tally) || '#6b7280';
   return makeIcon(color, 1, cluster.getChildCount());   // a normal pin + a count
 }
 
@@ -1227,6 +1250,17 @@ function buildPopup(ev) {
       pushLink(kingdomUrl, `${escapeHtml(ev.source)} calendar →`);
     }
   }
+  // Canton link: a canton's events ride on its parent barony's calendar, so when
+  // the title names a canton in the same kingdom, surface the canton's own site too.
+  const evKingdomNorm = normKingdom(ev.kingdom || groupKingdom[ev.source]
+    || (/^Kingdom of /.test(ev.source || '') ? ev.source : ''));
+  if (evKingdomNorm) {
+    const titleLc = (ev.title || '').toLowerCase();
+    CANTON_SITES.forEach(c => {
+      if (c.kingdomNorm === evKingdomNorm && c.short && titleLc.includes(c.short.toLowerCase()))
+        pushLink(c.website, `${escapeHtml(c.short)} (canton) →`);
+    });
+  }
   const links = linkButtons.length
     ? `<div class="links">${linkButtons.join('')}</div>` : '';
 
@@ -1248,6 +1282,7 @@ function buildPopup(ev) {
 let allEvents   = [];
 let groupPins   = [];   // placeholder pins from locals.csv (set after load)
 let sourceWebsite = {}; // { "Barony of Carolingia": "https://carolingia.eastkingdom.org" }
+let CANTON_SITES = [];  // cantons whose events ride on a parent barony's calendar
 let markerMap   = {};   // index → Leaflet marker
 // Cluster markers ONLY when they're at essentially the same location — the
 // same scale the spiral-scatter operates on — so co-located events (incl. a
@@ -1642,6 +1677,32 @@ function applyFilters() {
     warHostColor[rep._idx] = color;
   });
 
+  // Big cross-listing pins: an event posted to BIG_PIN_MIN_CALENDARS+ separate
+  // calendars also renders oversized (like a war), coloured by its hosting
+  // kingdom. The same event geocodes a few km apart across calendars, so group by
+  // proximity + date and count DISTINCT sources, not exact location.
+  const bigListColor = {};   // ev._idx -> host colour, set only on the big pin
+  const listGroups = [];     // [{ lat, lng, date, evs: [] }]
+  filtered.forEach(ev => {
+    if (ev.war_host) return;                            // wars already get a big pin
+    const la = parseFloat(ev.lat), lo = parseFloat(ev.lng);
+    if (isNaN(la) || isNaN(lo)) return;
+    const date = (ev.start || '').slice(0, 10);
+    let g = listGroups.find(grp => grp.date === date &&
+      Math.hypot(grp.lat - la, (grp.lng - lo) * Math.cos(la * Math.PI / 180)) < 0.25);  // ~25 km
+    if (!g) { g = { lat: la, lng: lo, date, evs: [] }; listGroups.push(g); }
+    g.evs.push(ev);
+  });
+  listGroups.forEach(({ evs }) => {
+    if (new Set(evs.map(e => e.source)).size < BIG_PIN_MIN_CALENDARS) return;
+    // Colour by the territory the event sits in (host_kingdom), like a war pin.
+    const host = evs.map(e => e.host_kingdom).find(h => h && KINGDOM_COLORS[h]);
+    if (!host) return;
+    // Enlarge the host kingdom's own listing if it posted one, else the first.
+    const rep = evs.find(e => e.source === host) || evs[0];
+    bigListColor[rep._idx] = KINGDOM_COLORS[host];
+  });
+
   // Render in two passes so each war's oversized "host" pin claims the TRUE
   // centre of its site (spiralOffset gives the centre to the first marker at a
   // coordinate) and the cross-listings spiral around it — otherwise the big pin
@@ -1655,9 +1716,12 @@ function applyFilters() {
     const lat = parseFloat(ev.lat), lng = parseFloat(ev.lng);
     if (isNaN(lat) || isNaN(lng)) return;
     const [plotLat, plotLng] = spiralOffset(lat, lng);
-    const hostColor = warHostColor[ev._idx];   // set only on the one big war pin
+    const hostColor = warHostColor[ev._idx] || bigListColor[ev._idx];   // the one big pin (war or 5+ cross-listing)
     const color = hostColor || eventColor(ev);
     const icon = makeIcon(color, hostColor ? WAR_PIN_SCALE : 1);
+    // Territory ("hosting") kingdom colour for this event, read by makeClusterIcon
+    // so an aggregated cluster takes the host kingdom's colour.
+    const territoryColor = ev.host_kingdom ? KINGDOM_COLORS[ev.host_kingdom] : null;
     // filtered is sorted soonest-first, so give the soonest event the highest
     // z-index — it stays on top when pins overlap (esp. with aggregation off).
     // The big war pin floats above everything so it isn't buried under small ones.
@@ -1670,7 +1734,8 @@ function applyFilters() {
     WORLD_COPIES.forEach(dx => {
       const marker = L.marker([plotLat, plotLng + dx], {
         icon,
-        kingdomColor: color,   // read by makeClusterIcon to colour a cluster by dominant kingdom
+        kingdomColor: color,         // source-kingdom colour — cluster fallback
+        hostColor: territoryColor,   // territory/hosting-kingdom colour — clusters prefer this
         zIndexOffset: z,
       });
       marker.bindPopup(() => buildPopup(ev), { maxWidth: 320, maxHeight: 280 });
@@ -1678,8 +1743,8 @@ function applyFilters() {
       if (dx === 0) markerMap[ev._idx] = marker;
     });
   };
-  filtered.forEach((ev, i) => { if (warHostColor[ev._idx]) renderEventMarker(ev, i); });
-  filtered.forEach((ev, i) => { if (!warHostColor[ev._idx]) renderEventMarker(ev, i); });
+  filtered.forEach((ev, i) => { if (warHostColor[ev._idx] || bigListColor[ev._idx]) renderEventMarker(ev, i); });
+  filtered.forEach((ev, i) => { if (!warHostColor[ev._idx] && !bigListColor[ev._idx]) renderEventMarker(ev, i); });
 
   // (The sidebar list is built by renderSidebarList() at the end of this
   //  function, so it can be re-run on map move without rebuilding markers.)
@@ -2002,9 +2067,18 @@ Promise.all([
     // and be coloured as a muted version of its kingdom's colour.
     sourceWebsite = {};
     groupKingdom = {};
+    CANTON_SITES = [];
     groupPins.forEach(p => {
       if (p.group && p.website && !sourceWebsite[p.group]) sourceWebsite[p.group] = p.website;
       if (p.group && p.kingdom && !groupKingdom[p.group]) groupKingdom[p.group] = p.kingdom;
+      // Cantons usually have no calendar of their own — their events ride on the
+      // parent barony's calendar — so register the canton's own site to link when
+      // an event title names it (see buildPopup).
+      if ((p.type || '').toLowerCase() === 'canton' && (p.website || '').trim()
+          && /^canton of /i.test(p.group || '')) {
+        CANTON_SITES.push({ short: p.group.replace(/^[Cc]anton of /, '').trim(),
+                            website: p.website.trim(), kingdomNorm: normKingdom(p.kingdom) });
+      }
     });
     // Append hand-maintained practices AFTER groupKingdom is built (so they pick
     // up their barony's kingdom colour) and BEFORE applyFilters (so they render).
@@ -2167,6 +2241,13 @@ document.getElementById('chk-overlay').addEventListener('change', async (e) => {
     map.removeLayer(kingdomOverlay);
   }
 });
+
+// The overlay is on by default (checkbox `checked` above). A static `checked`
+// attribute fires no `change` event, so trigger the same add path once at load;
+// unchecking still hits the remove branch unchanged.
+if (document.getElementById('chk-overlay').checked) {
+  document.getElementById('chk-overlay').dispatchEvent(new Event('change'));
+}
 
 // After fonts/layout settle, make sure the map knows its real pixel size — a
 // belt-and-suspenders guard for the projection race below that can leave far

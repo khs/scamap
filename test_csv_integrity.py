@@ -55,6 +55,15 @@ def _kingdom_colors() -> set:
 VALID_KINGDOMS = _kingdom_colors()
 
 
+def _nk(name: str) -> str:
+    """Normalise a kingdom name so ligature/casing variants compare equal:
+    'Æthelmearc', 'AEthelmearc' and 'Aethelmearc' are the same kingdom."""
+    return (name or "").replace("Æ", "AE").replace("æ", "ae").strip().lower()
+
+
+VALID_KINGDOMS_NORM = {_nk(k) for k in VALID_KINGDOMS}
+
+
 def _rows(path):
     with open(path, encoding="utf-8", newline="") as f:
         return list(csv.DictReader(f))
@@ -81,7 +90,7 @@ class TestTerritoryKingdoms(unittest.TestCase):
         unknown = set()
         for r in self.rows:
             colour_name = (r.get("parent kingdom") or "").strip() or r["kingdom"]
-            if colour_name and colour_name not in VALID_KINGDOMS:
+            if colour_name and _nk(colour_name) not in VALID_KINGDOMS_NORM:
                 unknown.add(colour_name)
         self.assertEqual(sorted(unknown), [],
                          f"colour kingdoms not in KINGDOM_COLORS: {sorted(unknown)}")
@@ -91,7 +100,7 @@ class TestTerritoryKingdoms(unittest.TestCase):
         bad = set()
         for r in self.rows:
             parent = (r.get("parent kingdom") or "").strip()
-            if parent and (not parent.startswith("Kingdom of") or parent not in VALID_KINGDOMS):
+            if parent and (not parent.startswith("Kingdom of") or _nk(parent) not in VALID_KINGDOMS_NORM):
                 bad.add(parent)
         self.assertEqual(sorted(bad), [], f"bad parent kingdoms: {sorted(bad)}")
 
@@ -159,7 +168,7 @@ class TestLocals(unittest.TestCase):
     def test_kingdoms_are_known_when_present(self):
         unknown = sorted({(r.get("kingdom") or "").strip() for r in self.rows
                           if (r.get("kingdom") or "").strip()
-                          and (r.get("kingdom") or "").strip() not in VALID_KINGDOMS})
+                          and _nk(r.get("kingdom")) not in VALID_KINGDOMS_NORM})
         self.assertEqual(unknown, [], f"locals kingdoms not in KINGDOM_COLORS: {unknown}")
 
     def test_lat_lng_paired_and_in_range(self):
@@ -222,8 +231,8 @@ class TestColourSchemes(unittest.TestCase):
     def test_covers_every_locals_kingdom(self):
         # Every kingdom a group actually lives in must have a colour row, else
         # that group's events/practices fall back to the generic shade.
-        have = {(r.get("kingdom") or "").strip() for r in self.rows}
-        used = {(r.get("kingdom") or "").strip() for r in _rows(LOCALS)
+        have = {_nk(r.get("kingdom")) for r in self.rows}
+        used = {_nk(r.get("kingdom")) for r in _rows(LOCALS)
                 if (r.get("kingdom") or "").strip()}
         missing = sorted(used - have)
         self.assertEqual(missing, [],
@@ -232,8 +241,8 @@ class TestColourSchemes(unittest.TestCase):
     def test_covers_every_kingdom_calendar(self):
         # Every kingdom-level feed source must have a colour row too, so a
         # kingdom-level event never renders with the fallback colour.
-        have = {(r.get("kingdom") or "").strip() for r in self.rows}
-        used = {(r.get("source") or "").strip() for r in _rows(CALENDARS)
+        have = {_nk(r.get("kingdom")) for r in self.rows}
+        used = {_nk(r.get("source")) for r in _rows(CALENDARS)
                 if (r.get("type") or "").strip() == "kingdom"
                 and (r.get("source") or "").strip()}
         missing = sorted(used - have)

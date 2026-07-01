@@ -22,6 +22,10 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).parent
 
 STEPS = [
+    # Fill blank lat/lng for groups in locals.csv that have a location (their
+    # "?"-pin coords + the baronial fallback read these). Only touches blank rows —
+    # hand-placed coords are never moved. Cached, so re-runs are cheap.
+    ("Geocoding local groups missing coordinates",      "geocode_locals.py"),
     ("Fetching events from kingdom/baronial calendars", "ImportMaps.py"),
     ("Cleaning, deduping, and merging recurring events", "clean_sca_events.py"),
     # Replace placeholder feed descriptions (e.g. Atlantia's "Upcoming event in

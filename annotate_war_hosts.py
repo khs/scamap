@@ -55,11 +55,12 @@ def is_war(title, start, end, calendar_type) -> bool:
     return (e - s).total_seconds() / 86400.0 >= MIN_WAR_DAYS
 
 
-def war_host_for(row: dict) -> str:
-    """The hosting kingdom for a war row, or '' (non-war / no coords / off-map)."""
-    if not is_war(row.get("title"), row.get("start"), row.get("end"),
-                  row.get("calendar_type")):
-        return ""
+def host_kingdom_for(row: dict) -> str:
+    """The kingdom whose TERRITORY the event's coordinates fall in, for ANY
+    geocoded event — '' when there are no coords or the point is off the mapped
+    territories. The map reads this to colour aggregated clusters and size big
+    cross-listed pins by the hosting kingdom (the same point-in-polygon lookup as
+    war_host, run once here instead of in every browser)."""
     try:
         lat, lng = float(row.get("lat")), float(row.get("lng"))
     except (TypeError, ValueError):
@@ -67,16 +68,35 @@ def war_host_for(row: dict) -> str:
     return kingdom_at_point(lat, lng) or ""
 
 
+def war_host_for(row: dict) -> str:
+    """The hosting kingdom for a war row, or '' (non-war / no coords / off-map)."""
+    if not is_war(row.get("title"), row.get("start"), row.get("end"),
+                  row.get("calendar_type")):
+        return ""
+    return host_kingdom_for(row)
+
+
 def main():
     if not OUTPUT_FILE.exists():
         print(f"  (no {OUTPUT_FILE.name} — nothing to annotate)")
         return
     df = pd.read_csv(OUTPUT_FILE, dtype=str, keep_default_na=False)
-    df["war_host"] = [war_host_for(r) for r in df.to_dict("records")]
+    records = df.to_dict("records")
+    # host_kingdom: territory for every geocoded event (point-in-polygon, memoised
+    # by rounded coords so cross-listings sharing a venue cost one lookup).
+    hosts = [host_kingdom_for(r) for r in records]
+    df["host_kingdom"] = hosts
+    # war_host: the same answer, kept only for multi-day kingdom "wars".
+    df["war_host"] = [
+        h if is_war(r.get("title"), r.get("start"), r.get("end"),
+                    r.get("calendar_type")) else ""
+        for r, h in zip(records, hosts)
+    ]
     df.to_csv(OUTPUT_FILE, index=False, quoting=csv.QUOTE_ALL)
-    tagged = df[df["war_host"] != ""]
-    hosts = sorted(tagged["war_host"].unique())
-    print(f"Annotated war_host on {len(tagged)} war listing(s); hosts: {hosts}")
+    n_host = int((df["host_kingdom"] != "").sum())
+    war = df[df["war_host"] != ""]
+    print(f"Annotated host_kingdom on {n_host} event(s); "
+          f"war_host on {len(war)} war(s): {sorted(war['war_host'].unique())}")
 
 
 if __name__ == "__main__":
