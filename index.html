@@ -1031,10 +1031,12 @@ function isLightColor(hex) {
   return (0.299 * r + 0.587 * g + 0.114 * b) > 150;   // perceived luminance
 }
 function makeClusterIcon(cluster) {
-  // Colour an aggregated cluster by the HOSTING kingdom (the territory the
-  // co-located events sit in) when any child knows it — so a stack of events from
-  // many kingdoms' calendars reads as the kingdom whose land they're on. Fall back
-  // to the dominant source-kingdom colour, then neutral grey.
+  // Cluster colour: normally the dominant colour among the stacked markers.
+  // Only when the stack is MIXED (markers of more than one colour share the
+  // spot) does the HOSTING kingdom — the territory the events sit in — take
+  // precedence, so a site cross-listed by many kingdoms' calendars reads as
+  // the host's colour. A single-kingdom stack keeps its own colour (e.g. a
+  // practice cluster keeps the muted practice shade).
   const tally = {}, hostTally = {};
   cluster.getAllChildMarkers().forEach(m => {
     if (m.options.kingdomColor) tally[m.options.kingdomColor] = (tally[m.options.kingdomColor] || 0) + 1;
@@ -1045,7 +1047,8 @@ function makeClusterIcon(cluster) {
     for (const c in obj) if (obj[c] > best) { best = obj[c]; color = c; }
     return color;
   };
-  const color = dominant(hostTally) || dominant(tally) || '#6b7280';
+  const mixed = Object.keys(tally).length > 1;
+  const color = (mixed && dominant(hostTally)) || dominant(tally) || '#6b7280';
   return makeIcon(color, 1, cluster.getChildCount());   // a normal pin + a count
 }
 
@@ -1693,13 +1696,28 @@ function applyFilters() {
     if (!g) { g = { lat: la, lng: lo, date, evs: [] }; listGroups.push(g); }
     g.evs.push(ev);
   });
+  // Cross-listings of ONE event share title words ("Known World Armoured Combat
+  // Collegium" in its many phrasings); five UNRELATED events that merely share a
+  // Saturday and a metro area don't. Before counting sources, keep only the
+  // largest subset whose titles overlap in 2+ significant words — otherwise a
+  // dense area's ordinary weekend could fake a "cross-listed on 5+ calendars" pin.
+  const sigTokens = t => new Set(String(t || '').toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
+    .filter(w => w.length >= 4 && w !== 'kingdom' && w !== 'event' && w !== 'events'));
+  const sharedTokens = (a, b) => { let n = 0; for (const w of a) if (b.has(w)) n++; return n; };
   listGroups.forEach(({ evs }) => {
-    if (new Set(evs.map(e => e.source)).size < BIG_PIN_MIN_CALENDARS) return;
+    const toks = evs.map(e => sigTokens(e.title));
+    let best = [];
+    evs.forEach((_, i) => {
+      const members = evs.filter((__, j) => i === j || sharedTokens(toks[i], toks[j]) >= 2);
+      if (members.length > best.length) best = members;
+    });
+    if (new Set(best.map(e => e.source)).size < BIG_PIN_MIN_CALENDARS) return;
     // Colour by the territory the event sits in (host_kingdom), like a war pin.
-    const host = evs.map(e => e.host_kingdom).find(h => h && KINGDOM_COLORS[h]);
+    const host = best.map(e => e.host_kingdom).find(h => h && KINGDOM_COLORS[h]);
     if (!host) return;
     // Enlarge the host kingdom's own listing if it posted one, else the first.
-    const rep = evs.find(e => e.source === host) || evs[0];
+    const rep = best.find(e => e.source === host) || best[0];
     bigListColor[rep._idx] = KINGDOM_COLORS[host];
   });
 

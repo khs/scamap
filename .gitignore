@@ -31,6 +31,9 @@ fetch_failures.json
 # a GitHub issue by the refresh workflow. Never committed.
 health_alert.md
 
+# Single-instance lock held by a running refresh.py (owner PID inside).
+refresh.lock
+
 # OS / editor
 .DS_Store
 Thumbs.db

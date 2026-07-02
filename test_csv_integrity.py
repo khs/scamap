@@ -276,5 +276,54 @@ class TestCanadaCdTopojson(unittest.TestCase):
         self.assertEqual(bad, [], f"unmapped PRUIDs: {bad}")
 
 
+# The exact header the full pipeline produces: clean_sca_events writes the first
+# 16 columns; annotate_war_hosts appends host_kingdom + war_host at the end.
+EVENTS = HERE / "sca_events_clean.csv"
+EXPECTED_EVENT_COLUMNS = [
+    "title", "start", "end", "location", "clean_location",
+    "address_confidence", "description", "event_url", "facebook_url",
+    "source", "calendar_type", "is_virtual", "lat", "lng",
+    "geocode_status", "location_specificity", "host_kingdom", "war_host",
+]
+
+
+class TestEventsCsvSchema(unittest.TestCase):
+    """sca_events_clean.csv is the pipeline's product and the map's only data
+    feed. Guard its shape: a partial pipeline run (e.g. committing while a
+    refresh is still mid-flight, which happened 2026-07-01) drops the annotate
+    columns — silently removing war pins and host-kingdom colouring."""
+
+    def test_header_is_exactly_the_pipeline_output(self):
+        with open(EVENTS, encoding="utf-8", newline="") as f:
+            header = csv.DictReader(f).fieldnames
+        self.assertEqual(header, EXPECTED_EVENT_COLUMNS,
+                         "header drift — was this committed mid-refresh?")
+
+    def test_rows_are_not_ragged(self):
+        # A row with extra fields (restkey) or missing fields (None values) is
+        # the signature of interleaved concurrent writes.
+        with open(EVENTS, encoding="utf-8", newline="") as f:
+            for i, row in enumerate(csv.DictReader(f)):
+                self.assertIsNone(row.get(None), f"row {i} has extra fields")
+                self.assertNotIn(None, row.values(), f"row {i} is missing fields")
+
+    def test_event_coordinates_in_range_when_present(self):
+        bad = []
+        with open(EVENTS, encoding="utf-8", newline="") as f:
+            for row in csv.DictReader(f):
+                lat = (row.get("lat") or "").strip()
+                lng = (row.get("lng") or "").strip()
+                if not lat and not lng:
+                    continue
+                try:
+                    la, lo = float(lat), float(lng)
+                except ValueError:
+                    bad.append((row.get("title"), lat, lng))
+                    continue
+                if not (-90 <= la <= 90 and -180 <= lo <= 180):
+                    bad.append((row.get("title"), lat, lng))
+        self.assertEqual(bad, [], f"bad event coordinates: {bad[:5]}")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
