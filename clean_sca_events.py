@@ -1180,7 +1180,10 @@ def is_recurring(dates: list) -> bool:
     if len(sorted_dates) >= 3:
         ordered = sorted(gaps)
         median_gap = ordered[len(ordered) // 2]
-        frequent = (2 <= median_gap <= 16) and (max(gaps) <= 35)
+        # Max-gap cap of 21 days: tolerate up to a ~3-week hiatus in a frequent
+        # series, but a month-long hole (e.g. gaps 7,30,7) means two separate
+        # clusters, not one practice — keep those split.
+        frequent = (2 <= median_gap <= 16) and (max(gaps) <= 21)
     return consistent or skips_ok or frequent
 
 

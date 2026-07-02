@@ -626,6 +626,19 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
             lat, lng = geocoder.nominatim(f"{ca_postal[:3]}, Canada", session, countrycodes="ca")
         if _validate(lat, lng, expected_state, source_states, source):
             return (lat, lng, "ok_retry")
+        # 1c. Rural CA postal codes (V0x/V9x…) have no OSM geometry — Nominatim
+        #     answers them with junk points. The city name is the reliable token,
+        #     and it sits right before the province, so the generic comma-tail
+        #     below ("BC, V0J 2X2, Canada") would DROP it and mislocate the event.
+        #     Strip the postal token and query "City, Province, Canada" instead.
+        bits = [p.strip() for p in address.split(",") if p.strip()]
+        bits = [p for p in bits if not CA_POSTAL_RE.fullmatch(p)]
+        if len(bits) >= 3:
+            city_tail = ", ".join(bits[-3:])
+            print(f"           → CA city tail: {city_tail[:70]}")
+            lat, lng = geocoder.nominatim(city_tail, session, countrycodes="ca")
+            if _validate(lat, lng, expected_state, source_states, source):
+                return (lat, lng, "ok_retry")
 
     # 2. Strip embedded venue prefix from the street part
     stripped = strip_venue_prefix(address)
@@ -662,9 +675,12 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
     # 5b. If we have an expected kingdom/state list, try appending each one to
     #     the address. Catches cases like "Greater Savannah area" (Meridies)
     #     where Photon returns Belize because the address is too vague.
-    #     BUT: if the address already contains an explicit 2-letter state abbreviation
-    #     (capitalized), the state is already clear — skip the hints.
-    has_explicit_state = bool(re.search(r'\b[A-Z]{2}\b', address))
+    #     BUT: if the address already names a real state/province (a comma-anchored
+    #     2-letter code that's in the bbox table), the state is already clear — skip
+    #     the hints. Comma anchoring + table membership avoid false hits on street
+    #     directionals ("123 NE 5th Ave"), a trailing ", US", or venue initials.
+    has_explicit_state = any(code in US_STATE_BBOX
+                             for code in STATE_FROM_ADDR_RE.findall(address))
     if source_states and not has_explicit_state:
         for state in sorted(source_states):
             query = f"{address}, {state}, USA"

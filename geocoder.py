@@ -140,7 +140,12 @@ def nominatim(query: str, session: requests.Session, *,
             if ok:
                 result = (float(top["lat"]), float(top["lon"]))
     except Exception as e:
+        # Transport/HTTP failure (403 ban, timeout, …) — do NOT cache: this is
+        # "couldn't ask", not "no match". Caching it turns a transient outage
+        # into a 30-day blackout for the query (_FAIL_TTL). A genuine empty
+        # result still caches below via the success path.
         print(f"    WARNING: Nominatim error for '{query[:60]}': {e}")
+        return result
     _cache_put(key, result)
     return result
 
@@ -162,6 +167,8 @@ def photon(query: str, session: requests.Session) -> tuple:
             coords = features[0]["geometry"]["coordinates"]  # [lng, lat]
             result = (float(coords[1]), float(coords[0]))
     except Exception as e:
+        # Same as nominatim(): a failed request is not a negative result.
         print(f"    WARNING: Photon error for '{query[:60]}': {e}")
+        return result
     _cache_put(key, result)
     return result

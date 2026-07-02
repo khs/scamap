@@ -170,9 +170,27 @@ class TestIsRecurring(unittest.TestCase):
         # the 7-day base, so the series is not a clean cadence.
         self.assertFalse(clean.is_recurring(_series(7, 30, 7)))
 
-    def test_average_gap_below_six_not_recurring(self):
-        # Consistent 5-day cadence but avg < 6 -> rejected.
-        self.assertFalse(clean.is_recurring(_series(5, 5, 5)))
+    def test_frequent_short_gap_series_is_recurring(self):
+        # POLICY CHANGE (Jul 2026): a consistent sub-weekly cadence is a real
+        # practice, not noise — the "frequent" rule now accepts it. (Previously
+        # rejected because avg < 6.)
+        self.assertTrue(clean.is_recurring(_series(5, 5, 5)))
+
+    def test_twice_weekly_with_replaced_weeks_is_recurring(self):
+        # The Adiantum archery/thrown case: Sat+Tue practice where some weeks
+        # are replaced by siegecraft. Gaps 3,4,10,14,4,7,3 fit no single
+        # cadence but are one recurring practice under the "frequent" rule.
+        self.assertTrue(clean.is_recurring(_series(3, 4, 10, 14, 4, 7, 3)))
+
+    def test_consecutive_daily_listings_not_recurring(self):
+        # A multi-day event posted as daily entries (gaps of 1) must NOT be
+        # collapsed into a (RECURRING) practice — median gap below 2 rejects it.
+        self.assertFalse(clean.is_recurring(_series(1, 1, 1)))
+
+    def test_frequent_series_with_month_hole_not_recurring(self):
+        # A frequent series interrupted by a month-long hole is two clusters,
+        # not one practice — the 21-day max-gap cap keeps them split.
+        self.assertFalse(clean.is_recurring(_series(3, 4, 30, 3)))
 
     def test_average_gap_above_thirty_two_not_recurring(self):
         # Consistent 35-day cadence but avg > 32 -> rejected.
