@@ -1144,6 +1144,19 @@ function escapeHtml(s) {
     .replace(/'/g, '&#39;');
 }
 
+// Only let safe link schemes reach an href. Event URLs come from third-party
+// calendar feeds; escapeHtml stops attribute-breakout but NOT a "javascript:" /
+// "data:" / "vbscript:" URL, which still executes on click. Allow only
+// http(s)/mailto (relative URLs resolve to http(s) and are fine); reject the rest.
+function safeUrl(u) {
+  const s = String(u || '').trim();
+  if (!s) return '';
+  try {
+    const proto = new URL(s, location.href).protocol;
+    return (proto === 'http:' || proto === 'https:' || proto === 'mailto:') ? s : '';
+  } catch (e) { return ''; }
+}
+
 // ── Hardcoded practices (hardcoded_events.csv) ───────────────────
 // Some groups publish their practices only as a static webpage, not an
 // importable calendar. hardcoded_events.csv lets us place those by hand: each
@@ -1179,7 +1192,7 @@ function ingestHardcodedEvents(text) {
 function buildHardcodedPopup(ev) {
   const where = ev.location ? ` at ${escapeHtml(ev.location)}` : '';
   const when  = ev.day ? ` on ${escapeHtml(ev.day)}` : '';
-  const url   = ev.schedule_url || '';
+  const url   = safeUrl(ev.schedule_url);
   const site  = url
     ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(url)}</a>`
     : 'the group’s website';
@@ -1223,9 +1236,10 @@ function buildPopup(ev) {
   const linkButtons = [];
   const used = new Set();
   const pushLink = (url, label) => {
-    if (url && !used.has(url)) {
-      used.add(url);
-      linkButtons.push(`<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${label}</a>`);
+    const safe = safeUrl(url);
+    if (safe && !used.has(safe)) {
+      used.add(safe);
+      linkButtons.push(`<a href="${escapeHtml(safe)}" target="_blank" rel="noopener">${label}</a>`);
     }
   };
   const evUrlSpecific = ev.event_url && !isGenericListing(ev.event_url);
@@ -1268,7 +1282,7 @@ function buildPopup(ev) {
     ? `<div class="links">${linkButtons.join('')}</div>` : '';
 
   // Make the source pill itself a link to the source's website when we have one
-  const sourceUrl = websiteForSource(ev.source);
+  const sourceUrl = safeUrl(websiteForSource(ev.source));
   const sourcePill = sourceUrl
     ? `<a class="source-pill" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener">${escapeHtml(ev.source)}</a>`
     : `<span class="source-pill">${escapeHtml(ev.source)}</span>`;
@@ -1359,12 +1373,12 @@ function isSpecificFacebookEvent(url) {
 // specific Facebook event, then a generic listing event_url, then any facebook
 // url, then the source's barony/kingdom site.
 function bestLinkFor(ev) {
-  if (ev.is_hardcoded === 'True') return ev.schedule_url || websiteForSource(ev.source);
-  if (ev.event_url && !isGenericListing(ev.event_url)) return ev.event_url;
-  if (isSpecificFacebookEvent(ev.facebook_url)) return ev.facebook_url;
-  return ev.event_url
-      || ev.facebook_url
-      || websiteForSource(ev.source);
+  let raw;
+  if (ev.is_hardcoded === 'True') raw = ev.schedule_url || websiteForSource(ev.source);
+  else if (ev.event_url && !isGenericListing(ev.event_url)) raw = ev.event_url;
+  else if (isSpecificFacebookEvent(ev.facebook_url)) raw = ev.facebook_url;
+  else raw = ev.event_url || ev.facebook_url || websiteForSource(ev.source);
+  return safeUrl(raw);   // never hand a javascript:/data: URL to an href
 }
 
 // ── Placeholder marker icon ───────────────────────────────────────
@@ -1510,8 +1524,9 @@ function groupTypeWord(groupName) {
 }
 
 function buildPlaceholderPopup(pin, onlineEvents) {
-  const linkBtn = pin.website
-    ? `<div class="links"><a href="${escapeHtml(pin.website)}" target="_blank" rel="noopener">${escapeHtml(pin.group)} →</a></div>`
+  const site = safeUrl(pin.website);
+  const linkBtn = site
+    ? `<div class="links"><a href="${escapeHtml(site)}" target="_blank" rel="noopener">${escapeHtml(pin.group)} →</a></div>`
     : '';
   let onlineBlock = '';
   if (onlineEvents && onlineEvents.length) {
@@ -1936,7 +1951,7 @@ function renderSidebarList() {
       const dateLabel = ev.is_hardcoded === 'True'
         ? escapeHtml(ev.day || 'Recurring') : shortDate(ev.start);
       const eventLink  = bestLinkFor(ev);
-      const sourceUrl  = websiteForSource(ev.source);
+      const sourceUrl  = safeUrl(websiteForSource(ev.source));
       const sourceHtml = sourceUrl
         ? `<a class="event-item-source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${escapeHtml(ev.source)}</a>`
         : escapeHtml(ev.source);
