@@ -155,6 +155,14 @@ def make_ics_url(calendar_id: str) -> str:
     function — see fetch_ics.
     """
     cid = calendar_id.strip()
+    # A Google Calendar *embed* page (calendar/embed?src=<id>) is HTML, not a feed;
+    # rewrite it to the ICS URL so pasting the embed link doesn't silently import
+    # zero events (fetch_ics would just reject the HTML body).
+    embed = re.match(
+        r"https?://calendar\.google\.com/calendar/embed\?\S*?src=([^&\s]+)", cid)
+    if embed:
+        return (f"https://calendar.google.com/calendar/ical/"
+                f"{embed.group(1)}/public/basic.ics")
     if cid.startswith("http://") or cid.startswith("https://"):
         return cid
     return f"https://calendar.google.com/calendar/ical/{cid}/public/basic.ics"
@@ -254,7 +262,13 @@ def get_datetime(component, field: str):
         return None
     dt = value.dt if hasattr(value, "dt") else value
     if isinstance(dt, datetime) and dt.tzinfo is not None:
-        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+        # Keep the event's LOCAL wall-clock time, not UTC. The map is a date-first
+        # display and the front-end takes the stored string's first 10 chars as the
+        # calendar day; converting to UTC pushed evening North-American events (e.g.
+        # 7 PM local) into the NEXT day (166 events mis-dated). Dropping tzinfo keeps
+        # the local components so the stored date is the day the event happens.
+        # (All-day VALUE=DATE values are plain `date` objects and fall through here.)
+        dt = dt.replace(tzinfo=None)
     return dt
 
 

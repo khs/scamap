@@ -104,14 +104,18 @@ class TestIsVirtualEvent(unittest.TestCase):
 
 
 class TestGetDatetime(unittest.TestCase):
-    def test_tzaware_normalised_to_naive_utc(self):
+    def test_tzaware_keeps_local_wallclock_and_day(self):
+        # A tz-aware time keeps its LOCAL wall-clock components (tzinfo dropped),
+        # NOT converted to UTC — so the stored calendar day is the day the event
+        # actually happens. A 7 PM PDT event must stay on the 15th, not roll to the
+        # 16th (the earlier UTC-conversion bug that mis-dated 166 events).
         ev = Event()
-        # 12:00 at UTC-5  ==  17:00 UTC
-        ev.add("dtstart", datetime(2026, 7, 1, 12, 0, 0,
-                                   tzinfo=timezone(timedelta(hours=-5))))
+        ev.add("dtstart", datetime(2026, 7, 15, 19, 0, 0,
+                                   tzinfo=timezone(timedelta(hours=-7))))
         got = m.get_datetime(ev, "DTSTART")
-        self.assertEqual(got, datetime(2026, 7, 1, 17, 0, 0))
-        self.assertIsNone(got.tzinfo)           # made naive
+        self.assertEqual(got, datetime(2026, 7, 15, 19, 0, 0))
+        self.assertIsNone(got.tzinfo)                    # made naive
+        self.assertEqual(got.date(), date(2026, 7, 15))  # NOT 2026-07-16
 
     def test_date_passes_through_unchanged(self):
         ev = Event()

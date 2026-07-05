@@ -138,17 +138,27 @@ def fetch_organizer(url: str):
     itself failed (leave uncached so a later run retries)."""
     try:
         from curl_cffi import requests as creq
-        text = creq.get(url, impersonate="chrome", timeout=30).text
+        resp = creq.get(url, impersonate="chrome", timeout=30)
     except Exception:
         try:
             import requests
-            text = requests.get(
-                url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
-                timeout=30).text
+            resp = requests.get(
+                url,
+                headers={"User-Agent":
+                         "SCAMap event aggregator (+https://github.com/khs/scamap)"},
+                timeout=30)
         except Exception as e:
             print(f"    fetch failed for {url}: {e}")
             return None
-    return parse_organizer(text) or ""
+    # An HTTP error is a failed fetch, not "page has no organizer" — neither
+    # curl_cffi nor requests raise on 4xx/5xx, so check the status. Returning None
+    # (uncached) stops a transient 403/429/500 or a Cloudflare challenge from
+    # permanently stranding the event at the state centroid (same failure-cache
+    # bug class fixed in geocoder.py).
+    if getattr(resp, "status_code", 200) >= 400:
+        print(f"    fetch failed for {url}: HTTP {resp.status_code}")
+        return None
+    return parse_organizer(resp.text) or ""
 
 
 def main():

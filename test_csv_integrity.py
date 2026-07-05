@@ -186,6 +186,22 @@ class TestLocals(unittest.TestCase):
                 bad.append((r.get("group"), lat, lng))
         self.assertEqual(bad, [], f"out-of-range or unpaired coordinates: {bad}")
 
+    def test_no_real_calendar_shared_across_kingdoms(self):
+        # A real (fetchable) calendar_id must not be reused by groups in different
+        # kingdoms — that's a copy-paste error that imports one group's events under
+        # another's name and region (the Mag Mor/Caer Mear collision). Placeholder
+        # ids ("No Calendar Listed", etc.) are shared freely and exempt.
+        placeholder = {"", "no calendar listed", "no calendar available", "none",
+                       "n/a", "tbd", "-", "practices added manually"}
+        by_cal = {}
+        for r in self.rows:
+            cal = (r.get("calendar_id") or "").strip()
+            if cal.lower() in placeholder:
+                continue
+            by_cal.setdefault(cal, set()).add((r.get("kingdom") or "").strip())
+        shared = {cal: sorted(ks) for cal, ks in by_cal.items() if len(ks) > 1}
+        self.assertEqual(shared, {}, f"calendar_id shared across kingdoms: {shared}")
+
 
 class TestColourSchemes(unittest.TestCase):
     """colourschemes.csv is the single source of truth for kingdom + practice

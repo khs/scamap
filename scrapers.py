@@ -82,6 +82,8 @@ HTTP_HEADERS = {
     "User-Agent": "Mozilla/5.0 (SCAMap event aggregator; +https://github.com/khs/scamap)",
 }
 HTTP_TIMEOUT = 30
+RETRY_BACKOFF_S = 3.0     # pause before retrying a 429 (rate-limited) response
+MEC_FETCH_DELAY = 1.0     # seconds between MEC per-event page fetches (WAF host)
 
 # Some kingdom WAFs (Cloudflare and similar) return 403 to our honest
 # aggregator UA when the request originates from a datacenter IP — e.g. the
@@ -126,6 +128,17 @@ def _looks_like_json(resp) -> bool:
     return body[:1] in ("{", "[")
 
 
+def _cffi_ok(resp, expect_json: bool) -> bool:
+    """A curl_cffi response is usable only if it isn't a WAF block code AND, when
+    JSON was requested, its body is actually JSON. Without the JSON re-check a
+    Cloudflare 'Just a moment…' HTML page returned with status 200 would be
+    accepted (and its host memoised), silently killing a JSON feed on the .json()
+    call downstream."""
+    return (resp is not None
+            and resp.status_code not in _WAF_BLOCK_CODES
+            and (not expect_json or _looks_like_json(resp)))
+
+
 def _curl_cffi_get(url, **kwargs):
     """Fetch with a real Chrome TLS/JA3 fingerprint via curl_cffi.
 
@@ -166,10 +179,12 @@ def _http_get(url, *, session=None, expect_json=False, **kwargs):
     getter = (session or requests).get
     host = urlparse(url).netloc
 
-    # Known fingerprint-blocked host: skip the honest attempt entirely.
+    # Known fingerprint-blocked host: skip the honest attempt entirely — but only
+    # accept the curl_cffi response if it's actually good (a non-JSON challenge
+    # page must fall through to the honest/last-resort path, not be returned).
     if host in _TLS_REQUIRED_HOSTS:
         cffi_resp = _curl_cffi_get(url, **kwargs)
-        if cffi_resp is not None:
+        if _cffi_ok(cffi_resp, expect_json):
             return cffi_resp
 
     resp = getter(url, headers=HTTP_HEADERS, **kwargs)
@@ -181,8 +196,10 @@ def _http_get(url, *, session=None, expect_json=False, **kwargs):
                else "non-JSON 200")
         print(f"  NOTE: {why} on {url[:60]} — retrying with a browser TLS "
               f"fingerprint")
+        if resp.status_code == 429:
+            time.sleep(RETRY_BACKOFF_S)          # don't deepen a rate-limit ban
         cffi_resp = _curl_cffi_get(url, **kwargs)
-        if cffi_resp is not None and cffi_resp.status_code not in _WAF_BLOCK_CODES:
+        if _cffi_ok(cffi_resp, expect_json):
             _TLS_REQUIRED_HOSTS.add(host)        # remember: skip honest next time
             return cffi_resp
         resp = getter(url, headers=BROWSER_HEADERS, **kwargs)   # last resort
@@ -281,7 +298,10 @@ def _emit_calendar(name: str, events: list[dict]) -> str:
         if ev.get("description"):
             lines.append(_fold(f"DESCRIPTION:{_ics_escape(ev['description'])}"))
         if ev.get("url"):
-            lines.append(_fold(f"URL:{ev['url']}"))
+            # Escape like every other TEXT field: a scraped url with a CR/LF (or
+            # stray whitespace) must not be able to inject `\nEND:VEVENT\nBEGIN...`
+            # and smuggle a fabricated event through icalendar's parser.
+            lines.append(_fold(f"URL:{_ics_escape(ev['url'].split()[0] if ev['url'].split() else '')}"))
         lines.append("END:VEVENT")
     lines.append("END:VCALENDAR")
     return "\r\n".join(lines) + "\r\n"
@@ -604,6 +624,7 @@ def scrape_mec_rest(site_url: str, name: str) -> Optional[str]:
         except requests.RequestException as exc:
             print(f"  WARNING: MEC event page failed {event_url}: {exc}")
             continue
+        time.sleep(MEC_FETCH_DELAY)   # polite gap: MEC is a WAF-fronted volunteer host
         ev = _parse_mec_event_page(ep.text, item, site_url)
         if ev:
             events.append(ev)
@@ -715,7 +736,13 @@ def scrape_calon_json(url: str, name: str) -> Optional[str]:
                 overview = cache[event_url]
             else:
                 overview = _fetch_calon_overview(event_url, session)
-                cache[event_url] = overview
+                # Only cache a real (non-empty) overview: _fetch_calon_overview
+                # also returns "" on a network error or a missing tab, and caching
+                # that permanently blanks the description (the failure-cache bug
+                # class fixed in geocoder.py). An empty result just re-fetches next
+                # run rather than sticking forever.
+                if overview:
+                    cache[event_url] = overview
                 new_fetches += 1
                 time.sleep(CALON_FETCH_DELAY)
 
