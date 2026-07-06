@@ -45,7 +45,10 @@
       position: relative;
       text-align: center;
       padding: 1rem 1rem 0.8rem;
-      background-image: url("newheaderbg_eventscout_blue.png");
+      /* Banner art is applied lazily by header-bg.js (downscaled JPEG for mobile,
+         full-res PNG for desktop). This blue keeps the parchment title legible
+         until/without it and never blocks first paint. */
+      background-color: var(--blue-dark);
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
@@ -580,6 +583,7 @@
     if (new URLSearchParams(location.search).has('embed'))
       document.documentElement.classList.add('embed');
   </script>
+  <script defer src="header-bg.js"></script>
 </head>
 <body>
 
