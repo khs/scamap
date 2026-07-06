@@ -1,17 +1,18 @@
 /* header-bg.js — lazy, responsive header banner (shared by all pages).
  *
- * The banner art is heavy (the desktop PNG is ~1.7 MB), so instead of loading it
- * from CSS on the critical path we apply it here from a `defer` script: it runs
- * after the HTML is parsed (never blocking first paint), identifies mobile vs
- * desktop with matchMedia, preloads the right file OFF the critical path, and only
- * swaps it in once decoded. Mobile gets a ~37 KB downscaled JPEG; desktop gets the
- * full-res PNG. Until (or unless) the art arrives the header keeps its solid blue
- * background colour, so the parchment title is always legible.
+ * The banner art is decorative and non-critical, so instead of loading it from CSS
+ * on the critical path we apply it here from a `defer` script: it runs after the
+ * HTML is parsed (never blocking first paint), identifies mobile vs desktop with
+ * matchMedia, preloads the right file OFF the critical path, and only swaps it in
+ * once decoded. Both are JPEGs (the source alpha is fully opaque): desktop gets the
+ * full-res one (~180 KB), mobile a ~37 KB downscaled one. Until (or unless) the art
+ * arrives the header keeps its solid blue background colour, so the parchment title
+ * is always legible.
  */
 (function () {
   var header = document.querySelector('header');
   if (!header) return;
-  var DESKTOP = 'newheaderbg_eventscout_blue.png';
+  var DESKTOP = 'newheaderbg_eventscout_blue.jpg';
   var MOBILE  = 'newheaderbg_eventscout_blue_mobile.jpg';
   var mq = window.matchMedia('(max-width: 700px)');
   var applied = '';

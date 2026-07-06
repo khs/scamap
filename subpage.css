@@ -29,13 +29,13 @@ body {
 
 /* ── Header ────────────────────────────────────────────────────── */
 /* Matches index.html's header: the parchment title sits over the shared
-   background image (newheaderbg_eventscout_blue.png). */
+   banner image (applied lazily by header-bg.js). */
 header {
   position: relative;
   text-align: center;
   padding: 1rem 1rem 0.8rem;
   /* Banner art is applied lazily by header-bg.js (downscaled JPEG for mobile,
-     full-res PNG for desktop); this blue keeps the parchment title legible until
+     full-res JPEG for desktop); this blue keeps the parchment title legible until
      it arrives. */
   background-color: var(--blue-dark);
   background-size: cover;
