@@ -45,7 +45,10 @@
       position: relative;
       text-align: center;
       padding: 1rem 1rem 0.8rem;
-      background-image: url("newheaderbg_eventscout_blue.png");
+      /* Banner art is applied lazily by header-bg.js (downscaled JPEG for mobile,
+         full-res JPEG for desktop). This blue keeps the parchment title legible
+         until/without it and never blocks first paint. */
+      background-color: var(--blue-dark);
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
@@ -181,9 +184,11 @@
       display: flex;
       align-items: center;
       gap: 0.45rem;
-      font-family: 'Cormorant Unicase', serif;
-      font-size: 0.72rem;
-      letter-spacing: 0.1em;
+      /* Body font (not the Cormorant Unicase display face) so these control
+         labels are easy to read at small size. */
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.01em;
       color: var(--ink-lt);
       cursor: pointer;
       user-select: none;
@@ -350,6 +355,14 @@
       color: var(--blue);
       border-bottom-color: var(--blue);
     }
+    /* Hand-coded events: "no auto-updating calendar" note, with linkified
+       group name / website / socials inside the muted .event-item-source line. */
+    .event-item-uncertain a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px dotted currentColor;
+    }
+    .event-item-uncertain a:hover { color: var(--blue); border-bottom-color: var(--blue); }
 
     .event-item-dot {
       position: absolute;
@@ -525,7 +538,26 @@
     .legend-swatch:hover, .legend-swatch:focus {
       outline: 2px solid var(--blue); outline-offset: 1px;
     }
+    /* A clicked (sticky) swatch keeps a blue ring so the active filter is visible. */
+    .legend-swatch.active { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--blue); }
+    .legend-clear {
+      font: inherit; font-size: 0.72rem; cursor: pointer;
+      border: 1px solid var(--sky-blue); border-radius: 10px;
+      background: #fff; color: var(--blue); padding: 1px 8px; margin-left: 4px;
+    }
+    .legend-clear:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
     .legend-readout { font-style: italic; color: #555; }
+    /* Full-screen toggle sits at the right end of the colour-key row. */
+    .fullscreen-btn {
+      margin-left: auto; font: inherit; font-size: 0.74rem; cursor: pointer;
+      border: 1px solid var(--sky-blue); border-radius: 6px;
+      background: #fff; color: var(--blue); padding: 2px 10px;
+    }
+    .fullscreen-btn:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
+    /* When the map area is full-screen, let it fill the viewport. */
+    .map-area:fullscreen { height: 100vh; width: 100vw; background: var(--parchment); }
+    .map-area:fullscreen #map,
+    .map-area:fullscreen .sidebar { height: 100%; }
 
     /* ── Embed mode (?embed) ─────────────────────────────────────────
        Drops the site chrome — header, nav, the event-list sidebar, and the
@@ -551,6 +583,7 @@
     if (new URLSearchParams(location.search).has('embed'))
       document.documentElement.classList.add('embed');
   </script>
+  <script defer src="header-bg.js"></script>
 </head>
 <body>
 
@@ -639,6 +672,7 @@
     <span class="legend-title">Key</span>
     <span class="legend-swatches" id="legend-swatches"></span>
     <span class="legend-readout" id="legend-readout" aria-live="polite">hover or tap a square to see what each colour means</span>
+    <button type="button" id="fullscreen-btn" class="fullscreen-btn" title="Expand the map and event list to fill your screen">⛶ Full screen</button>
   </div>
 
   <section class="prose-section">
@@ -1110,6 +1144,92 @@ function sortKey(s) {
   return isNaN(d) ? '9999' : d.toISOString();
 }
 
+// ── Hand-coded practice schedules ────────────────────────────────
+// hardcoded_events.csv rows carry a free-text `day` ("Sundays", "the first and
+// third Tuesdays of each month", "Sundays except third Sundays", "any month which
+// has a fifth Monday", "some Wednesdays and Sundays", "an unknown day") instead of
+// a real date. Parse it into weekday rules so the event's NEXT occurrence can be
+// placed in the date-sorted sidebar.
+const _WEEKDAY = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
+const _ORDINAL = { first: 1, second: 2, third: 3, fourth: 4, fifth: 5 };
+
+// Which occurrence of its weekday a date is within its month (1..5): the 5th
+// Monday, say, only exists in months whose Mondays reach the 29th–31st.
+function _nthWeekdayOfMonth(d) { return Math.floor((d.getDate() - 1) / 7) + 1; }
+
+// Parse one clause into [{weekday, ordinals:Set|null}] (ordinals null = every week).
+// Ordinals attach to the weekday they precede, so "first Monday and third Saturday"
+// yields Monday#1 + Saturday#3, while "first and third Tuesdays" yields Tuesday#1,3.
+function _parseScheduleClause(text) {
+  const rules = [];
+  const wdRe = /\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday)s?\b/g;
+  let m, prevEnd = 0;
+  while ((m = wdRe.exec(text)) !== null) {
+    const seg = text.slice(prevEnd, m.index);
+    const ords = [];
+    seg.replace(/\b(first|second|third|fourth|fifth)\b|\b([1-5])(?:st|nd|rd|th)\b/g,
+      (_, word, num) => { ords.push(word ? _ORDINAL[word] : parseInt(num, 10)); return ''; });
+    rules.push({ weekday: _WEEKDAY[m[1]], ordinals: ords.length ? new Set(ords) : null, except: null });
+    prevEnd = m.index + m[0].length;
+  }
+  return rules;
+}
+
+// Parse a `day` string → { maybe, rules } or null when it names no weekday
+// ("an unknown day"). `maybe` is set by "some"/"most" (→ MAYBE-tagged in the UI).
+function parseSchedule(dayStr) {
+  const s = String(dayStr || '').toLowerCase().trim();
+  if (!s || /unknown/.test(s)) return null;
+  const maybe = /\b(some|most)\b/.test(s);
+  let main = s, exc = '';
+  const ei = s.indexOf('except');
+  if (ei >= 0) { main = s.slice(0, ei); exc = s.slice(ei + 6); }
+  const rules = _parseScheduleClause(main);
+  if (!rules.length) return null;
+  if (exc) {                                  // "Sundays except third Sundays"
+    _parseScheduleClause(exc).forEach(er => {
+      if (!er.ordinals) return;
+      const target = rules.find(r => r.weekday === er.weekday) || rules[0];
+      target.except = target.except || new Set();
+      er.ordinals.forEach(o => target.except.add(o));
+    });
+  }
+  return { maybe, rules };
+}
+
+// The next date on/after `from` that matches the schedule (null within horizon).
+function nextScheduleDate(sched, from, horizonDays = 400) {
+  if (!sched) return null;
+  const d = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  for (let i = 0; i < horizonDays; i++) {
+    const nth = _nthWeekdayOfMonth(d);
+    const hit = sched.rules.some(r =>
+      d.getDay() === r.weekday
+      && (!r.ordinals || r.ordinals.has(nth))
+      && !(r.except && r.except.has(nth)));
+    if (hit) return d;
+    d.setDate(d.getDate() + 1);
+  }
+  return null;
+}
+
+// The sidebar/popup source line for a hand-coded event: flag that it has no
+// auto-updating calendar, linkifying the group name, "website" and "socials" only
+// where we actually have a URL (schedule_url + the locals.csv website/social).
+function hardcodedSourceNote(ev) {
+  const canon = canonicalSource(ev.source);
+  const webUrl = safeUrl(ev.schedule_url || sourceWebsite[ev.source] || sourceWebsite[canon]);
+  const socialUrl = safeUrl(sourceSocial[ev.source] || sourceSocial[canon]);
+  const link = (url, text) => url
+    ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${escapeHtml(text)}</a>`
+    : escapeHtml(text);
+  const checks = [];
+  if (webUrl) checks.push(link(webUrl, 'website'));
+  if (socialUrl) checks.push(link(socialUrl, 'socials'));
+  const tail = checks.length ? ` — please check the ${checks.join(' or ')}` : '';
+  return `The ${link(webUrl, ev.source)} does not have an automatically updating calendar${tail}.`;
+}
+
 // ── Source-calendar fallback URLs ────────────────────────────────
 // When an event has no extracted event_url, link to the kingdom's public
 // calendar/event page so people can find more info. Verified by
@@ -1186,6 +1306,16 @@ function ingestHardcodedEvents(text) {
       location_specificity: (row.location_specificity || row['location specificity'] || '').trim(),
       start: '', end: '', description: '',
     };
+    // Turn the free-text recurring `day` into the next concrete occurrence so the
+    // event sorts into the date-ordered sidebar; "some"/"most" days are tagged
+    // MAYBE. An undatable "unknown day" keeps start='' (still shown on the map).
+    const sched = parseSchedule(ev.day);
+    ev._maybe = !!(sched && sched.maybe);
+    const next = nextScheduleDate(sched, new Date());
+    if (next) {
+      ev.start = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`
+               + `-${String(next.getDate()).padStart(2, '0')}`;
+    }
     // A virtual hardcoded practice behaves like any other online event: no pin,
     // just tied to its parent group's coordinate (provided here) for the
     // Online-tab viewport filter.
@@ -1208,7 +1338,7 @@ function buildHardcodedPopup(ev) {
     ? `<p style="margin:0 0 0.5rem;"><strong>This pin is placed in an approximately correct town or city, but we do not know the correct address. Check the correct location before trying to attend the practice.</strong></p>`
     : '';
   return `<div class="event-popup">
-    <h3>${escapeHtml(ev.title)}</h3>
+    <h3>${ev._maybe ? 'MAYBE: ' : ''}${escapeHtml(ev.title)}</h3>
     <span class="source-pill">${escapeHtml(ev.source)}</span>
     <div class="desc" style="margin-top:0.45rem;">
       ${vague}EventScout is unable to import this calendar, but we believe this practice is${where}${when}.
@@ -1304,6 +1434,7 @@ function buildPopup(ev) {
 let allEvents   = [];
 let groupPins   = [];   // placeholder pins from locals.csv (set after load)
 let sourceWebsite = {}; // { "Barony of Carolingia": "https://carolingia.eastkingdom.org" }
+let sourceSocial  = {}; // { group -> social URL } — for the hand-coded "socials" link
 let CANTON_SITES = [];  // cantons whose events ride on a parent barony's calendar
 let markerMap   = {};   // index → Leaflet marker
 // Cluster markers ONLY when they're at essentially the same location — the
@@ -1567,6 +1698,16 @@ function buildPlaceholderPopup(pin, onlineEvents) {
 let sidebarMode = "map";  // "map" or "online"
 let lastFiltered = [];    // last filtered+sorted events, reused for viewport re-renders
 
+// Colour-key filter: the legend doubles as a filter. `legendFilter` holds the
+// clicked swatch colours (union — show events of ANY of them); `legendHover` is a
+// transient single colour previewed while the pointer is over a swatch. Empty =
+// show everything. Events are matched by their rendered eventColor().
+const legendFilter = new Set();
+let legendHover = null;
+function legendActiveColors() {
+  return legendHover ? new Set([legendHover]) : legendFilter;
+}
+
 function applyFilters() {
   const query       = document.getElementById('search-input').value.toLowerCase().trim();
   const showKingdom = document.getElementById('chk-kingdom').checked;
@@ -1597,6 +1738,9 @@ function applyFilters() {
     // Date-range filter — applied universally (map AND online). Hardcoded
     // practices have no date and always pass (see inDateWindow above).
     if (!inDateWindow(ev)) return false;
+    // Colour-key filter (hover preview or clicked swatches). Empty = show all.
+    const legendColors = legendActiveColors();
+    if (legendColors.size && !legendColors.has(eventColor(ev).toLowerCase())) return false;
     if (onlineOnly) {
       // Online-only view: virtual events, still honouring the Kingdom/Baronial
       // checkboxes (unchecking Baronial hides baronial business meetings here
@@ -1957,9 +2101,13 @@ function renderSidebarList() {
         ? escapeHtml(ev.day || 'Recurring') : shortDate(ev.start);
       const eventLink  = bestLinkFor(ev);
       const sourceUrl  = safeUrl(websiteForSource(ev.source));
-      const sourceHtml = sourceUrl
-        ? `<a class="event-item-source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${escapeHtml(ev.source)}</a>`
-        : escapeHtml(ev.source);
+      // Hand-coded events have no auto-updating calendar — say so, linkifying the
+      // group name / website / socials wherever we have the data (per request).
+      const sourceHtml = ev.is_hardcoded === 'True'
+        ? `<span class="event-item-uncertain">${hardcodedSourceNote(ev)}</span>`
+        : sourceUrl
+          ? `<a class="event-item-source-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${escapeHtml(ev.source)}</a>`
+          : escapeHtml(ev.source);
 
       // Online-list items have no map marker to fly to, so a click should
       // reveal the meeting's date/TIME + link INLINE — not jump straight to
@@ -1981,7 +2129,7 @@ function renderSidebarList() {
       }
       item.title = expandable ? 'Click to show date, time & link' : 'Click to show on the map';
       item.innerHTML = `
-        <div class="event-item-title">${escapeHtml(ev.title)}${virtualTag}</div>
+        <div class="event-item-title">${ev._maybe ? 'MAYBE: ' : ''}${escapeHtml(ev.title)}${virtualTag}</div>
         <div class="event-item-date">${dateLabel}</div>
         <div class="event-item-source">${sourceHtml}</div>
         <span class="event-item-dot" style="background:${color}"></span>
@@ -2104,10 +2252,12 @@ Promise.all([
     // whose source is "Barony of X" can fall back to that barony's official site
     // and be coloured as a muted version of its kingdom's colour.
     sourceWebsite = {};
+    sourceSocial = {};
     groupKingdom = {};
     CANTON_SITES = [];
     groupPins.forEach(p => {
       if (p.group && p.website && !sourceWebsite[p.group]) sourceWebsite[p.group] = p.website;
+      if (p.group && p.social && !sourceSocial[p.group]) sourceSocial[p.group] = p.social;
       if (p.group && p.kingdom && !groupKingdom[p.group]) groupKingdom[p.group] = p.kingdom;
       // Cantons usually have no calendar of their own — their events ride on the
       // parent barony's calendar — so register the canton's own site to link when
@@ -2197,6 +2347,20 @@ function buildLegend() {
   const kingdoms = Object.keys(KINGDOM_COLORS)
     .filter(k => k.startsWith('Kingdom of')).sort();
   const frag = document.createDocumentFragment();
+
+  // The legend doubles as a filter: hovering a swatch previews only that colour's
+  // events; clicking toggles it into a sticky multi-select; "Show all" clears it.
+  const baseReadout = 'hover or tap a square to see what each colour means';
+  let clearChip;
+  const syncActive = () => {
+    wrap.querySelectorAll('.legend-swatch').forEach(el =>
+      el.classList.toggle('active', legendFilter.has(el.dataset.color)));
+    if (clearChip) clearChip.style.display = legendFilter.size ? '' : 'none';
+    readout.textContent = legendFilter.size
+      ? `Showing ${legendFilter.size} selected colour${legendFilter.size > 1 ? 's' : ''} — click a square to toggle, or “Show all”.`
+      : baseReadout;
+  };
+
   kingdoms.forEach(k => {
     const short = k.replace(/^Kingdom of (the )?/, '');
     const pair = document.createElement('span');
@@ -2208,19 +2372,44 @@ function buildLegend() {
         sw.className = 'legend-swatch';
         sw.style.background = color;
         const label = `${short} (${kind})`;
-        sw.title = label;
+        sw.dataset.color = String(color).toLowerCase();
+        sw.title = `Filter to ${label}`;
         sw.tabIndex = 0;
         sw.setAttribute('role', 'button');
-        sw.setAttribute('aria-label', label);
-        const show = () => { readout.textContent = label; };
-        sw.addEventListener('mouseenter', show);
-        sw.addEventListener('click', show);
-        sw.addEventListener('focus', show);
+        sw.setAttribute('aria-label', `Filter to ${label}`);
+        const preview = () => { readout.textContent = label; legendHover = sw.dataset.color; applyFilters(); };
+        const endPreview = () => { legendHover = null; applyFilters(); syncActive(); };
+        const toggle = () => {
+          legendHover = null;
+          legendFilter.has(sw.dataset.color)
+            ? legendFilter.delete(sw.dataset.color)
+            : legendFilter.add(sw.dataset.color);
+          syncActive(); applyFilters();
+        };
+        sw.addEventListener('mouseenter', preview);
+        sw.addEventListener('mouseleave', endPreview);
+        sw.addEventListener('focus', preview);
+        sw.addEventListener('blur', endPreview);
+        sw.addEventListener('click', toggle);
+        sw.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+        });
         pair.appendChild(sw);
       });
     frag.appendChild(pair);
   });
   wrap.appendChild(frag);
+
+  clearChip = document.createElement('button');
+  clearChip.type = 'button';
+  clearChip.className = 'legend-clear';
+  clearChip.textContent = '✕ Show all';
+  clearChip.title = 'Clear colour filters and show all events';
+  clearChip.addEventListener('click', () => {
+    legendFilter.clear(); legendHover = null; syncActive(); applyFilters();
+  });
+  wrap.appendChild(clearChip);
+  syncActive();
 }
 
 document.getElementById('date-from').addEventListener('change', applyFilters);
@@ -2235,6 +2424,24 @@ document.getElementById('chk-baronial').addEventListener('change', applyFilters)
 document.getElementById('chk-placeholders').addEventListener('change', applyFilters);
 document.getElementById('chk-aggregate').addEventListener('change', applyFilters);
 document.getElementById('chk-virtual').addEventListener('change', applyFilters);
+
+// Full-screen: expand the map + sidebar to fill the whole screen (native
+// Fullscreen API on the .map-area box). Leaflet needs invalidateSize() once the
+// box has resized, and the sidebar re-renders against the new viewport.
+(() => {
+  const btn = document.getElementById('fullscreen-btn');
+  const area = document.querySelector('.map-area');
+  if (!btn || !area) return;
+  btn.addEventListener('click', () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (area.requestFullscreen) area.requestFullscreen().catch(() => {});
+  });
+  document.addEventListener('fullscreenchange', () => {
+    const on = document.fullscreenElement === area;
+    btn.textContent = on ? '✕ Exit full screen' : '⛶ Full screen';
+    setTimeout(() => { map.invalidateSize(); renderSidebarList(); }, 80);
+  });
+})();
 
 // Sidebar mode tabs: clicking "Online Only" filters to virtual events only,
 // date-sorted; clicking "Map Events" returns to the geographic event view.

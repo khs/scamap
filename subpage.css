@@ -28,16 +28,30 @@ body {
 }
 
 /* ── Header ────────────────────────────────────────────────────── */
-header { text-align: center; padding: 1rem 1rem 0.8rem; }
+/* Matches index.html's header: the parchment title sits over the shared
+   banner image (applied lazily by header-bg.js). */
+header {
+  position: relative;
+  text-align: center;
+  padding: 1rem 1rem 0.8rem;
+  /* Banner art is applied lazily by header-bg.js (downscaled JPEG for mobile,
+     full-res JPEG for desktop); this blue keeps the parchment title legible until
+     it arrives. */
+  background-color: var(--blue-dark);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
 .site-title {
+  position: relative;
   font-family: 'Cormorant Unicase', serif;
   font-size: clamp(2rem, 5.5vw, 3.8rem);
-  color: var(--blue-dark);
+  color: var(--parchment);
   letter-spacing: 0.03em;
   line-height: 1.15;
 }
 .site-title a { color: inherit; text-decoration: none; }
-.site-title a:hover { color: var(--sky-blue); }
+.site-title a:hover { color: var(--light-blue); }
 
 /* ── Navigation ────────────────────────────────────────────────── */
 nav { background: var(--blue); position: sticky; top: 0; z-index: 1000; }
