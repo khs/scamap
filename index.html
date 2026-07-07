@@ -1049,6 +1049,11 @@ function makeIcon(color, scale = 1, count = null) {
 // the war test and the host are computed at build time (annotate_war_hosts.py)
 // and arrive as the per-event `war_host` column, blank for everything else.
 const WAR_PIN_SCALE = 1.6;
+const WAR_PIN_SCALE_MOBILE = 1.5;   // a smaller bump on narrow screens — 1.6x reads huge on a phone
+// Same breakpoint as header-bg.js's mobile/desktop split, so "mobile" means the
+// same thing everywhere on the site.
+const MOBILE_MQ = window.matchMedia('(max-width: 700px)');
+function warPinScale() { return MOBILE_MQ.matches ? WAR_PIN_SCALE_MOBILE : WAR_PIN_SCALE; }
 // An event cross-listed on this many separate calendars also gets the oversized
 // pin (like a war), coloured by its hosting kingdom (host_kingdom = the territory
 // it sits in; precomputed in annotate_war_hosts.py).
@@ -1896,7 +1901,7 @@ function applyFilters() {
     const [plotLat, plotLng] = spiralOffset(lat, lng);
     const hostColor = warHostColor[ev._idx] || bigListColor[ev._idx];   // the one big pin (war or 5+ cross-listing)
     const color = hostColor || eventColor(ev);
-    const icon = makeIcon(color, hostColor ? WAR_PIN_SCALE : 1);
+    const icon = makeIcon(color, hostColor ? warPinScale() : 1);
     // Territory ("hosting") kingdom colour for this event, read by makeClusterIcon
     // so an aggregated cluster takes the host kingdom's colour.
     const territoryColor = ev.host_kingdom ? KINGDOM_COLORS[ev.host_kingdom] : null;
@@ -2494,6 +2499,11 @@ if (document.getElementById('chk-overlay').checked) {
 // belt-and-suspenders guard for the projection race below that can leave far
 // regions unpainted on a fast first load.
 window.addEventListener('load', () => map.invalidateSize());
+
+// Re-render markers when the mobile/desktop breakpoint is crossed (rotating a
+// phone, resizing the window) so war/big pins pick up the right scale live.
+(MOBILE_MQ.addEventListener ? MOBILE_MQ.addEventListener.bind(MOBILE_MQ, 'change')
+                             : MOBILE_MQ.addListener.bind(MOBILE_MQ))(applyFilters);
 </script>
 </body>
 </html>
