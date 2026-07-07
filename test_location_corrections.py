@@ -140,6 +140,21 @@ class TestLocationCorrections(_TmpDirMixin):
         self.assertAlmostEqual(float(out.iloc[0]["lat"]), 42.887382, places=5)
         self.assertEqual(out.iloc[0]["geocode_status"], "override")
 
+    def test_kingdom_cross_listing_pinned_to_real_site(self):
+        # A kingdom's cross-listing of an out-of-kingdom war can carry only a bare
+        # region name ("New Mexico") instead of the war's real address, geocoding to
+        # a state centroid hundreds of miles away (the Outlands' Pennsic listing).
+        # The correction must still pin it to the war's actual site.
+        self._corrections([{"source": "Kingdom of the Outlands", "keywords": "pennsic",
+                            "lat": "40.9749376", "lng": "-80.138691"}])
+        df = _df([{"title": "Pennsic War", "source": "Kingdom of the Outlands",
+                   "location": "New Mexico", "clean_location": "New Mexico",
+                   "lat": "34.5802074", "lng": "-105.996047", "geocode_status": "ok"}])
+        out = clean.apply_location_corrections(df)
+        self.assertAlmostEqual(float(out.iloc[0]["lat"]), 40.9749376, places=5)
+        self.assertAlmostEqual(float(out.iloc[0]["lng"]), -80.138691, places=5)
+        self.assertEqual(out.iloc[0]["geocode_status"], "override")
+
     def test_clears_vague_flag_on_precise_fix(self):
         self._corrections([{"source": "Barony of Bright Hills", "keywords": "practice",
                             "lat": "39.416485", "lng": "-76.505546"}])
