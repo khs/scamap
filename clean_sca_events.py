@@ -267,6 +267,24 @@ def unwrap_redirect(url: str) -> str:
     return url
 
 
+
+# Phrases that mean a nearby link is a standing policy/waiver/conduct page, not
+# the event's own listing — several calendars glue one onto the end of a
+# recurring practice's description as boilerplate (e.g. Storvik's Fighter and
+# Dance Practice links only to Atlantia's kingdom-wide COVID policy). When a
+# description has no clearly-labeled "event website" link, the two extractors
+# below fall back to "the description's only/first link must be the event's
+# page" — which wrongly adopts a policy link when that's the only one present.
+# Matching one of these anywhere in the description vetoes that fallback (an
+# absent link is preferable to a wrong one); an explicit "event website"-labeled
+# link is unaffected either way, since it's matched before the fallback runs.
+_NOT_EVENT_LINK_RE = re.compile(
+    r"covid|safety\s+polic|code\s+of\s+conduct|waiver|release\s+form|"
+    r"reopening\s+polic|health\s+polic",
+    re.IGNORECASE,
+)
+
+
 def extract_urls_from_html(html: str) -> dict:
     """
     Parse HTML and extract the first event website URL and first Facebook URL.
@@ -286,8 +304,9 @@ def extract_urls_from_html(html: str) -> dict:
         if not facebook_url and ("facebook.com" in href or "fb.com" in href):
             facebook_url = unwrap_redirect(href)
 
-    # Fallback: first non-Facebook link
-    if not event_url:
+    # Fallback: first non-Facebook link — unless the description reads like a
+    # policy page (see _NOT_EVENT_LINK_RE above), whose only link isn't the event.
+    if not event_url and not _NOT_EVENT_LINK_RE.search(soup.get_text(separator=" ")):
         for a in soup.find_all("a", href=True):
             href = a["href"]
             if "facebook.com" not in href and "fb.com" not in href:
@@ -310,12 +329,15 @@ def extract_urls_from_text(text: str) -> dict:
     """
     event_url = None
     facebook_url = None
+    # See _NOT_EVENT_LINK_RE: a description reading like a policy/waiver page
+    # means its only link is that policy, not the event — don't guess event_url.
+    skip_event_fallback = bool(_NOT_EVENT_LINK_RE.search(text))
     for m in PLAIN_URL_RE.finditer(text):
         url = m.group(0).rstrip(".,;:)")
         is_fb = "facebook.com" in url or "fb.com" in url
         if is_fb and not facebook_url:
             facebook_url = url
-        elif not is_fb and not event_url:
+        elif not is_fb and not event_url and not skip_event_fallback:
             event_url = url
         if event_url and facebook_url:
             break

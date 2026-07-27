@@ -130,6 +130,24 @@ class TestExtractUrlsFromText(unittest.TestCase):
         urls = clean.extract_urls_from_text("https://a.org/1 then https://b.org/2")
         self.assertEqual(urls["event_url"], "https://a.org/1")
 
+    def test_policy_link_not_adopted_as_event_url(self):
+        # The Storvik case: the description's only link is the kingdom's COVID
+        # policy, not the practice's own page — must not become event_url.
+        urls = clean.extract_urls_from_text(
+            "Join us for fighter practice every Monday. See the COVID Safe "
+            "policy for our current COVID requirements.  "
+            "https://atlantia.sca.org/reopening-atlantia/")
+        self.assertIsNone(urls["event_url"])
+
+    def test_facebook_still_found_alongside_policy_mention(self):
+        # The veto only suppresses the "guess event_url" fallback — a Facebook
+        # link (identified by domain, not by position) is unaffected.
+        urls = clean.extract_urls_from_text(
+            "See our COVID policy: https://k.org/covid. "
+            "Event page: https://facebook.com/events/9")
+        self.assertEqual(urls["facebook_url"], "https://facebook.com/events/9")
+        self.assertIsNone(urls["event_url"])
+
 
 class TestExtractUrlsFromHtml(unittest.TestCase):
     def test_event_website_link_text(self):
@@ -141,6 +159,25 @@ class TestExtractUrlsFromHtml(unittest.TestCase):
         html = '<a href="https://www.facebook.com/events/7">FB</a>'
         urls = clean.extract_urls_from_html(html)
         self.assertEqual(urls["facebook_url"], "https://www.facebook.com/events/7")
+
+    def test_policy_link_not_adopted_as_event_url(self):
+        # Storvik's actual feed shape: the only <a> in the description links to
+        # Atlantia's COVID policy, not the practice's page.
+        html = ('Join Storvik for fighter practice every Monday. '
+                'See the COVID Safe policy for our current COVID requirements. '
+                '<a href="https://atlantia.sca.org/reopening-atlantia/">'
+                'https://atlantia.sca.org/reopening-atlantia/</a>')
+        urls = clean.extract_urls_from_html(html)
+        self.assertIsNone(urls["event_url"])
+
+    def test_labeled_event_link_still_wins_alongside_policy_mention(self):
+        # A description that ALSO happens to mention a policy elsewhere must not
+        # lose its explicitly-labeled event link — the veto only affects the
+        # unlabeled "first link" guess, not the "event web" text match.
+        html = ('See our COVID policy for details. '
+                '<a href="https://kingdom.org/event/42">Event Website</a>')
+        urls = clean.extract_urls_from_html(html)
+        self.assertEqual(urls["event_url"], "https://kingdom.org/event/42")
 
     def test_fallback_first_non_facebook_link(self):
         html = ('<a href="https://www.facebook.com/x">fb</a>'
