@@ -100,6 +100,16 @@
 },
 "lastmod": "2025-07-06T12:04:43+00:00"
 },
+"https://avacal.org/event/avacal-crown-council/": {
+"event": {
+"description": "This has been awarded to Myrgan Wood.",
+"end": "20261018T235900Z",
+"location": "",
+"start": "20261017T000000Z",
+"summary": "Avacal Crown Council"
+},
+"lastmod": "2026-08-04T01:23:08+00:00"
+},
 "https://avacal.org/event/avacal-grand-tua-2/": {
 "event": {
 "description": "The Barony of Borealis proudly welcomes you to The University of Avacal! Their Majesties, King Vik and Queen A’isha, seek new champions of Bardic and Arts & Science, and invite Their populace to join Them for a full day of championships, classes, competitions, and merriment. Instructors of all disciplines are welcomed – both from afar and from within Avacal’s borders. Please contact HL Sicillia to add your class to the roster. Adult Event Registration – $40 Adult Member Discount Event Registration – $30 Youth Registration (0-17) – $0 There will be a limited number of merchant spaces available. Please contact HL Jehannette de Brie to register as a merchant for this event. Feast Details: Although a feast will not be held, arrangements are being made for a group reservation at a nearby restaurant(s). Arrangements are also being made for Regional Practice. Please stay tuned for further details. The University of Alberta’s North Campus lies on Treaty 6 lands known during the fur trade as “River Lot Five”. The Central Academic Building is located on the east side of the Main Quad, centralized on North Campus, and is accessible by LRT and bus. There are various parking lots and there are many hotels located within 2km. ↗︎ Event Facebook Page",
@@ -292,13 +302,13 @@
 },
 "https://avacal.org/event/grand-tua-3/": {
 "event": {
-"description": "",
-"end": "20270425T235900Z",
-"location": "",
-"start": "20270424T000000Z",
+"description": "Montengarde welcomes you to Grand TUA! Enjoy the tournaments to determine the kingdom’s next Arts & Sciences and Bardic champions, plus a day full of classes and multiple activities representing the diversity of Avacal! https://sites.google.com/view/grandtua2027 Adult Event Registration – $40 Adult Member Discount Event Registration – $30 Youth Registration (0-17) – $0 ↗︎ Event Facebook Page Event Stewards: Drifa at Laekjamoti and Albrecht of Borealis",
+"end": "20270425T193000Z",
+"location": "700 77th Street SW, Calgary, AB T3H 5R1",
+"start": "20270424T083000Z",
 "summary": "Grand TUA"
 },
-"lastmod": "2026-03-06T04:22:25+00:00"
+"lastmod": "2026-08-04T01:51:49+00:00"
 },
 "https://avacal.org/event/grand-tua/": {
 "event": {
