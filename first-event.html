@@ -9,6 +9,81 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Unicase:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="subpage.css" />
   <script defer src="header-bg.js"></script>
+  <style>
+    .event-type-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0 2rem;
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+    .event-type-table thead th {
+      padding: 0.6rem 1rem;
+      text-align: left;
+      font-family: 'Cormorant Unicase', serif;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      border-bottom: 2px solid #ccc;
+    }
+    .event-type-table thead th:first-child {
+      width: 7rem;
+    }
+    .event-type-table td {
+      padding: 0.75rem 1rem;
+      vertical-align: top;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .event-type-table td.row-label {
+      font-family: 'Cormorant Unicase', serif;
+      font-weight: 600;
+      font-size: 0.85rem;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+      color: #444;
+    }
+    .event-type-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .event-type-table tbody tr:hover td {
+      background: #fafafa;
+    }
+    @media (max-width: 680px) {
+      .event-type-table, .event-type-table thead, .event-type-table tbody,
+      .event-type-table tr, .event-type-table th, .event-type-table td {
+        display: block;
+      }
+      .event-type-table thead {
+        display: none;
+      }
+      .event-type-table td {
+        border-bottom: none;
+        padding: 0.4rem 0;
+      }
+      .event-type-table td.row-label {
+        margin-top: 1rem;
+        color: #222;
+        font-size: 0.9rem;
+      }
+      .event-type-table tbody tr {
+        border-top: 2px solid #ccc;
+        padding: 0.75rem 0;
+        margin-bottom: 0.5rem;
+      }
+      .event-type-table tbody tr:first-child {
+        border-top: none;
+      }
+      .event-type-table td::before {
+        content: attr(data-col);
+        display: block;
+        font-family: 'Cormorant Unicase', serif;
+        font-weight: 600;
+        font-size: 0.85rem;
+        letter-spacing: 0.06em;
+        color: #444;
+        margin-bottom: 0.2rem;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -33,33 +108,54 @@
     <h2>Practice, Event or War?</h2>
     <hr class="section-rule" />
     <p>There are generally three types of SCA events: practices, events, and wars. Some people find that they prefer starting small, attending a few practices to make friends and learn skills before they feel ready to attend a larger event. Others find that attending a large event is a great way to jump in; you get to try a little of many activities, and then decide which things appeal to you enough that you’d like to attend practices focused on them.</p>
-    <details class="fe-section" open>
-      <summary><h3>Practices</h3></summary>
-    <p>Practices are informal gatherings of a local SCA branch where people learn and teach various activities. They might include fighter practices and dance practices where you can participate in physical activities, crafting circles or bardic circles hosted at a community member’s home, heraldry or calligraphy meetups in cafés or libraries, classes on topics from poetry to blacksmithing, social nights or volunteers’ meetings. </p>
-    <p><strong>Locations:</strong> They’re often held in public spaces like parks. If the event is hosted at someone’s private home, you might need to contact somebody on social media to obtain the address. </p>
-    <p><strong>Cost:</strong> Practices are often free, though sometimes you might be asked to chip in a few dollars towards the cost of space rental or food. Generally there’s no extra charge for a non-member. </p>
-    <p><strong>Time:</strong> Practices in most groups are usually on a week-night evening, but some groups host practices for a few hours on a weekend. </p>
-    <p><strong>Requirements:</strong> You usually don’t need any experience to attend. It’s usually completely fine to wear your normal modern clothes. There’s usually no obligation to actually participate – it’s fine if you want to sit and watch for your first time. There will often be loaner gear available for newcomers who don’t have necessary items (armour, bows and arrows, swords, crafting tools) - but check before you rely on this. </p>
-    <p><strong>Activities:</strong> The activities available will vary by group. Some groups host ‘combined’ practices where you can try fencing, armoured fighting, dancing, crafting or bardic – all in the same space. Other practices will be focused on one specific activity, eg. a scriptorium (calligraphy-focused crafting time), melee practice (where fighters prepare for big battles by learning unit tactics) or sewing circle (focused on textile arts).</p>
-    </details>
-    <details class="fe-section" open>
-      <summary><h3>Events</h3></summary>
-    <p>Events are more formal gatherings, often involving tournaments and competitions and a “court” where awards are given out. </p>
-    <p><strong>Locations:</strong> You may need to travel a bit further to attend an event, as they’re often at campsites and rarely metro-accessible. Don’t be afraid to reach out to your local group to ask about carpooling; it’s not always available, but often people are willing to help. </p>
-    <p><strong>Cost:</strong> There is usually an entry fee, and sometimes a formal meal called a ‘feast’ which may cost extra. Depending on your kingdom, expect to pay between $10 and $30 for a single-day event, and $15-50 for an overnight camping event. If you need to book a hotel room, make sure to keep that additional cost in mind as you plan your budget. </p>
-    <p><strong>Time:</strong> Sometimes events are for a single day, with activities often running between around 9am and around 6pm. Some events will focus activities on Saturday, but have the option of arriving Friday night for some socialising and leaving Sunday morning (which allows you to talk late around the campfire on Saturday) – but don’t expect actual activities on Sunday. Others will be true all-weekend events with activities across Friday evening, Saturday all day and Sunday all day. Check the event’s website for details on the schedule. It’s almost always fine to arrive for only part of an event – so you might choose to only attend Saturday, even if there’s also activities on Friday and Sunday. </p>
-    <p><strong>Requirements:</strong> You should wear an attempt at clothing from before the year 1600. It does not have to be a good attempt, but it must be an attempt. If this presents a hardship for you, reach out to your local group to ask about Gold Key (loaner clothing). You do not have to be a member, but you will generally be charged $10 extra as a non-member, so it’s worth getting a membership if you plan to attend more than a few events. Certain activities will require more preparation to participate in; for example, you won’t be able to fight unless you’re authorized (which means attending some practices first to learn the rules and skills) and you may need to bring your own gear (bows, arrows, crafting supplies) to participate in other activities. Most events will allow you to pay at the door, but a few will require you to book in advance and some will give you a discount for booking in advance; check the event website. </p>
-    <p><strong>Activities:</strong> Check the event schedule before you attend an event to see what activities will be available. Some events will have a little bit of everything – you can watch fighting tournaments at 10am, attend an art class at noon, hit the archery range at 2pm, participate in a singing circle at 4pm, then go to court at 6pm. Other events will be focused on a few specific activities; a battle-focused event might not have many opportunities to attend classes, and a University may not allow any fighting. </p>
-    </details>
-    <details class="fe-section" open>
-      <summary><h3>Wars</h3></summary>
-    <p>Wars are much larger events. They are often inter-kingdom, meaning that you will meet people from a much wider area than your local SCA branch. </p>
-    <p><strong>Locations:</strong> You may have to travel a long distance to attend a war. Think of it like going on holiday; you might travel to another state or country to have a great experience for a week. </p>
-    <p><strong>Cost:</strong> Wars are usually more expensive than regular events. You may spend $100-300 on the entry fee, before taking into account the costs of food, camping/hotels, and any equipment you need.</p>
-    <p><strong>Time:</strong> Usually a week long, but sometimes a long weekend. Pennsic is two weeks. </p>
-    <p><strong>Requirements:</strong> You should almost always register in advance; some wars may let you pay at the door, but there may be downsides (for instance, you might not get any allocated camping space or might be unable to stay with your group). You must wear an attempt at clothing from before the year 1600. Some groups or campsites might have other requirements, like bringing a tent that looks period; you should check with the group you plan to stay with. You will usually need to bring your own gear for some activities (eg. bring your own bow and arrows to the archery range) and others may have more stringent requirements – for example, if you want to fight you should plan on attending other practices and events first (to sort out your authorization paperwork, learn skills, check your gear works, and find a group to fight with). </p>
-    <p><strong>Activities:</strong> There’s usually a massive variety of activities available to participate in. You can often take classes on a variety of topics, go to bardic circles or other performances and shows, compete in tournaments, or attend social events and meetups. Martial activities are likely to include several different options like armoured fighting, fencing, equestrian, archery, throwing weapons and sometimes experimental forms. You definitely won’t be bored – but you might find that you’d enjoy some activities more if you’ve previously attended enough practices and events that you have friends to do the activities with, appropriate gear, and/or authorization to compete. </p>
-    </details>
+        <table class="event-type-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Practices</th>
+          <th>Events</th>
+          <th>Wars</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="row-label"></td>
+          <td>Practices are informal gatherings of a local SCA branch where people learn and teach various activities. They might include fighter practices and dance practices where you can participate in physical activities, crafting circles or bardic circles hosted at a community member’s home, heraldry or calligraphy meetups in cafés or libraries, classes on topics from poetry to blacksmithing, social nights or volunteers’ meetings.</td>
+          <td>Events are more formal gatherings, often involving tournaments and competitions and a “court” where awards are given out.</td>
+          <td>Wars are much larger events. They are often inter-kingdom, meaning that you will meet people from a much wider area than your local SCA branch. Despite the name, they’re often not very competitive, and you don’t have to be focused on fighting to attend!</td>
+        </tr>
+        <tr>
+          <td class="row-label">Locations</td>
+          <td>Often held in public spaces like parks, libraries or churches. If the event is hosted at someone’s private home, you might need to contact somebody on social media to obtain the address.</td>
+          <td>You may need to travel a bit further to attend an event, as they’re often at campsites and rarely metro-accessible. Don’t be afraid to reach out to your local group to ask about carpooling; it’s not always available, but often people are willing to help.</td>
+          <td>You may have to travel a long distance to attend a war. Think of it like going on holiday; you might travel to another state or country to have a great experience for a week.</td>
+        </tr>
+        <tr>
+          <td class="row-label">Cost</td>
+          <td>Practices are often free, though sometimes you might be asked to chip in a few dollars towards the cost of space rental or food. Generally there’s no extra charge for a non-member.</td>
+          <td>There is usually an entry fee, and sometimes a formal meal called a ‘feast’ which may cost extra. Depending on your kingdom, expect to pay between $10 and $30 for a single-day event, and $15–50 for an overnight camping event. If you need to book a hotel room, make sure to keep that additional cost in mind as you plan your budget.</td>
+          <td>Wars are usually more expensive than regular events. You may spend $100–300 on the entry fee, before taking into account the costs of food, camping/hotels, and any equipment you need.</td>
+        </tr>
+        <tr>
+          <td class="row-label">Time</td>
+          <td>Usually only a few hours. Some groups host practice on a week-night evening. Others will hold practices on a weekend morning or weekend afternoon.</td>
+          <td>Sometimes events are for a single day, with activities often running between around 9am and around 6pm. Some events will focus activities on Saturday, but have the option of arriving Friday night for some socialising and leaving Sunday morning (which allows you to talk late around the campfire on Saturday) – but don’t expect actual activities on Sunday. Others will be true all-weekend events with activities across Friday evening, Saturday all day and Sunday all day. Check the event’s website for details on the schedule.<br><br>It’s almost always fine to arrive for only part of an event – so you might choose to only attend Saturday, even if there’s also activities on Friday and Sunday.</td>
+          <td>Usually a week long, but sometimes a long weekend. Pennsic is two weeks.</td>
+        </tr>
+        <tr>
+          <td class="row-label">Requirements</td>
+          <td>You usually don’t need any experience to attend.<br><br>It’s usually completely fine to wear your normal modern clothes.<br><br>There’s usually no obligation to actually participate – it’s fine if you want to sit and watch for your first time.<br><br>There will often be loaner gear available for newcomers who don’t have necessary items (armour, bows and arrows, swords, crafting tools) - but check before you rely on this.</td>
+          <td>You should wear an attempt at clothing from before the year 1600. It does not have to be a good attempt, but it must be an attempt. If this presents a hardship for you, reach out to your local group to ask about Gold Key (loaner clothing).<br><br>You do not have to be a member, but you will generally be charged $10 extra as a non-member, so it’s worth getting a membership if you plan to attend more than a few events.<br><br>Certain activities will require more preparation to participate in; for example, you won’t be able to fight unless you’re authorized (which means attending some practices first to learn the rules and skills) and you may need to bring your own gear (bows, arrows, crafting supplies) to participate in other activities.<br><br>Most events will allow you to pay at the door, but a few will require you to book in advance and some will give you a discount for booking in advance; check the event website.</td>
+          <td>You should almost always register in advance; some wars may let you pay at the door, but there may be downsides (for instance, you might not get any allocated camping space or might be unable to stay with your group).<br><br>You must wear an attempt at clothing from before the year 1600. Some groups or campsites might have other requirements, like bringing a tent that looks period; you should check with the group you plan to stay with.<br><br>You will usually need to bring your own gear for some activities (eg. bring your own bow and arrows to the archery range) and others may have more stringent requirements – for example, if you want to fight you should plan on attending other practices and events first (to sort out your authorization paperwork, learn skills, check your gear works, and find a group to fight with).</td>
+        </tr>
+        <tr>
+          <td class="row-label">Activities</td>
+          <td>The activities available will vary by group. Some groups host ‘combined’ practices where you can try fencing, armoured fighting, dancing, crafting or bardic – all in the same space. Other practices will be focused on one specific activity, eg. a scriptorium (calligraphy-focused crafting time), melee practice (where fighters prepare for big battles by learning unit tactics) or sewing circle (focused on textile arts).</td>
+          <td>Check the event schedule before you attend an event to see what activities will be available. Some events will have a little bit of everything – you can watch fighting tournaments at 10am, attend an art class at noon, hit the archery range at 2pm, participate in a singing circle at 4pm, then go to court at 6pm. Other events will be focused on a few specific activities; a battle-focused event might not have many opportunities to attend classes, and a University may not allow any fighting.</td>
+          <td>There’s usually a massive variety of activities available to participate in. You can often take classes on a variety of topics, go to bardic circles or other performances and shows, compete in tournaments, or attend social events and meetups. Martial activities are likely to include several different options like armoured fighting, fencing, equestrian, archery, throwing weapons and sometimes experimental forms.<br><br>You definitely won’t be bored – but you might find that you’d enjoy some activities more if you’ve previously attended enough practices and events that you have friends to do the activities with, appropriate gear, and/or authorization to compete.</td>
+        </tr>
+      </tbody>
+    </table>
     <h2>Activities in the SCA</h2>
     <hr class="section-rule" />
     <details class="fe-section" open>
