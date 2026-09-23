@@ -161,13 +161,18 @@ time changes still flow through):
 | `source` | The calendar's name, exactly as it appears in the `source` column of `sca_events_clean.csv` — usually the group name, e.g. `Province of the Mists` or `Barony of Bright Hills`. |
 | `keywords` | A word/phrase matched **case-insensitively as a substring of the title**. `practice` matches "Archery Practice" and "Fighter Practices"; `Rockridge Bart` matches "Rockridge BART Fighter Practice". |
 | `lat`, `lng` | The exact coordinates to pin matching events at (same as Google-Maps right-click coords). |
+| `location` | *Optional.* An address that replaces the event's displayed location in the popup. Leave blank to keep the calendar's own text. |
 
-Example rows (the two seeded corrections):
+Example rows:
 
-| source | keywords | lat | lng |
-| --- | --- | --- | --- |
-| Barony of Bright Hills | practice | 39.416485 | -76.505546 |
-| Province of the Mists | Rockridge Bart | 37.844514 | -122.252972 |
+| source | keywords | lat | lng | location |
+| --- | --- | --- | --- | --- |
+| Barony of Bright Hills | practice | 39.416485 | -76.505546 | |
+| Kingdom of Gleann Abhann | gulf wars | 30.911449 | -89.455939 | Kings Arrow Ranch, 26 Kings Highway Lumberton MS 39455 |
+
+> **"Every event with X in the title" belongs here, not in `event_overrides.csv`.**
+> An override row with only `match_source` filled in would move *every* event
+> on that calendar, so the pipeline skips such rows with a warning.
 
 - Matching events are pinned and marked `geocode_status = override`, so the
   geocoder leaves them alone — identical handling to an `event_overrides` pin.

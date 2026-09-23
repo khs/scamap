@@ -177,6 +177,35 @@ class TestLocationCorrections(_TmpDirMixin):
         out = clean.apply_location_corrections(df)   # no CSV written
         self.assertEqual(out.iloc[0]["geocode_status"], "ok")
 
+    def test_optional_location_replaces_address(self):
+        # Every "Gulf Wars" listing on Gleann Abhann's calendar -> the real venue,
+        # both pin AND popup text, with other titles on that calendar untouched.
+        self._write_csv("location_corrections.csv",
+                        ["source", "keywords", "lat", "lng", "location"],
+                        [{"source": "Kingdom of Gleann Abhann", "keywords": "gulf wars",
+                          "lat": "30.911449", "lng": "-89.455939",
+                          "location": "Kings Arrow Ranch, Lumberton MS"}])
+        df = _df([{"title": "Gulf Wars XXXV", "source": "Kingdom of Gleann Abhann",
+                   "clean_location": "Conway, AR and surrounding Areas"},
+                  {"title": "Spring Crown", "source": "Kingdom of Gleann Abhann",
+                   "clean_location": "Conway, AR", "geocode_status": "ok"}])
+        out = clean.apply_location_corrections(df)
+        self.assertEqual(out.iloc[0]["clean_location"], "Kings Arrow Ranch, Lumberton MS")
+        self.assertEqual(out.iloc[0]["address_confidence"], "high")
+        self.assertAlmostEqual(float(out.iloc[0]["lat"]), 30.911449, places=5)
+        self.assertEqual(out.iloc[1]["clean_location"], "Conway, AR")
+        self.assertEqual(out.iloc[1]["geocode_status"], "ok")
+
+    def test_blank_location_keeps_address(self):
+        self._write_csv("location_corrections.csv",
+                        ["source", "keywords", "lat", "lng", "location"],
+                        [{"source": "B", "keywords": "k", "lat": "1", "lng": "2",
+                          "location": ""}])
+        df = _df([{"title": "k event", "source": "B", "clean_location": "Orig"}])
+        out = clean.apply_location_corrections(df)
+        self.assertEqual(out.iloc[0]["clean_location"], "Orig")
+        self.assertEqual(out.iloc[0]["geocode_status"], "override")
+
     def test_bad_coords_skipped(self):
         self._corrections([{"source": "B", "keywords": "k", "lat": "999", "lng": "0"}])
         df = _df([{"title": "k event", "source": "B", "geocode_status": "ok"}])

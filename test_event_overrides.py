@@ -133,6 +133,12 @@ class TestApplyOverrides(unittest.TestCase):
                     ",,,,Nowhere,,,no match key at all\n")   # no url/source/title
         self.assertEqual(clean._load_overrides(), [])
 
+    def test_source_only_row_skipped(self):
+        # Source alone (no URL, no title) would re-pin a whole kingdom's calendar.
+        self._write(',Kingdom of Gleann Abhann,,,"Kings Arrow Ranch",30.9,-89.4,\n'
+                    ',Kingdom of Caid,,2026-05-02,,30.9,-89.4,date is not enough\n')
+        self.assertEqual(clean._load_overrides(), [])
+
     def test_missing_file_is_noop(self):
         clean.OVERRIDES_FILE = Path(self.tmp) / "does_not_exist.csv"
         df = pd.DataFrame([_row(title="X")])

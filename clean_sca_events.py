@@ -1438,6 +1438,15 @@ def _load_overrides() -> list[dict]:
                 if not (row["match_event_url"] or row["match_source"]
                         or row["match_title"]):
                     continue                                    # no match key
+                if not (row["match_event_url"] or row["match_title"]):
+                    # Source (+date) alone would re-pin a whole kingdom's
+                    # calendar. For "every X on this calendar", use
+                    # location_corrections.csv's keyword match instead.
+                    print(f"  WARNING: override for '{row['match_source']}' has no "
+                          f"match_event_url or match_title — it would move every "
+                          f"event on that calendar, so it's skipped. Use "
+                          f"location_corrections.csv for keyword matches.")
+                    continue
                 out.append(row)
     except Exception as e:
         print(f"  WARNING: could not read {OVERRIDES_FILE.name}: {e}")
@@ -1564,7 +1573,11 @@ def apply_location_corrections(df: pd.DataFrame) -> pd.DataFrame:
     Mists' Rockridge BART practice lands in Oakland) or carry no usable address
     (Bright Hills practices) — without hard-coding the whole event, so cancellations
     and time changes still flow from the live calendar. Virtual events, lacking the
-    physical practice's title keyword, simply don't match."""
+    physical practice's title keyword, simply don't match.
+
+    The optional `location` column also replaces the event's displayed address, so
+    the popup names the real venue (e.g. every "Gulf Wars" listing on Gleann
+    Abhann's calendar -> King's Arrow Ranch) instead of a vague area."""
     path = SCRIPT_DIR / "location_corrections.csv"
     if not path.exists():
         return df
@@ -1576,8 +1589,9 @@ def apply_location_corrections(df: pd.DataFrame) -> pd.DataFrame:
                 kw  = (r.get("keywords") or "").strip().lower()
                 coords = _valid_override_coords((r.get("lat") or "").strip(),
                                                 (r.get("lng") or "").strip())
+                loc = (r.get("location") or "").strip()
                 if src and kw and coords:
-                    corrections.append((src, kw, coords))
+                    corrections.append((src, kw, coords, loc))
     except Exception as e:
         print(f"  WARNING: could not read location_corrections.csv: {e}")
         return df
@@ -1594,11 +1608,15 @@ def apply_location_corrections(df: pd.DataFrame) -> pd.DataFrame:
             str(df.at[idx, "location"]),
             str(df.at[idx, "clean_location"]),
         )).lower()
-        for c_src, kw, coords in corrections:
+        for c_src, kw, coords, loc in corrections:
             if src == c_src and kw in haystack:
                 df.at[idx, "lat"] = coords[0]
                 df.at[idx, "lng"] = coords[1]
                 df.at[idx, "geocode_status"] = "override"
+                if loc:
+                    df.at[idx, "location"]           = loc
+                    df.at[idx, "clean_location"]     = loc
+                    df.at[idx, "address_confidence"] = "high"
                 if "location_specificity" in df.columns:
                     df.at[idx, "location_specificity"] = ""   # a precise fix, not vague
                 applied += 1

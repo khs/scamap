@@ -48,13 +48,17 @@ from scrapers import maybe_scrape, is_scraper_source
 # ---------------------------------------------------------------------------
 
 TODAY      = date.today()
-# Kingdom calendars fetch ~13 months forward (1 year + 1 month) so the date filter
-# has data when a user expands it out to the next year, without pulling the sparse
-# far-future tail (the old 2-year window) that made the late months look dead.
+# Kingdom calendars fetch through 31 Dec of NEXT calendar year (Sept 2026 -> end
+# of 2027; Jan 2027 -> end of 2028), so next year's big annual events (Gulf Wars,
+# Pennsic, Estrella, crowns) are always on the map as soon as kingdoms post them.
+# The window is 12-24 months depending on the time of year; the far tail is
+# sparse, but a missing flagship event is worse than a quiet late month.
 # Baronial calendars stay at ~2 months: they are dominated by weekly recurring
 # practices, which merge to their nearest occurrence and so show regardless of how
 # far the window reaches — widening it only multiplies recurrence expansion.
-FAR_END    = TODAY + timedelta(days=395)   # ~13 months — Kingdom calendars
+# (datetime, not date: recurring_ical_events treats a bare date as the START of
+# that day, which would drop events on 31 Dec itself.)
+FAR_END    = datetime(TODAY.year + 1, 12, 31, 23, 59, 59)  # Kingdom calendars
 NEAR_END   = TODAY + timedelta(days=60)    # ~2 months  — Baronial calendars
 
 # Paths relative to this script's location

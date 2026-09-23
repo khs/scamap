@@ -185,8 +185,11 @@ def main():
 
     is_gleann = df["source"] == SOURCE
     # Only relocate vague events; ones that carry a real street address ("high")
-    # keep their own, more precise, location.
-    vague = is_gleann & (df["address_confidence"] != "high") & (df["event_url"].str.len() > 0)
+    # keep their own, more precise, location, and a human pin (event_overrides /
+    # location_corrections -> "override") is never second-guessed.
+    vague = (is_gleann & (df["address_confidence"] != "high")
+             & (df["geocode_status"] != "override")
+             & (df["event_url"].str.len() > 0))
     idxs = df[vague].index.tolist()
     print(f"Gleann Abhann: {int(is_gleann.sum())} events, "
           f"{len(idxs)} vague to relocate; cache has {len(cache)} URL(s).")
