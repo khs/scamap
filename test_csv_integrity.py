@@ -293,13 +293,14 @@ class TestCanadaCdTopojson(unittest.TestCase):
 
 
 # The exact header the full pipeline produces: clean_sca_events writes the first
-# 16 columns; annotate_war_hosts appends host_kingdom + war_host at the end.
+# 17 columns; annotate_war_hosts appends host_kingdom + war_host at the end.
 EVENTS = HERE / "sca_events_clean.csv"
 EXPECTED_EVENT_COLUMNS = [
     "title", "start", "end", "location", "clean_location",
     "address_confidence", "description", "event_url", "facebook_url",
     "source", "calendar_type", "is_virtual", "lat", "lng",
-    "geocode_status", "location_specificity", "host_kingdom", "war_host",
+    "geocode_status", "location_specificity", "dates_approximate",
+    "host_kingdom", "war_host",
 ]
 
 

@@ -1365,6 +1365,11 @@ function buildPopup(ev) {
   const vague = /^vague$/i.test(ev.location_specificity || '')
     ? `<p class="vague-warn" style="margin:0 0 0.5rem;"><strong>EventScout placed a marker in what we believe is the correct area, but could not find an exact address for this event. Please check with locals.</strong></p>`
     : '';
+  // A wars.csv placeholder: no kingdom calendar lists this war yet, so the dates
+  // are the usual time of year, not this year's real dates.
+  const approxDates = ev.dates_approximate === 'True'
+    ? `<p class="vague-warn" style="margin:0 0 0.5rem;"><strong>EventScout is unable to import the dates for ${escapeHtml(ev.title)} because no Kingdom calendar lists it yet. The dates shown are approximate; check the event website.</strong></p>`
+    : '';
 
   // Build clickable links: prefer event-specific URL, then social, then the
   // source's barony/kingdom site. Every event should expose at least one of
@@ -1380,6 +1385,10 @@ function buildPopup(ev) {
   };
   const evUrlSpecific = ev.event_url && !isGenericListing(ev.event_url);
   const fbSpecific = isSpecificFacebookEvent(ev.facebook_url);
+
+  // A war's own site (wars.csv) is a bare domain like gulfwars.org — the event's
+  // real home, not a generic host listing.
+  if (ev.war_host && ev.event_url && !evUrlSpecific) pushLink(ev.event_url, 'Event website →');
 
   // Primary link: the most event-specific destination we have.
   if (evUrlSpecific)      pushLink(ev.event_url, 'Event page →');
@@ -1427,7 +1436,7 @@ function buildPopup(ev) {
     <h3>${escapeHtml(ev.title)}</h3>
     <div class="meta">${dateStr}</div>
     ${sourcePill}
-    ${vague}${desc}${loc}${links}
+    ${approxDates}${vague}${desc}${loc}${links}
   </div>`;
 }
 

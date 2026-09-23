@@ -168,7 +168,7 @@ Example rows:
 | source | keywords | lat | lng | location |
 | --- | --- | --- | --- | --- |
 | Barony of Bright Hills | practice | 39.416485 | -76.505546 | |
-| Kingdom of Gleann Abhann | gulf wars | 30.911449 | -89.455939 | Kings Arrow Ranch, 26 Kings Highway Lumberton MS 39455 |
+| Province of the Mists | Rockridge Bart | 37.844514 | -122.252972 | Rockridge BART lot, Oakland, CA |
 
 > **"Every event with X in the title" belongs here, not in `event_overrides.csv`.**
 > An override row with only `match_source` filled in would move *every* event
@@ -194,6 +194,37 @@ flinging it to a state centroid. Such pins are marked `geocode_status =
 ok_fallback` and `location_specificity = vague`, and the map shows a "we placed
 this approximately — check with locals" note on the popup. A precise
 `location_corrections` / `event_overrides` pin always wins over this fallback.
+
+---
+
+## Big wars with their own websites — `wars.csv`
+
+Gulf Wars, Pennsic and Lilies are listed on several kingdom calendars, each with
+its own spelling, address (or none) and link. `wars.csv` gives each war's
+permanent site and website **once**:
+
+| Column | Purpose |
+| --- | --- |
+| `name` | Display name, used for the placeholder (below). |
+| `title_keywords` | `\|`-separated phrases, matched as whole words in the title, case/punctuation-insensitive: `gulf wars\|gulf war`. |
+| `host_kingdom` | Kingdom the event is filed under (its colour and kingdom filter). Must match the `source` spelling, e.g. `Kingdom of AEthelmearc`. |
+| `location`, `lat`, `lng` | The war's permanent site. |
+| `website` | The war's own site; the popup links it as "Event website →". |
+| `fallback_start`, `fallback_end` | *Optional*, `MM-DD`. The usual time of year, used only when no kingdom calendar lists the war. |
+
+What happens every run:
+
+- **A kingdom calendar lists the war** (a kingdom event, 3+ days, title
+  matches): all of that year's listings merge into **one** event. The dates
+  come from the host kingdom's listing, or else the dates most kingdoms agree
+  on. The site and website come from `wars.csv`. Shorter side events (e.g. a
+  1-day "Gulf Wars Court") and baronial events are left alone.
+- **No calendar lists it** for this year or next, and fallback dates are set:
+  a placeholder spans the fallback range, and the popup warns that EventScout
+  couldn't import the real dates. Once any kingdom posts the war, the real
+  dates replace the placeholder automatically.
+
+Adding a war is one row, with no code change.
 
 ---
 

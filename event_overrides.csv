@@ -20,4 +20,5 @@ match_event_url,match_source,match_title,match_date,new_location,new_lat,new_lng
 # Example (remove the leading # and edit to use):,,,,,,,
 # ,Kingdom of Meridies,Greater Savannah Gathering,,"Savannah, GA, USA",,,'Greater Savannah area' would not geocode; set to the city
 # ---------------------------------------------------------------------------,,,,,,,
+,Kingdom of Gleann Abhann,Gleann Abhann Fall Crown List,,"Warner-Tulley Memorial YMCA Camp, 5184 Y Camp Road, Port Gibson, MS 39150",,,"Kingdom calendar has ZIP 31950 (a Georgia ZIP), so it failed to geocode; Port Gibson MS is 39150"
 ,Barony of Lyondemere,Archery Practice - Weeknight (RECURRING),,"Rancho Park Archery Range, Los Angeles, CA 90064",34.044,-118.4163,"Rancho Park archery range in West LA (the big park S of Century City, N of Cheviot Hills); the venue name won't geocode, so pinned by hand"

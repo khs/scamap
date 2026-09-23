@@ -1626,6 +1626,170 @@ def apply_location_corrections(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+# ---------------------------------------------------------------------------
+# Big recurring wars with their own websites (wars.csv)
+# ---------------------------------------------------------------------------
+# Gulf Wars, Pennsic, Lilies... are cross-listed on several kingdom calendars,
+# each with its own spelling, address (or none) and link. wars.csv names each
+# war's permanent site + website once. When any kingdom calendar lists the war,
+# its listings for that year collapse into ONE event: dates from the calendar
+# (the host kingdom's listing if there is one), site + website from wars.csv.
+# When no calendar lists it for a year in the fetch window, an optional
+# fallback date range adds a placeholder flagged dates_approximate="True" so the
+# map can warn that the dates are a guess.
+
+WAR_MIN_DAYS = 3   # a 1-day "Gulf Wars Court" or prep practice is not the war itself
+
+
+def _load_wars() -> list[dict]:
+    path = SCRIPT_DIR / "wars.csv"
+    if not path.exists():
+        return []
+    wars = []
+    try:
+        with open(path, encoding="utf-8", newline="") as f:
+            for r in csv.DictReader(f):
+                name = (r.get("name") or "").strip()
+                if not name or name.startswith("#"):
+                    continue
+                keywords = [_normalize_title_for_match(k)
+                            for k in (r.get("title_keywords") or "").split("|")]
+                keywords = [k for k in keywords if k]
+                coords = _valid_override_coords((r.get("lat") or "").strip(),
+                                                (r.get("lng") or "").strip())
+                if not keywords or not coords:
+                    print(f"  WARNING: wars.csv row '{name}' needs title_keywords and "
+                          f"valid lat/lng — skipped")
+                    continue
+                wars.append({
+                    "name": name, "keywords": keywords, "coords": coords,
+                    "host": (r.get("host_kingdom") or "").strip(),
+                    "location": (r.get("location") or "").strip(),
+                    "website": (r.get("website") or "").strip(),
+                    "fallback_start": (r.get("fallback_start") or "").strip(),
+                    "fallback_end": (r.get("fallback_end") or "").strip(),
+                })
+    except Exception as e:
+        print(f"  WARNING: could not read wars.csv: {e}")
+    return wars
+
+
+def _event_days(start, end) -> float:
+    from datetime import datetime
+    def parse(s):
+        s = str(s or "").strip()
+        for cand in (s.replace(" ", "T"), s[:10]):
+            try:
+                return datetime.fromisoformat(cand)
+            except ValueError:
+                pass
+        return None
+    s, e = parse(start), parse(end or start)
+    return (e - s).total_seconds() / 86400.0 if s and e else 0.0
+
+
+def _is_war_listing(row, keywords) -> bool:
+    """A kingdom-calendar, multi-day event whose title names this war."""
+    if str(row.get("calendar_type", "")).strip() != "kingdom":
+        return False
+    title = f" {_normalize_title_for_match(row.get('title', ''))} "
+    if not any(f" {k} " in title for k in keywords):
+        return False
+    return _event_days(row.get("start"), row.get("end")) >= WAR_MIN_DAYS
+
+
+def _pick_war_listing(listings: pd.DataFrame, host: str):
+    """The listing whose dates we trust: the host kingdom's own, else the dates
+    most kingdoms agree on (earliest start breaks a tie)."""
+    own = listings[listings["source"] == host]
+    if len(own):
+        return own.iloc[0]
+    keys = listings["start"].str[:10] + "|" + listings["end"].str[:10]
+    counts = keys.value_counts()
+    best = counts[counts == counts.max()].index
+    return listings[keys.isin(best)].sort_values("start").iloc[0]
+
+
+def _war_event(base: dict, war: dict) -> dict:
+    ev = dict(base)
+    location = war["location"] or ev.get("clean_location", "")
+    ev.update({
+        "location": location, "clean_location": location,
+        "address_confidence": "high",
+        "lat": war["coords"][0], "lng": war["coords"][1],
+        "geocode_status": "override", "location_specificity": "",
+        "calendar_type": "kingdom", "is_virtual": "False",
+        "dates_approximate": "",
+    })
+    if war["host"]:
+        ev["source"] = war["host"]
+    if war["website"]:
+        ev["event_url"] = war["website"]
+        ev["facebook_url"] = ""
+    return ev
+
+
+def apply_wars(df: pd.DataFrame, today=None) -> pd.DataFrame:
+    from datetime import date
+    wars = _load_wars()
+    if "dates_approximate" not in df.columns:
+        df["dates_approximate"] = ""
+    # Placeholders are regenerated every run; drop any carried forward from the
+    # last one so a guessed date range is never mistaken for a real listing.
+    df = df[df["dates_approximate"] != "True"]
+    if not wars:
+        return df
+    today = today or date.today()
+    new_rows, consumed = [], set()
+    for war in wars:
+        mask = df.apply(lambda r: _is_war_listing(r, war["keywords"]), axis=1)
+        mask &= ~df.index.isin(consumed)
+        by_year: dict[str, list] = {}
+        for idx in df[mask].index:
+            by_year.setdefault(str(df.at[idx, "start"])[:4], []).append(idx)
+        for year, idxs in sorted(by_year.items()):
+            rep = _pick_war_listing(df.loc[idxs], war["host"])
+            ev = _war_event(rep.to_dict(), war)
+            # Keep the fullest write-up among the listings, not a placeholder.
+            ev["description"] = max(df.loc[idxs, "description"].astype(str), key=len)
+            new_rows.append(ev)
+            consumed.update(idxs)
+            srcs = ", ".join(sorted(set(df.loc[idxs, "source"])))
+            print(f"  {war['name']} {year}: merged {len(idxs)} listing(s) "
+                  f"({srcs}) -> {str(rep['start'])[:10]}..{str(rep['end'])[:10]}")
+
+        if not (war["fallback_start"] and war["fallback_end"]):
+            continue
+        # Fetch window runs through 31 Dec next year, so cover this year + next.
+        for y in (today.year, today.year + 1):
+            if str(y) in by_year:
+                continue
+            try:
+                s = date.fromisoformat(f"{y}-{war['fallback_start']}")
+                e = date.fromisoformat(f"{y}-{war['fallback_end']}")
+            except ValueError:
+                print(f"  WARNING: wars.csv '{war['name']}' fallback dates must be "
+                      f"MM-DD (got {war['fallback_start']!r}..{war['fallback_end']!r})")
+                break
+            if e < today:
+                continue
+            ev = {c: "" for c in df.columns}
+            ev.update(title=war["name"], start=s.isoformat(), end=e.isoformat(),
+                      description=(f"{war['name']} is usually held between "
+                                   f"{s:%B} {s.day} and {e:%B} {e.day}. Check "
+                                   f"{war['website'] or 'the event website'} for "
+                                   f"this year's dates."))
+            ev = _war_event(ev, war)
+            ev["dates_approximate"] = "True"
+            new_rows.append(ev)
+            print(f"  {war['name']} {y}: no kingdom calendar lists it — added "
+                  f"placeholder {s}..{e}")
+    df = df.drop(index=list(consumed))
+    if new_rows:
+        df = pd.concat([df, pd.DataFrame(new_rows)], ignore_index=True).fillna("")
+    return df
+
+
 def apply_baronial_coords(df: pd.DataFrame) -> pd.DataFrame:
     """Pin the baronial no-address events flagged 'vague' in Step 3 at their
     barony's own coordinates (its "?"-pin spot) and set geocode_status so the
@@ -1989,6 +2153,12 @@ def main():
     print("Step 6e: Pinning baronial no-address events at barony coords ...")
     df = apply_baronial_coords(df)
 
+    # Step 6f: collapse each big war's kingdom listings into one event at its
+    # permanent site with its own website (wars.csv), or add a date-approximate
+    # placeholder when no calendar lists it yet.
+    print("Step 6f: Applying wars.csv ...")
+    df = apply_wars(df)
+
     # Step 7: For kingdoms whose calendars import from a Google Calendar
     # (and therefore lose the original WordPress event URL), backfill the
     # event_url field from the kingdom site's Tribe Events REST API.
@@ -2007,7 +2177,7 @@ def main():
         "title", "start", "end", "location", "clean_location",
         "address_confidence", "description", "event_url", "facebook_url",
         "source", "calendar_type", "is_virtual",
-        "lat", "lng", "geocode_status", "location_specificity",
+        "lat", "lng", "geocode_status", "location_specificity", "dates_approximate",
     ]
     df = df[[c for c in col_order if c in df.columns]]
 

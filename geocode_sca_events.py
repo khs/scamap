@@ -751,6 +751,23 @@ SUCCESS_STATUSES = {"ok", "ok_retry", "ok_photon", "cached", "override",
                     "ok_organizer", "ok_published", "ok_fallback"}
 
 
+# A location made only of these words ("Zoom", "Online via Zoom", "Virtual
+# meeting on Discord") names no place: there is nothing to geocode. At least one
+# word must be a platform/online word, and a real place word ("Manteca, CA &
+# Zoom") keeps the row geocodable for its in-person half.
+_ONLINE_WORDS = {"online", "zoom", "virtual", "discord", "webex", "teams",
+                 "meet", "livestream", "skype", "jitsi"}
+_ONLINE_FILLER = _ONLINE_WORDS | {"via", "on", "the", "and", "or", "only", "google",
+                                  "microsoft", "meeting", "event", "call", "live",
+                                  "stream", "link", "tbd", "see", "description", "a"}
+
+
+def is_online_only_location(loc: str) -> bool:
+    words = re.findall(r"[a-z]+", str(loc or "").lower())
+    return (bool(words) and any(w in _ONLINE_WORDS for w in words)
+            and all(w in _ONLINE_FILLER for w in words))
+
+
 def main(retry_failed: bool = False):
     print(f"Reading {INPUT_FILE.name} ...")
     df = pd.read_csv(INPUT_FILE, dtype=str).fillna("")
@@ -788,6 +805,18 @@ def main(retry_failed: bool = False):
     if published:
         print(f"  Used published coordinates for {published} event(s) (authoritative).")
 
+    # Online-only locations: flag virtual, never geocode (the map shows virtual
+    # events without a pin). Runs over ALL rows so a stale "ok"/"failed" from an
+    # earlier run — "Zoom" once geocoded to some real place — is cleared too.
+    online = (df["clean_location"].map(is_online_only_location)
+              & ~df["geocode_status"].isin(["override", "ok_organizer"]))
+    if "is_virtual" in df.columns:
+        df.loc[online, "is_virtual"] = "True"
+    df.loc[online, ["lat", "lng"]] = ""
+    df.loc[online, "geocode_status"] = "skipped"
+    if online.any():
+        print(f"  {int(online.sum())} online-only location(s) marked virtual, not geocoded.")
+
     # Rows considered "done" — successful or deliberately skipped, but NOT failed
     # unless --retry-failed is on
     done_statuses = SUCCESS_STATUSES | {"skipped"}
@@ -807,9 +836,9 @@ def main(retry_failed: bool = False):
     print()
 
     if to_geocode.sum() == 0:
-        if published:   # the pre-pass changed rows even though there's nothing to geocode
+        if published or online.any():   # pre-passes changed rows; nothing to geocode
             df.to_csv(OUTPUT_FILE, index=False, quoting=csv.QUOTE_ALL)
-            print(f"  Saved {published} published-coordinate update(s).")
+            print(f"  Saved {published + int(online.sum())} pre-pass update(s).")
         print("Nothing to do — all rows already have geocode_status set.")
         return
 
