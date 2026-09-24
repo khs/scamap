@@ -1,31 +1,32 @@
-match_event_url,match_source,match_title,match_date,new_location,new_lat,new_lng,note
-# ---------------------------------------------------------------------------,,,,,,,
-# event_overrides.csv — hand-maintained corrections, re-applied on EVERY run.,,,,,,
-# Editing sca_events_clean.csv directly does nothing: the pipeline rebuilds it,,,,,,,
-# from the upstream calendars each run. Put corrections HERE instead.,,,,,,,
-# Full guide with worked examples: EDITING_EVENTS.md  (READ IT FIRST).,,,,,,,
-# Tip: edit this in a spreadsheet (Excel / Google Sheets / LibreOffice) so it,,,,,,,
-# quotes commas for you. Lines whose first cell starts with # are ignored.,,,,,,,
-#,,,,,,,
-# MATCH the event (location-independent, survives minor upstream edits):,,,,,,
-#   best    -> match_event_url  (the event's permalink, most durable),,,,,,
-#   else    -> match_source + match_title  (+ match_date YYYY-MM-DD to pin one,,,,,,,
-#              instance of a title that repeats annually),,,,,,,
-# CHANGE the event:,,,,,,,
-#   new_location ......... fixes a vague/wrong address, gets geocoded,,,,,,
-#   new_lat + new_lng .... exact pin in decimal degrees (use when no address,,,,,,,
-#                          will geocode), skips the geocoder entirely,,,,,,
-#   both ................. corrected text AND an exact pin,,,,,,,
-#,,,,,,,
-# Example (remove the leading # and edit to use):,,,,,,,
-# ,Kingdom of Meridies,Greater Savannah Gathering,,"Savannah, GA, USA",,,'Greater Savannah area' would not geocode; set to the city
-# ---------------------------------------------------------------------------,,,,,,,
-,Kingdom of Gleann Abhann,Gleann Abhann Fall Crown List,,"Warner-Tulley Memorial YMCA Camp, 5184 Y Camp Road, Port Gibson, MS 39150",32.038867,-90.993114,"Kingdom calendar has ZIP 31950 (a Georgia ZIP); Port Gibson MS is 39150. Nominatim can't find the house number, so pinned via US Census geocoder exact match (2026-09-24)"
-,Kingdom of Atlantia,Autumn Training Camp (Windmasters' Hill),,"Scupperdog Farms, 7536 Goshen Rd, Oxford, NC 27565",36.418422,-78.740252,"Calendar says 'Oxford, DC, 27565'; ZIP 27565 is Oxford NC. Pinned via US Census geocoder exact match (2026-09-24)"
-,Kingdom of An Tir,"A Three Mountains ""Battle of the Bands""",,"Bear Creek Tree Farm, 30300 S Elisha Rd, Molalla, OR 97038",45.167815,-122.640478,"An Tir's calendar inserts its region name (', Rivers,') into the address. Pinned via US Census geocoder exact match (2026-09-24)"
-,Kingdom of Ansteorra,Bordermarch War of the Rams,,"Border Keep (Jones Country Music Park), 5754 Recreational Road 255, Colmesneil, TX 75938",30.964827,-94.329245,"Listing lacks ZIP; waroftherams.org says the site is Jones Country Music Park. 5754 matches Census + Yelp (the site's body text says 5747). Pinned via Census (2026-09-24)"
-,Kingdom of Drachenwald,Bows and Blows V,,"Kartala, Blagoevgrad, Bulgaria",42.042783,23.359445,"Calendar misspells Blagoevgrad and adds 'Sofia and Blagovegrad'. Kartala ski park/lodge area in Rila mtns E of Blagoevgrad (OSM place); exact lodge building unconfirmed (2026-09-24)"
-,Kingdom of Drachenwald,Gyllengran Fencing camp,,"Södra Vägen 32, 829 60 Gnarp, Sweden",62.054382,17.243787,"Calendar adds 'Sundsvall or Hudiksvall' which breaks geocoding; address confirmed in OSM (2026-09-24)"
-,Kingdom of Lochac,Fox Hunt Fencing Tournament Ynys Fawr (Ynys Fawr),,"Kingston Scout Hall, Kingston View Drive (cnr Twin Ovals Rd), Kingston TAS 7050, Australia",-42.973062,147.28474,"OSM has no No. 10 on Kingston View Dr. Kingston Scouts' site gives the hall on Kingston View Drive; pinned at the Twin Ovals Rd corner the listing names (2026-09-24)"
-,Kingdom of Lochac,River Haven Baronial Changeover (River Haven),,"Narangba Community Hall, 227-229 Mackie Rd, Narangba QLD 4504, Australia",-27.203558,152.962837,"Listing crams two venues together. Changeover court + feast are Saturday at Narangba (riverhaven.lochac.sca.org/baronage-changeover/); Sunday games at Lutwyche are secondary (2026-09-24)"
-,Barony of Lyondemere,Archery Practice - Weeknight (RECURRING),,"Rancho Park Archery Range, Los Angeles, CA 90064",34.044,-118.4163,"Rancho Park archery range in West LA (the big park S of Century City, N of Cheviot Hills); the venue name won't geocode, so pinned by hand"
+match_event_url,match_source,match_title,match_date,new_location,new_lat,new_lng,new_event_url,note
+# ---------------------------------------------------------------------------,,,,,,,,
+# event_overrides.csv — hand-maintained corrections, re-applied on EVERY run.,,,,,,,
+# Editing sca_events_clean.csv directly does nothing: the pipeline rebuilds it,,,,,,,,
+# from the upstream calendars each run. Put corrections HERE instead.,,,,,,,,
+# Full guide with worked examples: EDITING_EVENTS.md  (READ IT FIRST).,,,,,,,,
+# Tip: edit this in a spreadsheet (Excel / Google Sheets / LibreOffice) so it,,,,,,,,
+# quotes commas for you. Lines whose first cell starts with # are ignored.,,,,,,,,
+#,,,,,,,,
+# MATCH the event (location-independent, survives minor upstream edits):,,,,,,,
+#   best    -> match_event_url  (the event's permalink, most durable),,,,,,,
+#   else    -> match_source + match_title  (+ match_date YYYY-MM-DD to pin one,,,,,,,,
+#              instance of a title that repeats annually),,,,,,,,
+# CHANGE the event:,,,,,,,,
+#   new_location ......... fixes a vague/wrong address, gets geocoded,,,,,,,
+#   new_lat + new_lng .... exact pin in decimal degrees (use when no address,,,,,,,,
+#                          will geocode), skips the geocoder entirely,,,,,,,
+#   both ................. corrected text AND an exact pin,,,,,,,,
+#   new_event_url ........ replaces the event's link (e.g. the event's own site),,,,,,,,
+#,,,,,,,,
+# Example (remove the leading # and edit to use):,,,,,,,,
+# ,Kingdom of Meridies,Greater Savannah Gathering,,"Savannah, GA, USA",,,,'Greater Savannah area' would not geocode; set to the city
+# ---------------------------------------------------------------------------,,,,,,,,
+,Kingdom of Gleann Abhann,Gleann Abhann Fall Crown List,,"Warner-Tulley Memorial YMCA Camp, 5184 Y Camp Road, Port Gibson, MS 39150",32.038867,-90.993114,,"Kingdom calendar has ZIP 31950 (a Georgia ZIP); Port Gibson MS is 39150. Nominatim can't find the house number, so pinned via US Census geocoder exact match (2026-09-24)"
+,Kingdom of Atlantia,Autumn Training Camp (Windmasters' Hill),,"Scupperdog Farms, 7536 Goshen Rd, Oxford, NC 27565",36.418422,-78.740252,,"Calendar says 'Oxford, DC, 27565'; ZIP 27565 is Oxford NC. Pinned via US Census geocoder exact match (2026-09-24)"
+,Kingdom of An Tir,"A Three Mountains ""Battle of the Bands""",,"Bear Creek Tree Farm, 30300 S Elisha Rd, Molalla, OR 97038",45.167815,-122.640478,https://antirsca.wixsite.com/battlebands,"An Tir's calendar inserts its region name (', Rivers,') into the address. Address per the event's own site (linked); pin via US Census geocoder exact match (2026-09-24)"
+,Kingdom of Ansteorra,Bordermarch War of the Rams,,"Border Keep (Jones Country Music Park), 5754 Recreational Road 255, Colmesneil, TX 75938",30.964827,-94.329245,,Listing lacks ZIP; waroftherams.org says the site is Jones Country Music Park. 5754 matches Census + Yelp (the site's body text says 5747). Pinned via Census (2026-09-24)
+,Kingdom of Drachenwald,Bows and Blows V,,"Kartala Ski Resort, Blagoevgrad, Bulgaria",42.0432306,23.360726,,"Calendar misspells Blagoevgrad and adds 'Sofia and Blagovegrad'. Pin from the Google Maps place 'Kartala Ski Resort' supplied by the maintainer (2026-09-24)"
+,Kingdom of Drachenwald,Gyllengran Fencing camp,,"Södra Vägen 32, 829 60 Gnarp, Sweden",62.054382,17.243787,,Calendar adds 'Sundsvall or Hudiksvall' which breaks geocoding; address confirmed in OSM (2026-09-24)
+,Kingdom of Lochac,Fox Hunt Fencing Tournament Ynys Fawr (Ynys Fawr),,"Kingston Scout Hall, 10 Kingston View Drive, Kingston TAS 7050, Australia",-42.973062,147.28474,,"Address per maintainer. OSM has no No. 10 or hall building, so pinned at the Twin Ovals Rd corner the calendar names. Separate event from Fox Hunt Tournament (River Haven) at Lutwyche, which geocodes fine (2026-09-24)"
+,Kingdom of Lochac,River Haven Baronial Changeover (River Haven),,"Narangba Community Hall, 227-229 Mackie Rd, Narangba QLD 4504, Australia",-27.203558,152.962837,,Listing crams two venues together. Changeover court + feast are Saturday at Narangba (riverhaven.lochac.sca.org/baronage-changeover/); Sunday games at Lutwyche are secondary (2026-09-24)
+,Barony of Lyondemere,Archery Practice - Weeknight (RECURRING),,"Rancho Park Archery Range, Los Angeles, CA 90064",34.044,-118.4163,,"Rancho Park archery range in West LA (the big park S of Century City, N of Cheviot Hills); the venue name won't geocode, so pinned by hand"

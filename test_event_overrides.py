@@ -86,7 +86,7 @@ class TestApplyOverrides(unittest.TestCase):
         self.f.write_text(header + body, encoding="utf-8")
 
     def test_new_location_replaces_and_forces_regeocode(self):
-        self._write(',Kingdom of Meridies,Vague Fest,,"Savannah, GA, USA",,,fix\n')
+        self._write(',Kingdom of Meridies,Vague Fest,,"Savannah, GA, USA",,,,fix\n')
         df = pd.DataFrame([_row(source="Kingdom of Meridies", title="Vague Fest",
                                 clean_location="Greater Savannah area",
                                 location="Greater Savannah area",
@@ -99,7 +99,7 @@ class TestApplyOverrides(unittest.TestCase):
         self.assertEqual((r["lat"], r["lng"], r["geocode_status"]), ("", "", ""))
 
     def test_latlng_pins_and_skips_geocoder(self):
-        self._write("https://x.org/e/1,,,,,41.88,-87.63,pin\n")
+        self._write("https://x.org/e/1,,,,,41.88,-87.63,,pin\n")
         df = pd.DataFrame([_row(event_url="https://x.org/e/1",
                                 clean_location="the cabbage patch")])
         out = clean.apply_event_overrides(df)
@@ -110,7 +110,7 @@ class TestApplyOverrides(unittest.TestCase):
         self.assertEqual(r["clean_location"], "the cabbage patch")
 
     def test_location_and_pin_together(self):
-        self._write('https://x.org/e/1,,,,"Real Site, PA",40.1,-75.2,both\n')
+        self._write('https://x.org/e/1,,,,"Real Site, PA",40.1,-75.2,,both\n')
         df = pd.DataFrame([_row(event_url="https://x.org/e/1")])
         r = clean.apply_event_overrides(df).iloc[0]
         self.assertEqual(r["clean_location"], "Real Site, PA")
@@ -118,7 +118,7 @@ class TestApplyOverrides(unittest.TestCase):
                          ("40.1", "-75.2", "override"))
 
     def test_non_matching_rows_untouched(self):
-        self._write("https://x.org/e/1,,,,,41.88,-87.63,pin\n")
+        self._write("https://x.org/e/1,,,,,41.88,-87.63,,pin\n")
         df = pd.DataFrame([
             _row(event_url="https://x.org/e/1", title="Target"),
             _row(event_url="https://x.org/e/OTHER", title="Bystander",
@@ -129,14 +129,28 @@ class TestApplyOverrides(unittest.TestCase):
         self.assertEqual((bystander["lat"], bystander["lng"]), ("5.5", "6.6"))
 
     def test_comment_and_keyless_rows_skipped(self):
-        self._write("# this is a comment row,,,,,1,2,note\n"
-                    ",,,,Nowhere,,,no match key at all\n")   # no url/source/title
+        self._write("# this is a comment row,,,,,1,2,,note\n"
+                    ",,,,Nowhere,,,,no match key at all\n")   # no url/source/title
         self.assertEqual(clean._load_overrides(), [])
+
+    def test_new_event_url_replaces_link(self):
+        self._write(",Kingdom of An Tir,Battle of the Bands,,,,,"
+                    "https://antirsca.wixsite.com/battlebands,own site\n")
+        df = pd.DataFrame([_row(source="Kingdom of An Tir", title="Battle of the Bands",
+                                event_url="https://antir.org/events/x/")])
+        r = clean.apply_event_overrides(df).iloc[0]
+        self.assertEqual(r["event_url"], "https://antirsca.wixsite.com/battlebands")
+        self.assertEqual((r["lat"], r["geocode_status"]), ("1.0", "ok"))   # pin untouched
+
+    def test_non_http_event_url_ignored(self):
+        self._write("https://x.org/e/1,,,,,,,javascript:alert(1),bad link\n")
+        r = clean.apply_event_overrides(pd.DataFrame([_row(event_url="https://x.org/e/1")])).iloc[0]
+        self.assertEqual(r["event_url"], "https://x.org/e/1")
 
     def test_source_only_row_skipped(self):
         # Source alone (no URL, no title) would re-pin a whole kingdom's calendar.
-        self._write(',Kingdom of Gleann Abhann,,,"Kings Arrow Ranch",30.9,-89.4,\n'
-                    ',Kingdom of Caid,,2026-05-02,,30.9,-89.4,date is not enough\n')
+        self._write(',Kingdom of Gleann Abhann,,,"Kings Arrow Ranch",30.9,-89.4,,\n'
+                    ',Kingdom of Caid,,2026-05-02,,30.9,-89.4,,date is not enough\n')
         self.assertEqual(clean._load_overrides(), [])
 
     def test_missing_file_is_noop(self):
@@ -153,24 +167,24 @@ class TestApplyOverrides(unittest.TestCase):
                                   geocode_status="ok")])
 
     def test_non_numeric_coords_ignored(self):
-        self._write("https://x.org/e/1,,,,,not-a-number,also-bad,typo\n")
+        self._write("https://x.org/e/1,,,,,not-a-number,also-bad,,typo\n")
         r = clean.apply_event_overrides(self._target()).iloc[0]
         self.assertEqual((r["lat"], r["lng"], r["geocode_status"]),
                          ("5.5", "6.6", "ok"))            # garbage pin not placed
 
     def test_out_of_range_coords_ignored(self):
-        self._write("https://x.org/e/1,,,,,418.8,-87.63,lat out of range\n")
+        self._write("https://x.org/e/1,,,,,418.8,-87.63,,lat out of range\n")
         r = clean.apply_event_overrides(self._target()).iloc[0]
         self.assertEqual((r["lat"], r["lng"]), ("5.5", "6.6"))
 
     def test_half_filled_coords_ignored(self):
-        self._write("https://x.org/e/1,,,,,41.88,,lat only no lng\n")
+        self._write("https://x.org/e/1,,,,,41.88,,,lat only no lng\n")
         r = clean.apply_event_overrides(self._target()).iloc[0]
         self.assertEqual((r["lat"], r["lng"], r["geocode_status"]),
                          ("5.5", "6.6", "ok"))
 
     def test_override_with_no_change_is_skipped(self):
-        self._write("https://x.org/e/1,,,,,,,just a note, no change\n")
+        self._write("https://x.org/e/1,,,,,,,,\"just a note, no change\"\n")
         r = clean.apply_event_overrides(self._target()).iloc[0]
         self.assertEqual((r["lat"], r["lng"], r["geocode_status"]),
                          ("5.5", "6.6", "ok"))
@@ -178,7 +192,7 @@ class TestApplyOverrides(unittest.TestCase):
     def test_bad_pin_but_location_still_applies(self):
         # A bad pin must not block a valid location correction; the location is
         # taken and the event is re-geocoded (coords cleared).
-        self._write('https://x.org/e/1,,,,"Real City, PA",badlat,badlng,loc good pin bad\n')
+        self._write('https://x.org/e/1,,,,"Real City, PA",badlat,badlng,,loc good pin bad\n')
         r = clean.apply_event_overrides(self._target()).iloc[0]
         self.assertEqual(r["clean_location"], "Real City, PA")
         self.assertEqual((r["lat"], r["lng"], r["geocode_status"]), ("", "", ""))
@@ -209,7 +223,7 @@ class TestCommittedOverridesFile(unittest.TestCase):
         for ov in clean._load_overrides():
             has_match = bool(ov["match_event_url"]
                              or (ov["match_source"] and ov["match_title"]))
-            has_change = bool(ov["new_location"]
+            has_change = bool(ov["new_location"] or ov["new_event_url"]
                               or clean._valid_override_coords(ov["new_lat"], ov["new_lng"]))
             self.assertTrue(has_match, f"override has no match key: {ov}")
             self.assertTrue(has_change, f"override changes nothing: {ov}")

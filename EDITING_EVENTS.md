@@ -37,6 +37,7 @@ place.
 | `match_date` | *Optional.* `YYYY-MM-DD`. Only needed to pin **one year** of a title that repeats annually (e.g. correct *this* year's "Spring Coronation" but not next year's). Leave blank to match every instance. |
 | `new_location` | **What to change.** A corrected address string. It replaces the displayed location **and** is fed to the geocoder, so write something it can resolve — ideally `City, ST, USA` or a full street address. |
 | `new_lat`, `new_lng` | **What to change.** Exact coordinates in decimal degrees (e.g. `39.9526` / `-75.1652`). Use these when no address will geocode cleanly. They drop the pin precisely and skip the geocoder. |
+| `new_event_url` | **What to change.** Replaces the event's link, e.g. the event's own website instead of the kingdom calendar entry. Must start with `http://` or `https://`. Use official sources (the event's or group's own site), not aggregator listings. |
 | `note` | **Why.** A short human explanation. Always fill this in — it's the message to the next person (or future you) about what was wrong and what you did. |
 
 > **Match rule:** if `match_event_url` is filled, it alone identifies the

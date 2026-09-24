@@ -1437,7 +1437,7 @@ def carry_forward_failed_sources(df: pd.DataFrame) -> pd.DataFrame:
 
 OVERRIDE_COLUMNS = [
     "match_event_url", "match_source", "match_title", "match_date",
-    "new_location", "new_lat", "new_lng", "note",
+    "new_location", "new_lat", "new_lng", "new_event_url", "note",
 ]
 
 
@@ -1511,6 +1511,8 @@ def apply_event_overrides(df: pd.DataFrame) -> pd.DataFrame:
                      geocode_status="override" so the geocoder leaves it alone.
     Both may be given: corrected text plus an exact pin (use this when even the
     fixed address won't geocode cleanly).
+    new_event_url -> replaces the event's link (e.g. the event's own site
+                     instead of the kingdom calendar entry). http(s) only.
     """
     overrides = _load_overrides()
     if not overrides:
@@ -1529,9 +1531,14 @@ def apply_event_overrides(df: pd.DataFrame) -> pd.DataFrame:
             if (lat_s or lng_s) and coords is None:
                 print(f"  WARNING: override '{label}' has invalid or incomplete "
                       f"coordinates (lat={lat_s!r}, lng={lng_s!r}) — ignoring the pin")
-            if not new_loc and coords is None:
+            new_url = ov["new_event_url"]
+            if new_url and not re.match(r"^https?://\S+$", new_url):
+                print(f"  WARNING: override '{label}' new_event_url {new_url!r} is not "
+                      f"an http(s) link — ignoring it")
+                new_url = ""
+            if not new_loc and coords is None and not new_url:
                 print(f"  WARNING: override '{label}' changes nothing "
-                      f"(no new_location, no valid pin) — skipping")
+                      f"(no new_location, no valid pin, no new_event_url) — skipping")
                 continue
 
             mask = df.apply(lambda r: _override_matches(ov, r), axis=1)
@@ -1553,6 +1560,8 @@ def apply_event_overrides(df: pd.DataFrame) -> pd.DataFrame:
                     df.at[idx, "lat"]            = coords[0]
                     df.at[idx, "lng"]            = coords[1]
                     df.at[idx, "geocode_status"] = "override"
+                if new_url:
+                    df.at[idx, "event_url"]      = new_url
             applied += n
             print(f"  Override applied to {n} event(s): {label}")
         except Exception as e:                    # one bad row can't break cleaning
