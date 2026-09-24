@@ -505,6 +505,81 @@ def extract_published_coords(text: str, source: str = "") -> tuple:
     return (None, None)
 
 
+# ---------------------------------------------------------------------------
+# Map links pasted into a location / description
+# ---------------------------------------------------------------------------
+# Organisers often paste a Google Maps (or OpenStreetMap) link for the site. The
+# pin is IN the link: a full Google URL carries "!3d<lat>!4d<lng>" (the place pin;
+# "@lat,lng" is only the viewport centre, used as a fallback), "?q=lat,lng", or an
+# OSM "mlat=/mlon=". A short maps.app.goo.gl link is just an HTTP redirect to a
+# full URL, so one plain request (cached in maplink_cache.json) resolves it — no
+# page scraping, no JS.
+
+MAP_LINK_RE = re.compile(
+    r"https?://(?:www\.)?(?:maps\.app\.goo\.gl|goo\.gl/maps|google\.[a-z.]+/maps"
+    r"|maps\.google\.[a-z.]+|openstreetmap\.org)[^\s<>\"')]*", re.IGNORECASE)
+_SHORT_LINK_RE = re.compile(r"https?://(?:maps\.app\.goo\.gl|goo\.gl/maps)/", re.I)
+_PIN_RES = [
+    re.compile(r"!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)"),                       # place pin
+    re.compile(r"[?&](?:q|ll|query|destination|daddr)=(-?\d+\.\d+)(?:,|%2C)\s*(-?\d+\.\d+)", re.I),
+    re.compile(r"mlat=(-?\d+\.\d+)&(?:amp;)?mlon=(-?\d+\.\d+)"),          # OSM marker
+    re.compile(r"@(-?\d+\.\d+),(-?\d+\.\d+)"),                            # viewport centre
+    re.compile(r"#map=\d+/(-?\d+\.\d+)/(-?\d+\.\d+)"),                    # OSM viewport
+]
+MAPLINK_CACHE_FILE = SCRIPT_DIR / "maplink_cache.json"
+
+
+def coords_from_map_url(url: str) -> tuple:
+    """(lat, lng) carried by a full map URL, else (None, None)."""
+    from urllib.parse import unquote
+    for u in (url, unquote(url)):
+        for rx in _PIN_RES:
+            m = rx.search(u)
+            if m:
+                lat, lng = float(m.group(1)), float(m.group(2))
+                if _plausible(lat, lng):
+                    return (lat, lng)
+    return (None, None)
+
+
+def resolve_short_map_link(url: str, cache: dict, session=None):
+    """Follow a maps.app.goo.gl redirect to the full URL (cached). Returns the
+    full URL, or None when the request failed (not cached, so it's retried)."""
+    if url in cache:
+        return cache[url]
+    from urllib.parse import parse_qs, urlparse
+    s = session or requests
+    cur = url
+    try:
+        for _ in range(5):
+            r = s.get(cur, allow_redirects=False, timeout=15,
+                      headers={"User-Agent": USER_AGENT})
+            nxt = r.headers.get("Location")
+            if not nxt:
+                break
+            # An EU consent interstitial wraps the real URL in ?continue=.
+            if "consent.google" in nxt:
+                nxt = parse_qs(urlparse(nxt).query).get("continue", [nxt])[0]
+            cur = nxt
+            if coords_from_map_url(cur)[0] is not None:
+                break
+    except requests.RequestException as e:
+        print(f"           map link {url} could not be resolved: {e}")
+        return None
+    cache[url] = cur
+    return cur
+
+
+def extract_map_link_coords(text: str, cache: dict, session=None) -> tuple:
+    for url in MAP_LINK_RE.findall(text or ""):
+        full = resolve_short_map_link(url, cache, session) if _SHORT_LINK_RE.match(url) else url
+        if full:
+            lat, lng = coords_from_map_url(full)
+            if lat is not None:
+                return (lat, lng)
+    return (None, None)
+
+
 # SCA-speak "the city/area mundanely known as <place>" prefix.
 _MUNDANE_RE = re.compile(
     r"\bthe\s+(?:city|cities|town|area|region|lands?|shire|barony|canton|province)\s+"
@@ -787,14 +862,27 @@ def main(retry_failed: bool = False):
     # against an innocent number pair (a price/time can't parse, but a stray
     # coordinate-shaped pair must still land where this source's events can be).
     # A human override or an organizer-placed (Gleann) pin is left alone.
+    maplink_cache: dict = {}
+    if MAPLINK_CACHE_FILE.exists():
+        try:
+            maplink_cache = json.loads(MAPLINK_CACHE_FILE.read_text(encoding="utf-8"))
+        except ValueError:
+            maplink_cache = {}
     published = 0
     for idx in df.index:
         if str(df.at[idx, "geocode_status"]) in ("override", "ok_organizer"):
             continue
         source = str(df.at[idx, "source"] or "")
-        lat, lng = extract_published_coords(str(df.at[idx, "clean_location"] or ""), source)
+        # A map link pasted into the location is the most direct statement of
+        # where the pin goes (the raw `location` keeps it; clean_location strips
+        # the URL). A description link ranks last: it may point at parking/hotels.
+        lat, lng = extract_map_link_coords(str(df.at[idx, "location"] or ""), maplink_cache)
+        if lat is None:
+            lat, lng = extract_published_coords(str(df.at[idx, "clean_location"] or ""), source)
         if lat is None:   # fall back to the description, where some organisers paste it
             lat, lng = extract_published_coords(str(df.at[idx, "description"] or ""), source)
+        if lat is None:
+            lat, lng = extract_map_link_coords(str(df.at[idx, "description"] or ""), maplink_cache)
         if lat is None:
             continue
         if in_sca_region(lat, lng) and in_source_regions(lat, lng, source):
@@ -802,6 +890,9 @@ def main(retry_failed: bool = False):
             df.at[idx, "lng"] = str(lng)
             df.at[idx, "geocode_status"] = "ok_published"
             published += 1
+    if maplink_cache:
+        MAPLINK_CACHE_FILE.write_text(json.dumps(maplink_cache, indent=2, sort_keys=True),
+                                      encoding="utf-8")
     if published:
         print(f"  Used published coordinates for {published} event(s) (authoritative).")
 

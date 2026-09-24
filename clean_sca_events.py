@@ -811,6 +811,15 @@ US_STATE_NAMES = {
 }
 
 
+# A Google Maps / OSM link plus its optional label ("Google Maps link:", "Map:",
+# "(map: …)"). Kept in step with geocode_sca_events.MAP_LINK_RE.
+MAP_LINK_TEXT_RE = re.compile(
+    r"\(?\s*(?:(?:google\s+)?maps?(?:\s+(?:link|pin|url|location))?\s*[:\-–]?\s*)?"
+    r"https?://(?:www\.)?(?:maps\.app\.goo\.gl|goo\.gl/maps|google\.[a-z.]+/maps"
+    r"|maps\.google\.[a-z.]+|openstreetmap\.org)[^\s<>\"')]*\)?",
+    re.IGNORECASE)
+
+
 def clean_location(raw: str) -> tuple:
     """
     Attempt to strip the venue name from a location string, leaving a geocodable address.
@@ -820,6 +829,15 @@ def clean_location(raw: str) -> tuple:
         return ("", "empty")
 
     raw = unescape_ics(raw)
+
+    # A pasted map link ("… Google Maps link: https://maps.app.goo.gl/…") is not
+    # address text: it breaks the geocoder and clutters the popup. Drop it here;
+    # geocode_sca_events reads the pin straight out of the link in the raw
+    # `location`, which keeps it.
+    raw = MAP_LINK_TEXT_RE.sub(" ", raw)
+    raw = re.sub(r"\s{2,}", " ", raw).strip(" ,;-–")
+    if not raw:
+        return ("", "empty")
 
     # Placeholder strings like "TBD" — treat as empty so we don't geocode them
     if raw.strip().lower().rstrip(".") in PLACEHOLDER_LOCATIONS:

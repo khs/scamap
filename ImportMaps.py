@@ -197,6 +197,11 @@ def fetch_ics(calendar: dict) -> Calendar | None:
         if "BEGIN:VCALENDAR" not in data:
             print(f"  NOTE: {calendar['source']}: {path.name} has no events yet — skipping")
             return None
+        # A browser's "Save page as" wraps the calendar text in <html>…<body> …
+        # </body></html>; keep just BEGIN:VCALENDAR … END:VCALENDAR.
+        start = data.index("BEGIN:VCALENDAR")
+        end = data.rfind("END:VCALENDAR")
+        data = data[start:end + len("END:VCALENDAR")] if end > start else data[start:]
         try:
             return Calendar.from_ical(data)
         except Exception as e:                       # noqa: BLE001

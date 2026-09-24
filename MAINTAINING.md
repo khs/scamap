@@ -91,6 +91,15 @@ plenty):**
    **Ctrl-S / ⌘-S**.
 2. **Save / rename it to `antir.ics`** and put it in the SCAMap project folder,
    replacing the placeholder `antir.ics` that's already there.
+   - Windows hides file extensions, so typing `antir.ics` can produce
+     `antir.ics.ics`. Check the folder shows a single `antir.ics` that is
+     newer than before.
+   - Sanity check: open it in Notepad. Near the top it should say
+     `PRODID:-//wp-events-plugin.com//…`, and the `URL:` lines should point at
+     `antir.org`. If it says `Google Calendar` or `X-WR-CALNAME:` with another
+     group's name, you grabbed a different calendar download.
+   - A browser "Save page as" copy (wrapped in `<html>…`) is fine: the
+     pipeline strips the wrapper.
    - Doing it on GitHub instead? Open `antir.ics` in the repo → the pencil
      (Edit) → paste in the downloaded file's contents → Commit.
 3. Commit and push (`git add antir.ics && git commit -m "Update An Tir" &&

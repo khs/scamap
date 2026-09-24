@@ -74,6 +74,8 @@ jobs:
           # so the next scheduled run reuses prior lookups (and never repeats
           # the same Nominatim query, per their bulk-geocoding policy).
           git add sca_events_clean.csv geocode_cache.json description_cache.json eventprime_cache.json calon_desc_cache.json health_state.json
+          # Created on first use (resolved maps.app.goo.gl short links); add only once it exists.
+          if [ -f maplink_cache.json ]; then git add maplink_cache.json; fi
 
           if git diff --cached --quiet; then
             echo "No data changes to commit."

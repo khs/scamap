@@ -122,6 +122,36 @@
     }
     .search-input::placeholder { color: #94a3b8; font-style: italic; }
 
+    /* ── Planning-tool notice (dismissible; remembered per browser) ── */
+    .site-notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      margin-bottom: 0.8rem;
+      padding: 0.45rem 0.5rem 0.45rem 0.8rem;
+      background: #eaf2f7;
+      border: 1px solid #c3dbe8;
+      border-left: 3px solid var(--sky-blue);
+      border-radius: 4px;
+      font-size: 0.82rem;
+      line-height: 1.35;
+      color: var(--ink-lt);
+    }
+    .site-notice[hidden] { display: none; }
+    .site-notice p { flex: 1; }
+    .site-notice-close {
+      flex-shrink: 0;
+      background: transparent;
+      border: none;
+      color: #476369;
+      font-size: 1.1rem;
+      line-height: 1;
+      padding: 0.1rem 0.3rem;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .site-notice-close:hover { color: var(--blue); background: rgba(96,156,185,0.15); }
+
     /* ── Checkboxes ────────────────────────────────────────────── */
     .filter-checks {
       display: flex;
@@ -599,6 +629,23 @@
 
 <main>
 
+  <div class="site-notice" id="site-notice" role="note">
+    <p>This tool is intended to help you plan your event schedule. It is not a navigation tool. Locations may be wrong. Please click through to the hosting group's website for event details.</p>
+    <button type="button" class="site-notice-close" id="site-notice-close" aria-label="Dismiss this notice">&times;</button>
+  </div>
+  <script>
+    // Hide the notice for visitors who already dismissed it (remembered in this
+    // browser only; storage can be blocked, so fail open and show it).
+    (function () {
+      const box = document.getElementById('site-notice');
+      try { if (localStorage.getItem('siteNoticeDismissed') === '1') box.hidden = true; } catch (e) {}
+      document.getElementById('site-notice-close').addEventListener('click', () => {
+        box.hidden = true;
+        try { localStorage.setItem('siteNoticeDismissed', '1'); } catch (e) {}
+      });
+    })();
+  </script>
+
   <!-- Search + filter checkboxes -->
   <div class="search-row">
     <input id="search-input" class="search-input" type="search"
@@ -617,6 +664,10 @@
       Baronial (Practices)
     </label>
     <label class="check-label">
+      <input type="checkbox" id="chk-big" />
+      Big events only (wars &amp; Known World)
+    </label>
+    <label class="check-label">
       <input type="checkbox" id="chk-placeholders" />
       Show markers for groups without calendars
     </label>
@@ -629,6 +680,7 @@
       Colour background by kingdom
     </label>
   </div>
+
 
   <div class="filter-dates" role="group" aria-label="Date range">
     <label class="date-label">From <input type="date" id="date-from" aria-label="From date" /></label>
@@ -1718,8 +1770,17 @@ function legendActiveColors() {
   return legendHover ? new Set([legendHover]) : legendFilter;
 }
 
+// "Big events only": the wars that get the oversized pin (war_host is set by
+// annotate_war_hosts.py, which covers every wars.csv event) plus any Known World
+// event, in all its spellings (Known/Knowne World/Worlde).
+const KNOWN_WORLD_RE = /\bknowne?\s+worlde?\b/i;
+function isBigEvent(ev) {
+  return !!ev.war_host || KNOWN_WORLD_RE.test(ev.title || '');
+}
+
 function applyFilters() {
   const query       = document.getElementById('search-input').value.toLowerCase().trim();
+  const bigOnly     = document.getElementById('chk-big').checked;
   const showKingdom = document.getElementById('chk-kingdom').checked;
   const showBaronial= document.getElementById('chk-baronial').checked;
   const showVirtual = document.getElementById('chk-virtual').checked;
@@ -1751,6 +1812,7 @@ function applyFilters() {
     // Colour-key filter (hover preview or clicked swatches). Empty = show all.
     const legendColors = legendActiveColors();
     if (legendColors.size && !legendColors.has(eventColor(ev).toLowerCase())) return false;
+    if (bigOnly && !isBigEvent(ev)) return false;
     if (onlineOnly) {
       // Online-only view: virtual events, still honouring the Kingdom/Baronial
       // checkboxes (unchecking Baronial hides baronial business meetings here
@@ -2431,6 +2493,7 @@ document.getElementById('date-reset').addEventListener('click', () => {
 
 document.getElementById('chk-kingdom').addEventListener('change', applyFilters);
 document.getElementById('chk-baronial').addEventListener('change', applyFilters);
+document.getElementById('chk-big').addEventListener('change', applyFilters);
 document.getElementById('chk-placeholders').addEventListener('change', applyFilters);
 document.getElementById('chk-aggregate').addEventListener('change', applyFilters);
 document.getElementById('chk-virtual').addEventListener('change', applyFilters);

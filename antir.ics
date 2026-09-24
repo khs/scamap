@@ -1,793 +1,115 @@
 BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//wp-events-plugin.com//7.2.3.1//EN
+PRODID:-//wp-events-plugin.com//7.4.2//EN
 TZID:America/Los_Angeles
 X-WR-TIMEZONE:America/Los_Angeles
 BEGIN:VEVENT
-UID:1-8782@antir.org
-DTSTART;TZID=America/Los_Angeles:20260627T083000
-DTEND;TZID=America/Los_Angeles:20260627T200000
-DTSTAMP:20260627T010721Z
-URL:https://antir.org/events/athenaeum-7/
-SUMMARY:Athenaeum
-DESCRIPTION:Each year\, Their Excellencies of Madrone\, in partnership with
-  the Laurels of An Tir\, invite artisans of all skill levels to journey to
-  Athenaeum\, sponsored by the Barony of Madrone\, to showcase their artist
- ic skills to all the Realm. The populace is welcomed to be inspired and aw
- ed by the largest collection of artisans in An Tir\, in a non-competitive 
- Body of Work event.\n\nAthenaeum is an Art and Sciences event where regist
- ered Artisans and Scientists display their work to Laurels and to members 
- of the populace. This is not judged\, but an opportunity for an exchange o
- f ideas and appreciation of the work done behind the scenes.\n\nThe schedu
- le includes a day of viewing the displays of the artists\, talking to exhi
- bitors\, socializing with attendees\, and both Royal and Baronial Court. W
- e encourage you to attend and see all of the wonderful projects and engage
-  with the artists.\n\nAthenaeum is designed to be a place for artisans to 
- display the breadth of their artistic abilities and receive valuable feedb
- ack and commentary from the Laurels of An Tir\, and artisans\, and attende
- es at the event in a relaxed\, collaborative\, and engaging environment.\n
- \nThe event is being held ot Renton Technical College\, 3000 NE 4th St\, R
- enton\, WA 98056. We are in Building I. Please use entrance 3 and follow t
- he SCA signs.
-CATEGORIES:Madrone
-LOCATION:Renton Technical College\, 3000 NE 4th Street\, Renton\, WA\, 9805
- 6\, United States
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=3000 NE 4th Street\, Renton
- \, WA\, 98056\, United States;X-APPLE-RADIUS=100;X-TITLE=Renton Technical 
- College:geo:0,0
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8872@antir.org
-DTSTART;TZID=America/Los_Angeles:20260629T080000
-DTEND;TZID=America/Los_Angeles:20260703T075900
-DTSTAMP:20251122T214529Z
-URL:https://antir.org/events/fields-of-gold-engineers-week/
-SUMMARY:Fields of Gold Engineers Week
-DESCRIPTION:
-CATEGORIES:Tir Bannog
-LOCATION:Fields of Gold Educational Center\, 17317 Larch Rd\, Telkwa\, BC\,
-  V0J 2X2\, Canada
-GEO:54.609499;-126.847751
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=17317 Larch Rd\, Telkwa\, B
- C\, V0J 2X2\, Canada;X-APPLE-RADIUS=100;X-TITLE=Fields of Gold Educational
-  Center:geo:54.609499,-126.847751
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8616@antir.org
-DTSTART;TZID=America/Los_Angeles:20260630T120000
-DTEND;TZID=America/Los_Angeles:20260705T150000
-DTSTAMP:20260616T174355Z
-URL:https://antir.org/events/an-tir-west-war-16/
-SUMMARY:An Tir West War
-DESCRIPTION:Co-event Stewards SCA Names:  Viscountess Cempestrae i Holtasj
- on\, Kennara\, and Countess Astrid of the Fjordlands\nEvent Steward contac
- t:  eventstewards@antirwestwar.org\nEvent Name:   An Tir West War\nEv
- ent Site Open:   June 30\, 2026\, 12pm\nEvent Site Close:    July 5\, 
- 2026\, 3pm\n&nbsp\;\nFurther Event Information:\nCome to the beautiful\, t
- emperate coastlands of Oregon for an epic war between the mighty SCA Kingd
- oms of the West and An Tir. Updates will be posted to https://antirwestwa
- r.org/\nExperience legendary armored combat and rapier war scenarios– so
- me with siege weapons\, combat archers\, and thrown weapons on the field o
- f battle! Participate in target archery and thrown weapons. Marvel at SCA 
- Equestrian activities. For non-combatants\, dive into Arts &amp\; Sciences
-  classes\, cooking\, community and demos! Youth activities will run for th
- e entire war. Peruse our many fine merchants! Delicious food stalls are pa
- ramount to any war. Both Kingdoms will host Royal Court and Grand Court. R
- easonable ADA accommodations will be made for those who need them.\nThe AT
- WW Event Stewards\, Countess Astrid of the Fjordlands and Viscountess Cemp
- estrae i Holtasjon\, Kennara\, look forward to meeting you at the event!\n
- Volunteers are the backbone of a war\; please see the event website for in
- fo on how to sign up. There is almost no cell phone service on site.\nSite
-  Name:   Lazy J Moore Ranch\nSite Address:   96029 Euchre Creek Rd. Go
- ld Beach\, OR 97444\nWritten Directions to Site:\nFrom the south: Make you
- r best way to Gold Beach\, Oregon. Head north on Hwy 101 about 13 miles. T
- urn right towards Coy Creek Rd. Turn right onto Coy Creek Rd. Turn left on
- to Euchre Creek Rd. This road has quite a few curves. NOTE: Be careful of 
- possible congestion at the Coy Creek Rd turnoff. From the north: Make your
-  best way to Port Orford\, Oregon. Head south on Hwy 101 about 17 miles. T
- urn left towards Coy Creek Rd. Turn right onto Coy Creek Rd. Turn left ont
- o Euchre Creek Rd. NOTE: Be careful of possible congestion at the Coy Cree
- k Rd. turnoff.\nSite Accessibility:  Close / Handicap Parking\, Voice of
-  the Populace (Silent Heralds) in Court\, Accessible privies\, DEIB event 
- staff\nTerrain Description:   Uneven ground\, hills\, valleys\, bridges
- \, can be swampy. Extremely variable dependent on rain patterns. Long gras
- s is mown shortly before the event\, so bring a rake (and maybe allergy me
- dication). Tends to be warm during the day and chilly at night. Often wind
- y during the day. This is a working farm and animals may be nearby. Please
-  respect any signage!\nBodies of Water on/near Site:   Site has a river
-  and creek\, and is a couple miles from the Pacific Ocean\nInsects or wild
-  animals to be aware of on/ near site:   Domesticated farm animals. Wel
- l-behaved dogs are welcome. All dogs and adventure cats must be leashed at
-  all times! Bring proof of current rabies vaccination with your pet. Clean
-  up after your pets.\nAmenities on Site:  Portable privies\, ADA privies\
- , Hand-washing stations\, Showers\, RV parking (no hookups)\, Livestock st
- alls/housing. Cell service is almost completely unavailable.\nAdditional C
- omments: Cell service is almost completely unavailable.\nWeb Link: antir
- westwar.org\nFacebook link: https://www.facebook.com/ATWWar\n\nInstagram 
- link: https://www.instagram.com/antirwestwar
-CATEGORIES:Kingdom of An Tir,Kingdom of the West
-LOCATION:Lazy J Moore Ranch\, 96029 Euchre Creek Rd.\, Gold Beach\, OR\, 97
- 444\, United States
-GEO:42.5638902;-124.3635571
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=96029 Euchre Creek Rd.\, Go
- ld Beach\, OR\, 97444\, United States;X-APPLE-RADIUS=100;X-TITLE=Lazy J Mo
- ore Ranch:geo:42.5638902,-124.3635571
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8923@antir.org
-DTSTART;TZID=America/Los_Angeles:20260703T150000
-DTEND;TZID=America/Los_Angeles:20260705T130000
-DTSTAMP:20260315T200648Z
-URL:https://antir.org/events/cold-keep-defenders-4/
-SUMMARY:Cold Keep Defenders
-DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
- y business is expected to be conducted event.\n\n3:00 PM- 1:00 PM\n\nCold 
- Keep Defenders is an event where members of the populace compete for the t
- itle of Defender in several categories\, including heavy\, rapier\, archer
- y\, thrown weapons\, and arts and sciences.
-CATEGORIES:Cold Keep
-LOCATION:Miworth Community Hall\, 13510 Flint Road\, Prince George\, BC\, V
- 2M 6B9\, Canada
-GEO:53.942348;-122.9449998
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=13510 Flint Road\, Prince G
- eorge\, BC\, V2M 6B9\, Canada;X-APPLE-RADIUS=100;X-TITLE=Miworth Community
-  Hall:geo:53.942348,-122.9449998
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8878@antir.org
-DTSTART;TZID=America/Los_Angeles:20260704T090000
-DTEND;TZID=America/Los_Angeles:20260710T090000
-DTSTAMP:20251122T220000Z
-URL:https://antir.org/events/penguins-crusade/
-SUMMARY:Penguins Crusade
-DESCRIPTION:
-CATEGORIES:Tir Bannog
-LOCATION:Fields of Gold Educational Center\, 17317 Larch Rd\, Telkwa\, BC\,
-  V0J 2X2\, Canada
-GEO:54.609499;-126.847751
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=17317 Larch Rd\, Telkwa\, B
- C\, V0J 2X2\, Canada;X-APPLE-RADIUS=100;X-TITLE=Fields of Gold Educational
-  Center:geo:54.609499,-126.847751
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8877@antir.org
-DTSTART;TZID=America/Los_Angeles:20260710T090000
-DTEND;TZID=America/Los_Angeles:20260712T090000
-DTSTAMP:20251122T215414Z
-URL:https://antir.org/events/fields-of-gold-18/
-SUMMARY:Fields of Gold
-DESCRIPTION:
-CATEGORIES:Tir Bannog
-LOCATION:Fields of Gold Educational Center\, 17317 Larch Rd\, Telkwa\, BC\,
-  V0J 2X2\, Canada
-GEO:54.609499;-126.847751
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=17317 Larch Rd\, Telkwa\, B
- C\, V0J 2X2\, Canada;X-APPLE-RADIUS=100;X-TITLE=Fields of Gold Educational
-  Center:geo:54.609499,-126.847751
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8954@antir.org
-DTSTART;TZID=America/Los_Angeles:20260711T090000
-DTEND;TZID=America/Los_Angeles:20260711T190000
-DTSTAMP:20260515T230335Z
-URL:https://antir.org/events/lord-defender-5/
-SUMMARY:Lord Defender
-DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
- y business is expected to be conducted event.\n\n9:00 AM7:00 PM\n\nLord De
- fend of Blatha an Oir\nA single day of competition to determine the defend
- ers of Blatha an Oir\nHeavy\nRapier\nArchery\nThrown Weapons
-CATEGORIES:Blatha An Oir
-LOCATION:Camp Curran\,  13220 50th Ave E \, Tacoma\, WA\, 98446\, Western\,
-  United States
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS= 13220 50th Ave E \, Tacoma
- \, WA\, 98446\, Western\, United States;X-APPLE-RADIUS=100;X-TITLE=Camp Cu
- rran:geo:0,0
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8614@antir.org
-DTSTART;TZID=America/Los_Angeles:20260717T150000
-DTEND;TZID=America/Los_Angeles:20260719T140000
-DTSTAMP:20260502T150612Z
-URL:https://antir.org/events/july-coronation-24/
-SUMMARY:July Coronation
-DESCRIPTION:Join us to celebrate the Coronation of the Heirs of An Tir!\n\n
- This event is hosted by the Kingdom of An Tir\nEvent steward team: Attia P
- rima\, Brigid Ross\, Marcus Longinius Rufus and Alessandra Luciana Giancom
- oHeld at Fort Stevens State Park OR\n\nEvent Fee: $35\; under 18 free.\n**
- SCA Members will receive a $10 member discount off the site fee\nMake chec
- ks payable to SCA\, Inc.\, Kingdom of An Tir\n\n\n\nRV sites available: $2
- 5 additional fee. NO RV HOOK UPS will be available\n\nIf you could like to
-  check the Fort Stevens State Park for personal reservations you can do so
-  here:\nhttps://oregonstateparks.reserveamerica.com/camping/fort-stevens-s
- tate-park/r/campgroundDetails.do?contractCode=OR&amp\;parkId=402178\n*This
-  will be outside of the SCA camping area\n\n
-CATEGORIES:Kingdom of An Tir
-LOCATION:Ft. Stevens\, 100 Peter Iredale Road\, Hammond\, OR\, 97121\, Rive
- rs\, United States
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=100 Peter Iredale Road\, Ha
- mmond\, OR\, 97121\, Rivers\, United States;X-APPLE-RADIUS=100;X-TITLE=Ft.
-  Stevens:geo:0,0
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8591@antir.org
-DTSTART;TZID=America/Los_Angeles;VALUE=DATE:20260724
-DTEND;TZID=America/Los_Angeles;VALUE=DATE:20260727
-DTSTAMP:20260502T150726Z
-URL:https://antir.org/events/mooselmas-v/
-SUMMARY:Mooselmas V
-DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
- Kingdom interest) event.\n\nMooselmas V! Come cool down on the coast at Ty
- mberhavene 's Championship Event
-CATEGORIES:Tymberhavene
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8920@antir.org
-DTSTART;TZID=America/Los_Angeles:20260724T150000
-DTEND;TZID=America/Los_Angeles:20260726T160000
-DTSTAMP:20260217T025435Z
-URL:https://antir.org/events/hartwood-midsummer-defenders/
-SUMMARY:Hartwood MidSummer Defenders
-DESCRIPTION:
-CATEGORIES:Hartwood
-LOCATION:Camalot\, 9780 Somers Road\, Port Alberni\, BC\, V9Y 8N9\, Canada
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=9780 Somers Road\, Port Alb
- erni\, BC\, V9Y 8N9\, Canada;X-APPLE-RADIUS=100;X-TITLE=Camalot:geo:0,0
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8883@antir.org
-DTSTART;TZID=America/Los_Angeles:20260725T140000
-DTEND;TZID=America/Los_Angeles:20260803T140000
-DTSTAMP:20260608T234116Z
-URL:https://antir.org/events/lions-war-4/
-SUMMARY:Lions War
-DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
- Kingdom interest) event.\n\n\nPlanned events start on Friday July 31st and
-  run through Monday August 3rd.\n\n\nHot sunny days and cool crisp evening
- s await participants and revelers alike at this year's Lions War! The Baro
- ny of Lions Gate welcomes all from near and far to join in activities with
-  your friends and chosen family! Return with us to the home of mighty batt
- les of the past\, and then join them in camaraderie and revels afterwards.
-  Hear the clash of armoured combat upon the dusty plains of Clinton. Witne
- ss the swashbuckling elegance of rapier combat in the tavern! Hear the son
- gs of the bards as we gather around the hearths at night\, and revel in th
- e craft of the most skilled of artists! And let us not forget to mention 
- the Lions Gate Combat Archery Tournament!\n\n\nLions War has a long tradit
- ion of inviting volunteers to participate in site preparation the week pri
- or to the main event. Starting July 25th the gate will be open at 2 pm for
-  registration and the site fee will cover your entire stay until the end o
- f the event. The expectation is that during this "Work Week" each person c
- ommits 1 hour per day cumulatively towards site preparation. Work meetings
-  are at 9am every morning!\n\n\nMerchants are welcome to set up and displa
- y their wares along the designated merchant roads - no fee! Please contact
-  the event steward to arrange for space.\n\n\nRV parking is available but 
- please be aware that generators are forbidden between the hours of 9pm and
-  9am.\nDirections from the south - Follow the Trans Canada Hwy. (Hwy. 1) t
- o Cache Creek\, head north on Hwy. 97 to Clinton. Pass through town and tu
- rn left on MacDonald (right if you are taking Hwy. 97 south). Follow it up
- hill until it forks and take the right hand fork which turns into a gravel
-  road that continues to head up hill. Follow it until you cross the railwa
- y tracks\, then cross a cattle guard and immediately turn left onto a road
-  that parallels the railway. [Don’t mistakenly turn right at this fork 
- – it dead ends at a water tower] Follow this road and take no forks. Hon
- k as you round the blind corner and listen for others honking and go slow!
-  It will eventually pass a reservoir on your left and bring you to a gate.
-  Pass through the gate (open it first\, close it afterwards) and follow th
- e road to the site.\n\n\n It's time for war! Join us as the Barony of Lio
- ns Gate once again fights everyone else!\n\n&nbsp\;\n\n\n
-CATEGORIES:Lions Gate
-LOCATION:Clinton Creek Ranch\, 7701 Clinton Station Road\, Clinton\, BC\, C
- anada
-GEO:51.089604;-121.590819
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=7701 Clinton Station Road\,
-  Clinton\, BC\, Canada;X-APPLE-RADIUS=100;X-TITLE=Clinton Creek Ranch:geo:
- 51.089604,-121.590819
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8959@antir.org
-DTSTART;TZID=America/Los_Angeles:20260801T110000
-DTEND;TZID=America/Los_Angeles:20260801T190000
-DTSTAMP:20260616T182705Z
-URL:https://antir.org/events/august-in-the-park-viking-bog-games/
-SUMMARY:August in the Park &amp\; Viking Bog Games
-DESCRIPTION:\n 	Join us at Daubenspeck Park...a beautiful\, shady spot...fo
- r games\, classes and contests with a viking theme! Board games\, lawn gam
- es &amp\; physical contests\, and a Holmgång contest for the fighters.\n\
- nThere will be games and contests throughout the day\, including: Hunkerha
- usen\, Glima (shield wrestling)\, Togahonk\, Jomswikinger\, and the Portho
- le Rat Toss! For the heavy fighters there will be a Holmgång contest. If 
- you're looking for something a little more relaxed\, we will have a select
- ion of board and lawn games like Hnefatafl\, Taflkast\, Kubb and Petanque.
-  We'll also have some A&amp\;S classes to keep you busy.\n\nThere will be 
- plenty of activities to choose from if you wish\, or just relax in the sha
- de of the big trees and be a spectator if that’s your preference! (Be su
- re to bring a blanket or chair to sit on).\n\nThere will be a potluck in t
- he afternoon\, so bring your favorite dish\, &amp\; your feast gear. This 
- is "picnic style"\, with no electricity for crockpots.\n\nDefender's Tourn
- ey:\n\nThis year\, the trials are open to others not from the Shire! If yo
- u are open to supporting fighting activities in the Shire for the next yea
- r\, and willing to help organize next years trials\, you are welcome to vi
- e for the honour of becoming the next Shield of Hauksgardr! The lists form
- at will be determined based on the number of fighters who attend. We will 
- be fighting Holmgang tournament and the victor will be chosen based on the
-  outcome of the tournament\, and participation in the Bog Olympics!\n\nTen
- tative schedule:\n\nsite open at 11:00 - No site fee!\n\nDefender's Tourne
- y 11:30\n\nGames starting at 12:30\n\nImpromptu A&amp\;S throughout the da
- y\n\ndinner prep 4:30\n\ndinner 5:00\n\nOff site by 7pm
-CATEGORIES:Hauksgarðr
-LOCATION:Daubenshpeck Park\, 408-412 Humbolt Street\, Bingen\, WA\, 98672\,
-  RIVERS\, United States
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=408-412 Humbolt Street\, Bi
- ngen\, WA\, 98672\, RIVERS\, United States;X-APPLE-RADIUS=100;X-TITLE=Daub
- enshpeck Park:geo:0,0
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8926@antir.org
-DTSTART;TZID=America/Los_Angeles;VALUE=DATE:20260807
-DTEND;TZID=America/Los_Angeles;VALUE=DATE:20260810
-DTSTAMP:20260609T160809Z
-URL:https://antir.org/events/the-long-and-short-of-it-10/
-SUMMARY:The Long and Short of It
-DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
- y business is expected to be conducted event.\n\n&nbsp\;\n\nSTONEHENGE FAR
- MS: 9755 Willamette St\, Aumsville\, OR 97325\n\n&nbsp\;\n\nJoin us as the
-  Barony of Terra Pomaria once again hosts the Long and Short of It! This y
- ear’s event will be host to a veritable buffet of activities and tournam
- ents. Including but not limited to: 2 Equestrian Activities\, Terra Pomari
- a's Youth Archery Championship\, Armored Combat Prize Tourney\, and the ch
- ance to become the Heavy Defender of Terra Pomaria!\n\nWatch this space fo
- r further details as they are confirmed.
-CATEGORIES:Terra Pomaria
-LOCATION:Stonehenge Farms\, 9755 Willamette St.\, Aumsville\, OR\, 97325\, 
- United States
-GEO:44.84402810167109;-122.8614134162903
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=9755 Willamette St.\, Aumsv
- ille\, OR\, 97325\, United States;X-APPLE-RADIUS=100;X-TITLE=Stonehenge Fa
- rms:geo:44.84402810167109,-122.8614134162903
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8948@antir.org
-DTSTART;TZID=America/Los_Angeles:20260807T170000
-DTEND;TZID=America/Los_Angeles:20260809T150000
-DTSTAMP:20260406T005803Z
-URL:https://antir.org/events/seagirt-summer-tournament-7/
-SUMMARY:Seagirt Summer Tournament
-DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
- Kingdom interest) event.\n\n5:00 PM-3:00 PM\n\nMore information coming soo
- n.
-CATEGORIES:Seagirt
-LOCATION:Duncan Community Lodge\, 2244 Moose Rd\, Duncan\, BC\, V9L 5C2\, C
- anada
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=2244 Moose Rd\, Duncan\, BC
- \, V9L 5C2\, Canada;X-APPLE-RADIUS=100;X-TITLE=Duncan Community Lodge:geo:
- 0,0
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8520@antir.org
-DTSTART;TZID=America/Los_Angeles;VALUE=DATE:20260808
-DTEND;TZID=America/Los_Angeles;VALUE=DATE:20260809
-DTSTAMP:20240903T210146Z
-URL:https://antir.org/events/newcomers-sergeants-2/
-SUMMARY:Newcomers &amp\; Sergeants
-DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
- y business is expected to be conducted event.\n\nNewcomers &amp\; Sergeant
- s
-CATEGORIES:Wealdsmere
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8924@antir.org
-DTSTART;TZID=America/Los_Angeles:20260808T110000
-DTEND;TZID=America/Los_Angeles:20260808T180000
-DTSTAMP:20260414T210430Z
-URL:https://antir.org/events/peasants-reven/
-SUMMARY:Peasants Reven
-DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
- y business is expected to be conducted event.\n\n11:00 AM6:00 PM\n\nPeasan
- t games in the park!
-CATEGORIES:Porte de l'Eau
-LOCATION:Spiritridge Park\, 16100 SE 33rd Pl\, Bellevue\, WA\, 98008\, Unit
- ed States
-GEO:47.5804811;-122.1264778
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=16100 SE 33rd Pl\, Bellevue
- \, WA\, 98008\, United States;X-APPLE-RADIUS=100;X-TITLE=Spiritridge Park:
- geo:47.5804811,-122.1264778
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8879@antir.org
-DTSTART;TZID=America/Los_Angeles:20260808T120000
-DTEND;TZID=America/Los_Angeles:20260808T190000
-DTSTAMP:20260515T223217Z
-URL:https://antir.org/events/peasants-revel-23/
-SUMMARY:Peasant's Revel
-DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
- y business is expected to be conducted event.\n\n12:00 PM7:00 PM\n\nPeasan
- t’s Revel is one of the Barony of Madrone’s most beloved events. The P
- easant’s Revel has been held every year since 1979\, although the event 
- was on hiatus from 2020 to 2022 and returned in 2023. The event is hosted 
- by the Barony of Madrone and the Madrone Culinary Guild.\n\nDress like a p
- easant. (Nobles\, you may want to send your illegitimate second cousin twi
- ce removed who looks remarkably like you.)\n\nRemember to bring a bowl\, a
-  spoon\, a plate\, and your cup and napkin. The Madrone Culinary Guild wil
- l provide food and beverages.\n\nThere is no court and no meetings. This i
- s a great event for newcomers. Bring your children. Play and watch silly g
- ames.\n\nBring chairs or a picnic blanket\, your lunch and the beverages y
- ou prefer. This is a Bellevue city park. Wear comfortable peasant garb or 
- OK-to-get-grass-stains garb. There is shade available under the trees\, or
-  you can bring a pop-up sunshade. You cannot drive stakes in the lawn.\n\n
- Event activities are primarily on grass in a mostly flat space.\n\nAmple p
- arking is available in an adjacent parking lot. Parking spaces within the 
- park can be for people with mobility challenges who need close parking. If
-  you need close parking\, please contact the Event Steward in advance\, an
- d we will make every effort to save a close parking space.
-CATEGORIES:Madrone
-LOCATION:Spiritridge Park\, 16100 SE 33rd Pl\, Bellevue\, WA\, 98008\, Unit
- ed States
-GEO:47.5804811;-122.1264778
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=16100 SE 33rd Pl\, Bellevue
- \, WA\, 98008\, United States;X-APPLE-RADIUS=100;X-TITLE=Spiritridge Park:
- geo:47.5804811,-122.1264778
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8904@antir.org
-DTSTART;TZID=America/Los_Angeles:20260814T000000
-DTEND;TZID=America/Los_Angeles:20260816T000000
-DTSTAMP:20260616T171206Z
-URL:https://antir.org/events/mountains-pride-field-day-2/
-SUMMARY:Mountains Pride Field Day
-DESCRIPTION:
+UID:1-8906@antir.org
+DTSTART;TZID=America/Los_Angeles:20260925T090000
+DTEND;TZID=America/Los_Angeles:20260927T150000
+DTSTAMP:20260923T020437Z
+URL:https://antir.org/events/a-three-mountains-battle-of-the-bands/
+SUMMARY:A Three Mountains "Battle of the Bands"
+DESCRIPTION:This is a Rock and Roll themed\, team melee and bardic camping 
+ event.\n\nhttps://antirsca.wixsite.com/battlebands \n \nThere will be priz
+ es for the winning melee team AND bardic competitions to be held AND a win
+ ners feast.\n\nThe Melee tournament will be of teams of 5 combatants and b
+ e held in the medieval style with galleries for spectators and crowd invol
+ vement!&nbsp; \n\nEach Melee “band” will also be required to have a Bard o
+ r Herald to introduce/ hype/ herald the team onto the field each time. (th
+ ink Chaucer from the movie Knights Tale…)&nbsp; \nThis will be one of the tw
+ o bardic competitions\, the Best Intro or Field Presence.&nbsp; The second Bar
+ dic competition would be held during the Winners feast and be a performanc
+ e composed or written about something the bard had seen during the days me
+ lee competition..\n\nThere will be a feast with a head table for the Winni
+ ng team and visiting royalty.&nbsp; This will be prepared family style by the 
+ VC with service for the Head table on Saturday night after the tournament.
+ \n\nOn Friday and Saturday night we’d like to host “Open Mic night” 
+ which would be a torch light/ Pas d’ Arm/ barrier tournament (with Prize
+ s) AND combination Rock and Roll Karaoke.&nbsp;&nbsp;\nCall it “Friday Night\, o
+ pen-mike\, Pas d’ Arme and Karaoke”\n\nThis will be a weekend camping 
+ event and support RVs\n\nhttps://antirsca.wixsite.com/battlebands\n\nSched
+ ule\nFriday\nNoon - Gate open for volunteers\n3pm - Gate opens to public\n
+ 6pm - VC serves dinner\n8pm (darkish) - 10pm - Torchlight Karaoke and Barr
+ ier Pas d’ Arm\nMidnight - Quiet please\n\n\nSaturday\n8am - Gate opens\
+ n9am - announcements - Armor Inspection\n10am Battle of the Band Melee Tou
+ rnament begins\nNoon - 2pm Lunch break at the VC\n2pm - Tournament resumes
+  if needed\n2pm 3M Legacy Champions Raiper scroll Tournament\n6pm - VC Din
+ ner and Prize Court\, Bardic competition for best original piece\n Midnigh
+ t - Quiet please\n\n\nSunday\nNoon - Site closes\n\n&nbsp;\;
 CATEGORIES:Three Mountains
+LOCATION:Bear Creek Tree Farm\, 30300 S Elisha Rd\, Molalla\, OR\, 97038\, 
+ Rivers\, United States
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=30300 S Elisha Rd\, Molalla
+ \, OR\, 97038\, Rivers\, United States;X-APPLE-RADIUS=100;X-TITLE=Bear Cre
+ ek Tree Farm:geo:0,0
 END:VEVENT
 BEGIN:VEVENT
-UID:1-8836@antir.org
-DTSTART;TZID=America/Los_Angeles:20260814T170000
-DTEND;TZID=America/Los_Angeles:20260816T170000
-DTSTAMP:20260620T000238Z
-URL:https://antir.org/events/bartholomew-fair-3/
-SUMMARY:Bartholomew Fair
+UID:1-8984@antir.org
+DTSTART;TZID=America/Los_Angeles:20260925T120000
+DTEND;TZID=America/Los_Angeles:20260927T150000
+DTSTAMP:20260723T040643Z
+URL:https://antir.org/events/vulcanalia-4/
+SUMMARY:Vulcanalia
 DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
- Kingdom interest) event.\n\n5:00 PM Fri Aug 14th 2026 -4:00 PM Sun Aug 16 
- 2026 (must be COMPLETELY cleared out)\n\nTime of the event: 5pm Friday Aug
-  14th 2026 to 4pm Sunday Aug 16 2026 (must be         COMPLETELY clear
- ed out by 4pm)\n\nSponsoring branch: Shire of Lionsdale\n\nGate fee for t
- he whole event only:  Adult non-member $40  Adult member $30   Youth/c
- hild free\n\nStreet address of the site: Agassiz Fair Grounds 6800 Pioneer
-  Ave Agassiz BC V0M 1A\n\nEvent and Ball Theme: A Midsummer Night’s Drea
- m\nSynopsis of happenings:   Heavy Competition Banner Tourney\, Thrown We
- apons Comp\,                                         
-              Rapier Comp\,           Target &amp\; Combat
-  Archery Comps\,                                       
-                                            Tutr Clas
- ses              Arts and Sciences activities           
-                                                  
-                                 “All day” Bardic\,  
-     Daytime Dance instruction                            
-                                                  
-                    Saturday night themed Ball (masks for ball ar
- e welcome\, not mandatory\, however it helps hide you from fair folk)\n&nb
- sp\;\n\nThe ground facilities include:      Camping areas      
-                            On site Sanitation sta
- tion for rvs\n\nFlush and portable toilets              Showe
- rs availible for 2$\n\nStage for  all day bardic            
-       Inside a/c area for Evening court\n\nClassroom space     
-                          Camping &amp\; overflow p
- arking\n\nKids Waterpark                          
-       Jungle gym\n\nSwimming pool Public swim access only\n\nPrices: 
-  under 3 &amp\; over 80 yrs Free\,\n\n13yrs-18yrs &amp\; 60yrs-79yrs $4.3
- 5\,\n\n19yrs -59yrs $5.50\,\n\n&nbsp\;\n\nSchedule awaiting approval
-CATEGORIES:Lionsdale
-LOCATION:Agassiz Fair Grounds\, 6800 Pioneer Ave\, Agassiz\, BC\, V0M 1A0\,
-  Canada
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=6800 Pioneer Ave\, Agassiz\
- , BC\, V0M 1A0\, Canada;X-APPLE-RADIUS=100;X-TITLE=Agassiz Fair Grounds:ge
- o:0,0
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8728@antir.org
-DTSTART;TZID=America/Los_Angeles;VALUE=DATE:20260815
-DTEND;TZID=America/Los_Angeles;VALUE=DATE:20260816
-DTSTAMP:20250227T190831Z
-URL:https://antir.org/events/its-still-a-garden-party/
-SUMMARY:It's Still A Garden Party
-DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
- Kingdom interest) event.\n\nGlymm Mere's archery and thrown weapons champi
- onships as well as games.
-CATEGORIES:Glymm Mere
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8947@antir.org
-DTSTART;TZID=America/Los_Angeles:20260815T090000
-DTEND;TZID=America/Los_Angeles:20260815T190000
-DTSTAMP:20260322T044354Z
-URL:https://antir.org/events/cdv-play-date-3/
-SUMMARY:CDV Play Date
-DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
- Kingdom interest) event.\n\n9:00 AM7:00 PM\n\nCome join us under the shade
-  of historic Douglas-firs and in the cold running waters of the South Sant
- iam River for a day of community and revelry! There will be fighting\, cra
- fting\, bardic\, dancing and an afternoon potluck. The folk of Coeur du Va
- l welcome you all!
-CATEGORIES:Coeur du Val
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8961@antir.org
-DTSTART;TZID=America/Los_Angeles:20260815T090000
-DTEND;TZID=America/Los_Angeles:20260815T180000
-DTSTAMP:20260515T230957Z
-URL:https://antir.org/events/wastekeep-sergeant-trials/
-SUMMARY:Wastekeep sergeant trials
-DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
- Kingdom interest) event.\n\n9:00 AM6:00 PM\n\nCome and join us for a day o
- f merriment while our sergeant candidates complete their in-person parts o
- f their sergeant trials. There will be games\, dancing\, fighting\, a potl
- uck and many other fun activities.
-CATEGORIES:Wastekeep
-LOCATION:Bailey Memorial Youth Ranch\,  131 Memorial Lane\, Mesa\, WA\, 993
- 43\, Inlands\, United States
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS= 131 Memorial Lane\, Mesa\,
-  WA\, 99343\, Inlands\, United States;X-APPLE-RADIUS=100;X-TITLE=Bailey Me
- morial Youth Ranch:geo:0,0
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8828@antir.org
-DTSTART;TZID=America/Los_Angeles:20260821T120000
-DTEND;TZID=America/Los_Angeles:20260823T120000
-DTSTAMP:20250828T220658Z
-URL:https://antir.org/events/corvid-crafting-convocation/
-SUMMARY:Corvid Crafting Convocation
-DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
- y business is expected to be conducted event.\n\n12:00 PM12:00 PM\n\nCome 
- join us for a weekend of creativity\, camaraderie\, and corvid cleverness!
-  The Corvid Crafting Convocation is a limited-attendance\, pre-registratio
- n only arts and sciences retreat for artisans and makers of all kinds.\n\n
- Our gathering will take place in a beautiful park setting featuring:\n• 
- A white-sand pocket beach\, perfect for wading\, relaxing\, or kite flying
- \n• A spacious lodge with plenty of tables for classes and projects\n•
-  A large outdoor fire pit\, ideal for cooking classes and demonstrations\n
- • Wide lawns for tents\, plus a limited number of cabin bunks (BYO beddi
- ng)\n• On-site bathrooms and showers for your comfort\n\nThe weekend wil
- l be full of opportunities to learn\, share\, and create:\n• Classes\, w
- orkshops\, and demos on diverse arts and sciences\n• A “show &amp\; te
- ll” for your latest projects\n• A supply swap table to exchange treasu
- res and materials\n• Unstructured “free play” crafting time\n• Sat
- urday evening bardic circle by the campfire\n\nFeast &amp\; Meals\nYour si
- te fee includes breakfast on Saturday and Sunday mornings\, as well as a s
- pecial Mesopotamian Bronze Age Feast on Saturday evening.\n\nSchedule\n•
-  Event opens: Friday\, noon\n• Event closes: Sunday\, noon\n\nRegistrati
- on (Pre-registration only\, limited spaces—don’t delay!)\n• Full wee
- kend: $35 for members\, $45 for non-members\n• Day trip (includes meals 
- as applicable): $15 for members\, $25 for non-members\n\nWe anticipate thi
- s event will sell out quickly\, so register early to ensure your place at 
- the table.\n\nCome craft\, learn\, and share in good company—whether you
- r passion is fiber\, metal\, wood\, paint\, ink\, or something entirely un
- expected\, the Corvid Crafting Convocation welcomes you.
-CATEGORIES:Crows Gate
-LOCATION:Morehead Park\,  27600 Sandridge Rd\, Ocean Park\, WA\, 98640\, Ri
- vers\, United States
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS= 27600 Sandridge Rd\, Ocean
-  Park\, WA\, 98640\, Rivers\, United States;X-APPLE-RADIUS=100;X-TITLE=Mor
- ehead Park:geo:0,0
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8840@antir.org
-DTSTART;TZID=America/Los_Angeles:20260821T150000
-DTEND;TZID=America/Los_Angeles:20260823T150000
-DTSTAMP:20260603T060704Z
-URL:https://antir.org/events/a-game-of-thrones-and-stormgods-9/
-SUMMARY:A Game of Thrones and Stormgods
-DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
- Kingdom interest) event.\n\nBarony of Stromgards Championship event:\nStor
- mgod\, StormBlade\, StormHunter and StormThrower tournaments
-CATEGORIES:Stromgard
-LOCATION:Zumstein Family Farm\, 41316 NE 12th Ave.\, Woodland\, WA\, 98674\
- , United States
-GEO:45.918651;-122.66299
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=41316 NE 12th Ave.\, Woodla
- nd\, WA\, 98674\, United States;X-APPLE-RADIUS=100;X-TITLE=Zumstein Family
-  Farm:geo:45.918651,-122.66299
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8962@antir.org
-DTSTART;TZID=America/Los_Angeles:20260822T090000
-DTEND;TZID=America/Los_Angeles:20260822T180000
-DTSTAMP:20260623T012138Z
-URL:https://antir.org/events/wyewood-champions-9/
-SUMMARY:Wyewood Champions
-DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
- y business is expected to be conducted event.\n\nWyewood Champions will fe
- ature a day packed with Martial Activities. There will be Heavy Fighting! 
- There will be Archery! There will be Rapier! There will be Thrown Weapons!
-  There will be Fried Chicken! Come see what else we get up to on this wond
- rous day of activities!
-CATEGORIES:Wyewood
-LOCATION:Associated Energy Systems\, 8621 S 180th St\, Kent\, WA\, 98032\, 
- United States
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=8621 S 180th St\, Kent\, WA
- \, 98032\, United States;X-APPLE-RADIUS=100;X-TITLE=Associated Energy Syst
- ems:geo:0,0
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8943@antir.org
-DTSTART;TZID=America/Los_Angeles:20260828T120000
-DTEND;TZID=America/Los_Angeles:20260830T160000
-DTSTAMP:20260309T200520Z
-URL:https://antir.org/events/william-tell-39/
-SUMMARY:William Tell 39
-DESCRIPTION:
-CATEGORIES:River's Bend
-LOCATION:Wahkiakum County Fairgrounds\, 16 Fairgrounds Rd\, Skamokawa\, WA\
- , 98647\, United States
-GEO:46.2724553;-123.4570551
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=16 Fairgrounds Rd\, Skamoka
- wa\, WA\, 98647\, United States;X-APPLE-RADIUS=100;X-TITLE=Wahkiakum Count
- y Fairgrounds:geo:46.2724553,-123.4570551
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8908@antir.org
-DTSTART;TZID=America/Los_Angeles:20260828T160000
-DTEND;TZID=America/Los_Angeles:20260830T130000
-DTSTAMP:20260325T181147Z
-URL:https://antir.org/events/acorn-war-xxxii/
-SUMMARY:Acorn War XXXII
-DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
- Kingdom interest) event.\n\n4:00 PM August 28 to 1:00 PM August 30\, 2026\
- n\nACORN WAR XXXII SHIRE OF MOUNTAIN EDGE\nAugust 28-30\, 2026\n\nJoin us 
- for the 32nd annual Acorn War August 28-30\, 2026\, to be held at the Powe
- rland Heritage Park in Salem\, OR.  We’ll have war scenarios and rapier
-  dueling. Compete for the honor of becoming a Defender in archery\, thrown
-  weapons\, scribal\, art &amp\; science tournaments! MORE war scenarios th
- an you can shake a spear at: village burning\, bridge battles\, and mixed 
- archery and war combat. Activities for all ages. Saturday night bardic gat
- hering. A variety of merchants will be present. You are strongly encourage
- d to bring drinking water. Fire season will be upon us\, details to come. 
- We welcome you to volunteer in at least one area or more\, it takes a vill
- age. If there is something you want to lead\, please let event steward kno
- w.\n\nEvent Stewards: HL Asny Brunsdottir\, email: asny.brunsdottir@gmail.
- com or facebook messaging (same name). (Asny/Heidi R at 971-241-9868). Co-
- event steward is: Lady Elovel of Avalon and Archery Marshall . \n\nFees: 
- Pre-Reg (check only) will be accepted between July 20-Aug 20\, (extra $5 d
- iscount for event fee). Event Fee (camping or day trip): Adults - 35\, wit
- h $10 discount for members. Youth and children\, no charge\, waivers do ap
- ply for nonmember minors/adults. Please list on form. NO MERCHANT FEES - m
- erchants must pre-register! (Individual site fee still applies). Make chec
- ks payable to “Shire of Mountain Edge\, SCA Inc.              \n\
- nNote:  Mountain Edge Defenders and Royals are comp'd for entry fee to ev
- ent. Please let us know if you can come.  *Checks and Cash only at the si
- te\n\nSite opens at 4pm on Friday (3pm for merchants)\, and closes at 1pm 
- on Sunday.\n\nSite:  Powerland Heritage Park\, 3995 Brooklake Rd\, NE Sal
- em\, OR 97303\n\nDirections: Powerland Heritage Park is located off of I-5
- \, exit 263.\nIf coming south\, take I-5 exit 263 and turn right.\nIf comi
- ng north\, take I-5 exit 263 and turn left.\n\nDrive to the back area\, pa
- st the museum structures\, look for fields. \nPowerland Heritage Park with
-  be 1/4th a mile on the right.
-CATEGORIES:Mountain Edge
-LOCATION:Powerland Heritage Park\, 3995 Brooklake Rd NE\, Salem\, OR\, 9730
- 3\, United States
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=3995 Brooklake Rd NE\, Sale
- m\, OR\, 97303\, United States;X-APPLE-RADIUS=100;X-TITLE=Powerland Herita
- ge Park:geo:0,0
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8951@antir.org
-DTSTART;TZID=America/Los_Angeles:20260828T170000
-DTEND;TZID=America/Los_Angeles:20260830T150000
-DTSTAMP:20260420T021333Z
-URL:https://antir.org/events/tir-righ-august-investiture-13/
-SUMMARY:Tir Righ August Investiture
-DESCRIPTION:This is a Level 1: Coronet Event (Principality Coronet Tourname
- nts and Investitures) event.\n\n5:00 PM-3:00 PM\n\nTir Righ Investiture - 
- More Information to come.
-CATEGORIES:Principality of Tir Righ,Seagirt
-LOCATION:Camp Bernard\, 3202 Young Lake Rd\, Sooke\, BC\, V9Z 0J6\, Canada
-GEO:48.4069628498242;-123.761168718338
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=3202 Young Lake Rd\, Sooke\
- , BC\, V9Z 0J6\, Canada;X-APPLE-RADIUS=100;X-TITLE=Camp Bernard:geo:48.406
- 9628498242,-123.761168718338
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8615@antir.org
-DTSTART;TZID=America/Los_Angeles:20260904T150000
-DTEND;TZID=America/Los_Angeles:20260907T150000
-DTSTAMP:20251001T045207Z
-URL:https://antir.org/events/september-crown-tournament-19/
-SUMMARY:September Crown Tournament
-DESCRIPTION:
-CATEGORIES:Kingdom of An Tir
-LOCATION:Camp McLean\, 20315 16th Ave\, Langley\, BC\, V2Z 1W5\, Canada
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=20315 16th Ave\, Langley\, 
- BC\, V2Z 1W5\, Canada;X-APPLE-RADIUS=100;X-TITLE=Camp McLean:geo:0,0
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8890@antir.org
-DTSTART;TZID=America/Los_Angeles:20260905T090000
-DTEND;TZID=America/Los_Angeles:20260906T183000
-DTSTAMP:20251221T170713Z
-URL:https://antir.org/events/known-world-armored-combat-collegium-kingdom-
- of-northshield/
-SUMMARY:Known World Armored Combat Collegium (Kingdom of Northshield)
-DESCRIPTION:For more information\, please visit the following website: http
- s://kristyanapplegate.wixsite.com/kwacc
-CATEGORIES:Kingdom of Northshield
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8899@antir.org
-DTSTART;TZID=America/Los_Angeles:20260910T140000
-DTEND;TZID=America/Los_Angeles:20260913T150000
-DTSTAMP:20260604T002345Z
-URL:https://antir.org/events/autumn-war-23/
-SUMMARY:Autumn War featuring Emprise of the Black Lion
-DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
- Kingdom interest) event.\n\n2:00 PM3:00 PM\n\nBlatha an Oir's Premier War
-CATEGORIES:Blatha An Oir
-LOCATION:T90 Ranch\, 16641 Old Hwy 99 SE\, Tenino\, WA\, 98589\, Western\, 
- United States
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=16641 Old Hwy 99 SE\, Tenin
- o\, WA\, 98589\, Western\, United States;X-APPLE-RADIUS=100;X-TITLE=T90 Ra
- nch:geo:0,0
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8880@antir.org
-DTSTART;TZID=America/Los_Angeles:20260911T120000
-DTEND;TZID=America/Los_Angeles:20260913T160000
-DTSTAMP:20260614T230041Z
-URL:https://antir.org/events/insula-magna-medieval-market-demo/
-SUMMARY:Insula Magna Medieval Market Demo
-DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
- Kingdom interest) event.\n\n12:00 PM-4:00 PM\n\nAnnual Demo hosted by Insu
- la Magna that includes a Medieval Market.
-CATEGORIES:Seagirt
-LOCATION:Coombs Fairgrounds\, 1014 Ford Road\, Coombs\,  British Columbia\,
-   V0R 1M0\, Tir Righ\, Canada
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=1014 Ford Road\, Coombs\,  
- British Columbia\,  V0R 1M0\, Tir Righ\, Canada;X-APPLE-RADIUS=100;X-TITLE
- =Coombs Fairgrounds:geo:0,0
-END:VEVENT
-BEGIN:VEVENT
-UID:1-7979@antir.org
-DTSTART;TZID=America/Los_Angeles:20260918T000000
-DTEND;TZID=America/Los_Angeles:20260920T000000
-DTSTAMP:20250113T191322Z
-URL:https://antir.org/events/summits-coronet-10/
-SUMMARY:Summits Coronet
-DESCRIPTION:
-CATEGORIES:Corvaria,Principality of the Summits
-END:VEVENT
-BEGIN:VEVENT
-UID:1-8964@antir.org
-DTSTART;TZID=America/Los_Angeles:20260918T150000
-DTEND;TZID=America/Los_Angeles:20260920T150000
-DTSTAMP:20260524T124605Z
-URL:https://antir.org/events/banner-war-25/
-SUMMARY:Banner War
-DESCRIPTION:Preregistration and other event form links will be available at
-  https://linktr.ee/AQBannerWar\n\nThe Barony of Aquaterra calls all houses
-  of An Tir to raise their banners and declare to compete for the mighty wa
- r chest! Not with sword alone\, but with spicy skill and saucy swagger!\n\
- nIn the spirit of medieval feasting culture\, this year's Banner War cente
- rs on the bounty of the table\, the rivalry of the kitchen\, and the glory
-  of those who can feed a crowd. Factions will compete not only in martial 
- prowess\, but in culinary artistry as they answer the age-old question: wh
- ich camp smells the best? It doesn’t matter if you're a seasoned fighter
-  or someone who just showed up because their friend mentioned there would 
- be soup\, we have something for you.\n\n&nbsp\;\n\nThis is a Level 2: Bran
- ch Event where no Kingdom or Principality business is expected to be condu
- cted event.
-CATEGORIES:Aquaterra
-LOCATION:Masonic Family Park\, 24310 Mountain Loop HWY\, Granite Falls \, W
- A\, 98252\, United States
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=24310 Mountain Loop HWY\, G
- ranite Falls \, WA\, 98252\, United States;X-APPLE-RADIUS=100;X-TITLE=Maso
- nic Family Park:geo:0,0
+ Kingdom interest) event.\n\nBarony of Vulcanfeldt invites one and all to o
+ ur Annual Vulcanalia event and Champions Tournaments for Marshal Activitie
+ s including: Heavy fighting and Archery. Fun Shoots\, York\, Flight\, Clou
+ t and Light you're Dead are always a hoot. We will also have a "Double Tap
+ " duo Largesse Competition for our A&amp;\;S participants along with an A&amp;a
+ mp\;S display opportunity. Gate opens at 2PM Friday 9/25/26 Cash or Check 
+ only. Camping is encouraged\, and there's plenty of space for RVs to boond
+ ock. Thank you in advance for volunteers to help set up\, serve at gate\, 
+ help with Lists\, as well as run archery ranges and tear down on Sunday. C
+ ome and swear fealty to our Baron and Baroness: His Excellency Sir Steinar
+  and her Excellency Tai. Win Prizes\, Word fame and enjoy the merriment of
+  comradery.Event Dates: Friday September 25 \, 2026 until Sunday September
+ \, 27 2026Event site:Fullbright Park4508 Main St. Union Gap\, WA 98903Even
+ t Steward: Ionamyst ReginasdottirCo Steward: Sjofn Larsdottir
+CATEGORIES:Vulcanfeldt
+LOCATION:Fullbright Park\, 4508 Main St.\, Union Gap\, WA\, 98903\, United 
+ States
+GEO:46.5404388314835;-120.477868959802
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=4508 Main St.\, Union Gap\,
+  WA\, 98903\, United States;X-APPLE-RADIUS=100;X-TITLE=Fullbright Park:geo
+ :46.5404388314835,-120.477868959802
 END:VEVENT
 BEGIN:VEVENT
 UID:1-8914@antir.org
-DTSTART;TZID=America/Los_Angeles:20260918T150000
-DTEND;TZID=America/Los_Angeles:20260920T140000
-DTSTAMP:20260603T061250Z
+DTSTART;TZID=America/Los_Angeles:20260925T140000
+DTEND;TZID=America/Los_Angeles:20260927T150000
+DTSTAMP:20260921T051514Z
 URL:https://antir.org/events/border-war-24/
 SUMMARY:Border War
 DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
  Kingdom interest) event.\n\nBorder War is the Barony of Wealdsmere's war e
  vent. It is a weekend of fighting in the spectacular fall beauty of Lake C
- ouer d'Alene.
+ ouer d'Alene.\n\nGather warriors! Gather Bards! Gather Artists! Gather all
+  good people of An Tir!&nbsp;\n\nJoin the call of Wealdsmere to raise great Wa
+ r Bands and march in defense of our Eastern Borders\, to drive away enemie
+ s and make merry with those seeking respite in the shade of tall pines\, b
+ eside cool waters\, safely away from bandits and ruffians who roam the wil
+ d lands - and the monsters that dwells in the depths.\n\nWe shall break br
+ ead in fellowship after a day of breaking bones in war.\n\nWe shall gather
+  round the evening fires and share tales of great deeds done dirt cheap. (
+ Sheep?)\n\nThere will be war. All the war your barbarian little hearts can
+  handle.\n\nRetreat is not an option!\n\nCamp Easton will host us once aga
+ in on the shores of beautiful Lake Coeur D’Alene. War points will be awa
+ rded for all activities which include\, but are not limited to: Heavy figh
+ ting\, rapier fighting\, Arts and Sciences competition\, Bardic\, voluntee
+ r opportunities and water bearing\, youth activities\, and classes.\nThis 
+ site features real bathrooms and hot showers and yes...Cabins! There are a
+  limited number of cabins to reserve.\n\n\n\nSite Rules:\n\n 	This is a Sc
+ out camp. Therefore it is a DRY site. Please respect the Scouts rules.\n 	
+ This is a wildlife area - Please leave pets at home. Populace with service
+  animals please use extreme caution.\n 	The lake is deep\, cold\, and prob
+ ably has a plesiosaur in it. Their name is Paddler. Swimming is not advise
+ d.\n 	Parents - please mind your children. There are cars\, bears and coug
+ ars around. Also see above about the lake monster.\n 	If you pack it in\, 
+ please pack it out and practice “Leave No Trace”\n 	Restrooms and Show
+ ers are available\, as well as limited access to power - there will be a t
+ able set up in the main hall to charge cell phones\, etc.\n\n\nPlease chec
+ k back often as we will be updating this page more
 CATEGORIES:Wealdsmere
 LOCATION:Camp Easton\, 23516 S. Hwy 97\, Harrison\, ID\, 83833\, United Sta
  tes
@@ -797,48 +119,34 @@ X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=23516 S. Hwy 97\, Harrison\
  .5996071885006,-116.776322556097
 END:VEVENT
 BEGIN:VEVENT
-UID:1-8906@antir.org
-DTSTART;TZID=America/Los_Angeles:20260925T090000
-DTEND;TZID=America/Los_Angeles:20260927T150000
-DTSTAMP:20260326T203350Z
-URL:https://antir.org/events/a-three-mountains-battle-of-the-bands/
-SUMMARY:A Three Mountains "Battle of the Bands"
-DESCRIPTION:This is a Rock and Roll themed\, team melee and bardic camping 
- event.\n\nhttps://antirsca.wixsite.com/battlebands \n \nThere will be priz
- es for the winning melee team AND bardic competitions to be held AND a win
- ners feast.\n\nThe Melee tournament will be of teams of 5 combatants and b
- e held in the medieval style with galleries for spectators and crowd invol
- vement!  \n\nEach Melee “band” will also be required to have a Bard o
- r Herald to introduce/ hype/ herald the team onto the field each time. (th
- ink Chaucer from the movie Knights Tale…)  \nThis will be one of the tw
- o bardic competitions\, the Best Intro or Field Presence.  The second Bar
- dic competition would be held during the Winners feast and be a performanc
- e composed or written about something the bard had seen during the days me
- lee competition..\n\nThere will be a feast with a head table for the Winni
- ng team and visiting royalty.  This will be prepared family style by the 
- VC with service for the Head table on Saturday night after the tournament.
- \n\nOn Friday and Saturday night we’d like to host “Open Mic night” 
- which would be a torch light/ Pas d’ Arm/ barrier tournament (with Prize
- s) AND combination Rock and Roll Karaoke.  \nCall it “Friday Night\, o
- pen-mike\, Pas d’ Arme and Karaoke”\n\nThis will be a weekend camping 
- event and support RVs\n\nhttps://antirsca.wixsite.com/battlebands\n\n&nbsp
- \;\n\n&nbsp\;
-CATEGORIES:Three Mountains
-LOCATION:Bear Creek Tree Farm\, 30300 S Elisha Rd\, Molalla\, OR\, 97038\, 
- Rivers\, United States
-X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=30300 S Elisha Rd\, Molalla
- \, OR\, 97038\, Rivers\, United States;X-APPLE-RADIUS=100;X-TITLE=Bear Cre
- ek Tree Farm:geo:0,0
-END:VEVENT
-BEGIN:VEVENT
 UID:1-8038@antir.org
 DTSTART;TZID=America/Los_Angeles:20260926T090000
 DTEND;TZID=America/Los_Angeles:20260926T190000
-DTSTAMP:20260614T230816Z
+DTSTAMP:20260821T223803Z
 URL:https://antir.org/events/tir-righ-arts-sciences-bardic-championships-7
  /
-SUMMARY:Tir Righ Arts\, Sciences &amp\; Bardic Championships 2026
-DESCRIPTION:
+SUMMARY:Tir Righ Arts\, Sciences &amp;\; Bardic Championships 2026
+DESCRIPTION:The Shire of Appledore is delighted to host Tir Righ for the Pr
+ incipality Arts &amp;\; Sciences and Bardic Championships at the Quail's Ne
+ st Arts Centre in Oliver\, BC.\n\nWe will open the site for setup at 8am w
+ ith the event and gate starting at 9am. Opening court is tentatively sched
+ uled for 9:30am. A full schedule and activities will appear on the Faceboo
+ k Event page closer to the event.\n\n&nbsp;\;\n\nOliver\, BC is found betwe
+ en Penticton and Osoyoos on Highway 97 in the South Okanagan. From the Nor
+ th and West\, make your best way to Penticton and head south on Highway 97
+  until you are in Oliver. Turn left onto Similkameen Avenue and then your 
+ first right on Apirport Street. From points East\, make your way to Osoyoo
+ s\, turn right onto Highway 97 to Oliver\, right onto Similkameen\, then r
+ ight on Airport Street.\n\nOliver is a small town packed with amenities. T
+ here are hotels\, grocery stores\, and restaurants in easy walking distanc
+ e. Local wineries and fruit stands are found throughout the region.\n\nThe
+  site is the quirky\, charming Arts Centre. There ample parking\, an acces
+ sible entrance and an accessible washroom. We will have site tea\, coffee 
+ and hot water for a donation.&nbsp; We will also have various popups available
+  for gathering space.\n\nMerchants\, should there be any interested\, shou
+ ld contact the event steward. We will not charge a merchant fee.\n\nThe si
+ te fee is $35.00 less the $10 non-member surcharge for SCA members. Youth 
+ age 18 and younger are free.\n\n&nbsp;\;\n\n&nbsp;\;
 CATEGORIES:Appledore,Principality of Tir Righ
 LOCATION:Quails Nest Arts Centre\, 5840 Airport Road\, Oliver\, BC\, V0H 1T
  0\, Canada
@@ -846,6 +154,937 @@ GEO:49.1756465;-119.5517114
 X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=5840 Airport Road\, Oliver\
  , BC\, V0H 1T0\, Canada;X-APPLE-RADIUS=100;X-TITLE=Quails Nest Arts Centre
  :geo:49.1756465,-119.5517114
+END:VEVENT
+BEGIN:VEVENT
+UID:1-9004@antir.org
+DTSTART;TZID=America/Los_Angeles:20261002T150000
+DTEND;TZID=America/Los_Angeles:20261004T120000
+DTSTAMP:20260910T195401Z
+URL:https://antir.org/events/barons-ball-14/
+SUMMARY:Baron's Ball
+DESCRIPTION:Good gentles all! Lend ye to the call of your Baron! Long do th
+ e nights begin to grow as summer gives way to autumn's cold. Join us for t
+ he final camping event of the season at Baron's Ball! Defend the honor of 
+ your Baron and Barony in war! Scenarios TBD. If war isn't your thing\, com
+ pete to become Wastekeep's next Arts and Sciences champion or Bardic champ
+ ion. Have a twisted mind and way with words? Compete for the honor of beco
+ ming Wastekeep's next Defenestrator!\n\nYouth! Our Baron calls for your ai
+ d as well! Test your creativity in the annual Veggie Creature Creation Com
+ petition. Show off your prowess in Youth Armored Combat and Youth Armored 
+ Rapier competitions!\n\nHospitality more your speed? Join us for our hospi
+ tality competition.\n\n\n\nPlease contact Magdi Tynkere with questions.\n\
+ n\nReservations\nLarge camping groups and RVs please contact Magdi for res
+ ervations. Smaller groups should have plenty of space for camping. There a
+ re no RV hookups\, so please plan on self-containment. Contact her with yo
+ ur SCA name and the length of your RV.\n\nDetails of Competitions &amp;\; A
+ ctivities\nWastekeep Arts &amp;\; Sciences Championship - The Kids Are Alri
+ ght\n\nFor millennia\, older generations have complained about the younger
+  generation. But as time marched forward\, progress and human ingenuity pe
+ rsevered. There can only be one conclusion:\nThe kids are alright.\n\n\n\n
+ We as SCAdians see this very clearly\, as we care for and nurture younger 
+ generations\, and focus an passing down knowledge and wisdom. This is espe
+ cially apparent in our legacy SCAdians. So to honor this (and as a nod to 
+ our Queen and Royal Princess)\, let's acknowledge the importance of the yo
+ unger generation.\n\n\n\nPlease bring an item (or items if you wish) that 
+ have something to do with the youth. It could be games\, clothing\, kits f
+ or kids to learn\, art forms about kids\, art by kids\, or anything that y
+ ou can use to tell a story about special youth in your life.\n\n\n\nPopula
+ ce judging\, and the youth of An Tir are encouraged to help judge\, as the
+  future of our populace.\n\nWastebeast Arts &amp;\; Sciences Competition\n\
+ nLong ago\, at the beginning of time in Wastekeep\, there was a story abou
+ t the Wastebeast. The Beast of Wastekeep. That story\, once for\, has been
+  found\, but alas no drawing of this wonderful beast remains. We are hopin
+ g to change this and ask a boon of An Tir. Please help us revive this beas
+ t\, by submitting your rendition of our magnificent creature to the popula
+ ce at Barons Ball. A contest to spark creativity\, and based on the story
+ ’s description:\n\n\n\nA most marvelous crew like a dragon and like a gr
+ iffin and like a hydra\, but none of these. The skin is emerald green and 
+ the scales shine like bronze. The claws and mouths are blood-red\, and the
+ y have two heads\, one to sleep and one to watch.\n\n\nThe chosen entry wi
+ ll be used in the future by artisans of Wastekeep\, so please be careful a
+ nd do not use any copyright drawings. Have fun with this and looking forwa
+ rd to all the creative idea. Please direct questions to Ciosa Fioravanti.\
+ nLargesse Competition\n\n\n(Please read to the rhyme of Baa Baa Black Shee
+ p)\n\n\n\nLargesse makers have you any wool?\nYes we do! Three bags full.\
+ nOne for the Baronage\, one for the game\,\n and one for Her Magesty to sh
+ are down the lane.\n\n\nIt’s a three item largesse contest\, and it does
+  not need to be made of wool. Each entrant will receive one of the submitt
+ ed largesse items\, others divided between kingdom and barony. Please dire
+ ct questions to Ciosa Fioravanti.\nBaby Shower for the Princess Royale\n(S
+ eparate Facebook Event located here.)\n\nThere are events of importance th
+ at are told in stars. The birth of a Royal Princess is one such event. To 
+ welcome her into the embrace of the House of Jarlskald and Argent Fox\, th
+ e Barony of Wastekeep and the Kingdom of An Tir\, a vigil (aka baby shower
+ ) is planned for Baron’s Ball\, October 2nd. Those who would like to con
+ tribute food items please note that as the Princess Royal is a ray of suns
+ hine\, and to honor the Queen’s preference\, sweet or savory lemon items
+  including beverages or other savory snacks are appreciated.\nActivities a
+ re planned!\nWords of Wisdom and Encouragement – Please share your wisdo
+ m\, skills acquired and experiences in the vigil book or on a note card. P
+ erhaps a cautionary tale of things you learned the hard way? Baby Doll Clo
+ thes –The Jarlskald Raiding and Trading Company recently returned from a
+  successful venture with an entire basket of naked baby dolls!! Clearly th
+ ese babies need garments! There are 13 babies in all. Her Majesty will sel
+ ect one for the Princess along with a few outfits. The generous Princess R
+ oyal will be donated the rest to largesse. Baby Doll measurements are in t
+ he comments below. If you are unable to attend Baron’s Ball garments may
+  be sent via mail or another party. Message one of the Vigil Hosts for an 
+ address.Diaper Toss – Accurate disposal of diapers is a must for all. De
+ monstrate your skill by tossing the most diapers into a target. The winner
+  will receive a prize of the lemon variety.We are looking forward to seein
+ g one and all at their Majesties last event until the biggest event of all
+ \, the birth of the Princess!!\n\n\n\n
+CATEGORIES:Inlands Region,Kingdom of An Tir,Wastekeep
+LOCATION:Basin City Memorial Park and Arena\, 303 Bailie Blvd\, Mesa\, WA\,
+  99343\, Inland\, United States
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=303 Bailie Blvd\, Mesa\, WA
+ \, 99343\, Inland\, United States;X-APPLE-RADIUS=100;X-TITLE=Basin City Me
+ morial Park and Arena:geo:0,0
+END:VEVENT
+BEGIN:VEVENT
+UID:1-9010@antir.org
+DTSTART;TZID=America/Los_Angeles:20261003T080000
+DTEND;TZID=America/Los_Angeles:20261004T160000
+DTSTAMP:20260902T215934Z
+URL:https://antir.org/events/rose-and-thorn-symposium-6/
+SUMMARY:Rose and Thorn Symposium
+DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
+ Kingdom interest) event.\n\nSaturday: 9:00 AM to 9:00 PM\n\nSunday: 9:00 A
+ M to 4:00 PM\n\nJoin us in Caladphort for a celebration of the underrepres
+ ented gender fighting community! We will have rapier\, cut and thrust\, an
+ d armored tournaments as well as classes tailored to the martial community
+ .\nPlease note we have a new site this year at the Grays Harbor Historic S
+ eaport in Aberdeen\, WA\, home of the Lady Washington.\n\n&nbsp;\;\n\nYou w
+ ill want to bring your own chairs. This is a new site that is in the early
+  stages of renovation so anything we don't bring we don't have.
+CATEGORIES:Glymm Mere,Kingdom of An Tir,Western Region
+LOCATION:Grays Harbor Historic Seaport\, 500 N. Custer St.\, Aberdeen\, Was
+ hington\, 98520\, United States
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=500 N. Custer St.\, Aberdee
+ n\, Washington\, 98520\, United States;X-APPLE-RADIUS=100;X-TITLE=Grays Ha
+ rbor Historic Seaport:geo:0,0
+END:VEVENT
+BEGIN:VEVENT
+UID:1-9020@antir.org
+DTSTART;TZID=America/Los_Angeles:20261009T140000
+DTEND;TZID=America/Los_Angeles:20261011T120000
+DTSTAMP:20260914T000643Z
+URL:https://antir.org/events/briaroak-bash-13/
+SUMMARY:Briaroak Bash
+DESCRIPTION:
+CATEGORIES:Briaroak,Principality of the Summits
+LOCATION:Church on the Rise\, 3500 NE Diamond Lake\, Roseburg\, Or\, 97470\
+ , United States
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=3500 NE Diamond Lake\, Rose
+ burg\, Or\, 97470\, United States;X-APPLE-RADIUS=100;X-TITLE=Church on the
+  Rise:geo:0,0
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8963@antir.org
+DTSTART;TZID=America/Los_Angeles:20261009T170000
+DTEND;TZID=America/Los_Angeles:20261012T110000
+DTSTAMP:20260820T164135Z
+URL:https://antir.org/events/tournament-of-the-golden-swan-16/
+SUMMARY:Tournament of the Golden Swan
+DESCRIPTION:The good shire of Appledore invites one and all to join the est
+ imable Ladies of the Golden Swan to celebrate scholarship and persona deve
+ lopment during this long weekend event. Join us beneath the boughs and wit
+ hin Cawston Hall as we entertain one who would challenge the contests to c
+ all themselves a Golden Swan.\n\nTravel back to a simpler SCA time\, when 
+ camaraderie and revelry reigns\, for communal breakfasts\, cozy camping\, 
+ two pot luck feasts\, singing\, games\, dancing\, and laughing long into t
+ he night.\n\nThe persona development challenge fosters knowledge of the li
+ ves of women in the middle ages. A successful Golden Swan demonstrates a l
+ evel and depth of understanding of what a woman's life was like in her giv
+ en time period that may be unequalled even in the highest academic circles
+ . The contest consists of several round table discussions\, private demons
+ trations of skills\, and the ongoing challenge of remaining in persona com
+ pletely from Saturday morning until Sunday afternoon. Everyone at the even
+ t is encouraged to participate in the discussion\, and attempt to present 
+ themselves in their most fullsome medieval manner.\n\n&nbsp;\;
+CATEGORIES:Appledore
+LOCATION:Cawston Community Hall\, 2119 Main Street\, Cawston\, BC\, V0X 1C1
+ \, Canada
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=2119 Main Street\, Cawston\
+ , BC\, V0X 1C1\, Canada;X-APPLE-RADIUS=100;X-TITLE=Cawston Community Hall:
+ geo:0,0
+END:VEVENT
+BEGIN:VEVENT
+UID:1-9001@antir.org
+DTSTART;TZID=America/Los_Angeles:20261010T100000
+DTEND;TZID=America/Los_Angeles:20261010T200000
+DTSTAMP:20260904T174419Z
+URL:https://antir.org/events/harvest-feast-51/
+SUMMARY:Harvest Feast
+DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
+ y business is expected to be conducted event.\n\n10:00 AM8:00 PM\nTheir Ex
+ cellencies\, Baroness&nbsp;Furia Dommitia and Baron&nbsp;Conrad Cedricson\, invite
+  all to vie for Their Arts and Sciences\, Youth Arts &amp;\; Sciences\, &amp;am
+ p\; Bardic Champions! Harvest Feast will also include Scholar’s Presenta
+ tions\, martial practices\, and hand crafts. The all-day-long feast theme 
+ is&nbsp;El Pasado Presente!\, the present past – Spanish Cuisine!\n\nMany ha
+ nds make light work\, and as such Their Excellencies\, along with the rest
+  of the Financial Committee\, wish to pass on the fruits of your hard work
+  at making June Faire a huge success this year. As a thank you they have d
+ ecided that Harvest Feast will be FREE for all who attend.\n\n\n\n\n\nFeas
+ t is limited to 120 so you must be pre-registered to ensure your spot.&nbsp;Pl
+ ease fill out the form for each person in your party.\n\n\n\nEvent team me
+ mbers:\nEvent Steward: Lyleth Ó hAllmhuráin\n\nFeast Coordinator: Lord R
+ owyn MacLost\nPre-registration and Accessibility: THL Jessy Gateman\, Dr
+ agonsLaire.PreReg@antir.org\nArts &amp;\; Sciences and Bardic Championship 
+ Coordinator: THL Karl inn irski\, THL Ciar ingen Fiachnae: DragonsLaire.
+ ArtNSci@antir.org\nScholar’s Coordinator: THL Rycheza z Polska\nYouth Ac
+ tivities: Lady Pak Sol Hwa\nWebminister: Lady Kira&nbsp;Kirova\, DragonsLair
+ e.Webminister@antir.org\nSocial Media: THL Caterina da Savona\, DragonsL
+ aire.SocialMedia@antir.org\nDecorations: THL Sigridr Vilhjalmsdottir\n\nOt
+ her sites for event info:\nBaronial event link: https://dragonslaire.antir
+ .org/wordpress/events/harvest-feast/\nFacebook event link:&nbsp;https://www.fa
+ cebook.com/events/2117668175814901\n\n\n\nWhere? When?\nWhen: October 10\,
+  2026. The hall opens at 8AM for setup — 10AM for everyone else. The hal
+ l closes at 8PM.\n\nWhere:&nbsp;Key Peninsula Civic Center at 17010 S Vaughn R
+ d NW\, Vaughn\, WA 98394 (link to Google map).\n\nParking: Please only par
+ k in the front Civic Center parking lot. Do not park on private property\,
+  or in the back of the Civic Center.\n\n\n\n\n\nBaronial Court\nBaroness&nbsp;
+ Furia Dommitia and Baron&nbsp;Conrad Cedricson will preside over opening court
+  in the morning (time TBA). Competitors for the A&amp;\;S and Bardic Champi
+ onships should be prepared to stand up and declare their intent!\n\nThe wi
+ nners will be announced at Evening Court (time TBA)\, as will the Scholars
+  of Dragon’s Laire\, and there will be other awards for various members 
+ of the Barony.\n\n\n\n\n\n\n\n\n\n\nSchedule\nThe schedule will be posted 
+ here when available.\n\n8AM: site opens for set-up\n10AM: site opens for t
+ he general populace\n8PM: site closes\n\n\n\n\n\n\n\n\n\n\n\nPeople intera
+ cting with this event must adhere to the SCA Core values\; behave with cou
+ rtesy\, honor\, chivalry and respect\, even in times of inevitable differe
+ nces of opinion\; and comply with SCA policy and modern law. The SCA prohi
+ bits harassment and bullying of all individuals and groups. Hate speech is
+  not tolerated in the Society. Hate speech is speech or symbols that offen
+ d\, threaten\, or insult individuals or groups\, based on race\, color\, r
+ eligion\, national origin\, sexual orientation\, disability or other trait
+ s.\n\n\n
+CATEGORIES:Dragon's Laire,Kingdom of An Tir,Western Region
+LOCATION:Key Peninsula Civic Center\, 17010 South Vaughn Road NW\, Vaughn\,
+  WA\, 98394\, Western\, United States
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=17010 South Vaughn Road NW\
+ , Vaughn\, WA\, 98394\, Western\, United States;X-APPLE-RADIUS=100;X-TITLE
+ =Key Peninsula Civic Center:geo:0,0
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8976@antir.org
+DTSTART;TZID=America/Los_Angeles:20261010T100000
+DTEND;TZID=America/Los_Angeles:20261010T190000
+DTSTAMP:20260922T182304Z
+URL:https://antir.org/events/crows-feast-2026/
+SUMMARY:Crows' Feast 2026
+DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
+ y business is expected to be conducted event.\n\n10:00 AM7:00 PM\n\nAdditi
+ onal information at the Facebook Event\n\nFriends\, the rustling of wings 
+ and rattling of wind bid you welcome to the fantastic fete: Crows gather a
+ t our Gate to welcome those from near and far. Come join us for a day of s
+ tory\, games\, dancing\, tasty foods and more.\n\nSite opens at 10 am and 
+ closes at 7 pm. Feast will begin at 3 am with court to follow. A wheelchai
+ r ramp is available.\n\nGate\nAdults - $25*\nYouth (13-18) - $10**\nChildr
+ en Feast (12 and under) - Free\n\nPreregister here\n\n*Adult SCA members w
+ ill receive a $10 discount off the pricing above. Membership Number and Ex
+ piration Date must be provided to receive the discount.\n**Registering chi
+ ldren is no charge\, but will speed up the entry process. Youth and Childr
+ en must either be accompanied by parent/guardian or their parent or guardi
+ an must complete both of the SCA Inc. required forms prior to your arrival
+ : Minor Waiver and Medical Authorization.\n\nActivities\nTheir Excellencie
+ s of Glymm Mere will hold baronial court.\n\nMenu will include charcuterie
+ \, fresh bread\, pottage\, and light dessert. The main dish will be gluten
+  and dairy free\, with a vegan option available (items with gluten will be
+  prepped in the same area\, so exercise caution). A dessert auction will b
+ enefit Greater Chehalis Food Bank\, a 501(c)(3) organization.\n\nContests!
+ \nCraftiest Crow: a show and tell style A&amp;\;S Competition\, be the craf
+ tiest among us!\nCrow of Crows: a bardic competition\, sign up for a 10 mi
+ nute slot when you arrive\, crowing rights apply\nBenevolent Crow: largess
+  competition\, donate two items for baronial largess - populace favorite w
+ ins a donated item and a token of appreciation\n\nGames will be played\, c
+ lasses will be held (dancing!)\, and with enough interest\, fighter/rapier
+  practice may take place. There is some indoor space available. Contact th
+ e Steward if you would like to teach or help.
+CATEGORIES:Crows Gate
+LOCATION:Newaukum Grange\, NSA\, Chehalis\, WA\, 98532\, Rivers\, United St
+ ates
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=NSA\, Chehalis\, WA\, 98532
+ \, Rivers\, United States;X-APPLE-RADIUS=100;X-TITLE=Newaukum Grange:geo:0
+ ,0
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8952@antir.org
+DTSTART;TZID=America/Los_Angeles:20261010T180000
+DTEND;TZID=America/Los_Angeles:20261012T120000
+DTSTAMP:20260420T020537Z
+URL:https://antir.org/events/feast-of-st-crispins-5/
+SUMMARY:Feast of St. Crispin's
+DESCRIPTION:
+CATEGORIES:Tir Bannog
+LOCATION:Fields of Gold Educational Center\, 17317 Larch Rd\, Telkwa\, BC\,
+  V0J 2X2\, Canada
+GEO:54.609499;-126.847751
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=17317 Larch Rd\, Telkwa\, B
+ C\, V0J 2X2\, Canada;X-APPLE-RADIUS=100;X-TITLE=Fields of Gold Educational
+  Center:geo:54.609499,-126.847751
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8905@antir.org
+DTSTART;TZID=America/Los_Angeles:20261016T000000
+DTEND;TZID=America/Los_Angeles:20261018T000000
+DTSTAMP:20260904T165703Z
+URL:https://antir.org/events/barony-of-three-mountians-ballistic-champions
+ hips/
+SUMMARY:**CANCELLED** Barony of Three Mountians Ballistic Championships
+DESCRIPTION:
+CATEGORIES:Three Mountains
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8734@antir.org
+DTSTART;TZID=America/Los_Angeles:20261016T120000
+DTEND;TZID=America/Los_Angeles:20261018T100000
+DTSTAMP:20260717T052829Z
+URL:https://antir.org/events/freeze-off-xxxvii/
+SUMMARY:Freeze Off XXXVII
+DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
+ Kingdom interest) event.\n\nThe Shire of Ramsgaard is pleased to invite on
+ e and all to our signature event!\nFeaturing:\n* The annual Defenders' tou
+ rnaments and competitions!\n* Prize tourneys!\n* Classes!\n* Food!\n... An
+ d so much more! Watch this space for more details.
+CATEGORIES:Ramsgaard
+LOCATION:Heffley Creek  Community Hall\, Old Hwy 5 Rd\, Heffly Creek\, BC\,
+  V0E 1Z0\, Canada
+GEO:50.85894706494081;-120.267646500092
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=Old Hwy 5 Rd\, Heffly Creek
+ \, BC\, V0E 1Z0\, Canada;X-APPLE-RADIUS=100;X-TITLE=Heffley Creek  Communi
+ ty Hall:geo:50.85894706494081,-120.267646500092
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8915@antir.org
+DTSTART;TZID=America/Los_Angeles;VALUE=DATE:20261017
+DTEND;TZID=America/Los_Angeles;VALUE=DATE:20261018
+DTSTAMP:20260921T040905Z
+URL:https://antir.org/events/octoberfeast-5/
+SUMMARY:Octoberfeast
+DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
+ Kingdom interest) event.\n\nOctoberfeast is Barony of Wealdsmere's Toys fo
+ r Tots tournament and feast.
+CATEGORIES:Wealdsmere
+LOCATION:St. Mary's Catholic School\, 14601 E 4th Ave\, Spokane Valley\,  W
+ A\, 99216\, Inlands\, United States
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=14601 E 4th Ave\, Spokane V
+ alley\,  WA\, 99216\, Inlands\, United States;X-APPLE-RADIUS=100;X-TITLE=S
+ t. Mary's Catholic School:geo:0,0
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8934@antir.org
+DTSTART;TZID=America/Los_Angeles:20261017T080000
+DTEND;TZID=America/Los_Angeles:20261018T150000
+DTSTAMP:20260919T011606Z
+URL:https://antir.org/events/hartwood-fall-tutr-2/
+SUMMARY:Hartwood Fall TUTR 2026
+DESCRIPTION:HARTWOOD FALL TUTR 2026\n\n\n&nbsp;\;\n\nHarken now\, good schol
+ ars!\n\nThe Shire of Hartwood is once again holding classes for The Univer
+ sity of Tir Righ.&nbsp; Join us and our amazing instructors at the Beban Socia
+ l Centre in Nanaimo where they will share their skills and answer question
+ s on October 17th and 18th.\n\nClasses include but are certainly not limit
+ ed to: Wire Weaving\, Medieval Poetry\, Birgitte Cap\, How to Make eyelets
+ \, and many\, many more.&nbsp;\n\nBetween classes\, relax with friends\, new a
+ nd old\, and enjoy lunch and snacks by donation. We hope you’ll also joi
+ n us for Saturday night’s potluck and enjoy our entertainment.\n\nThe si
+ te admission cost is $35. SCA members will receive a $10-off discount (bri
+ ng your membership ID!) and Seniors and Students will also receive $5-off 
+ with ID.\n\nAs each course is different and will have different material r
+ equirements\, expect to pay a small cost for each course to the instructor
+  (separate from the site admission fee).\n\nDoors will open at 8:00 AM Sat
+ urday\, October 18th\, with Gate opening at 08:30. Classes end at 3:00 PM 
+ Sunday.\nPRE-REGISTRATION FOR CLASSES IS REQUIRED and will open Sept 22\, 
+ 2026 and closes Oct 12\, 2026. Register early as classes fill up quickly!
+ &nbsp;\n\nClasses will be available for pre-view as of September 15th!\nACCOMM
+ ODATION: Some billeting space will be available. More information to follo
+ w.\n\nFOOD: There will be day food available both days by donation as well
+  as a potluck dinner on Saturday.&nbsp;\n\nNO PETS as per the facilities rules
+ . Service animals must have proper documentation. No exceptions.\n\nCheck 
+ our FB event page for additional information\n\nNote: This is an SCA event
+  and students are expected to wear period clothing (except for off-site cl
+ asses).\n\nIf you have any questions about courses\, please contact the TU
+ TR class coordinators: Mistress Alicia le Wilfulle and Lady Beatrice inghe
+ an Ghiolla Mhuire at hartwood.tutr@tirrigh.org.&nbsp;\n\nFor non-class related
+  questions\, please contact the event steward Arrindís inn kyrri at Arinn
+ disInnKyrri@gmail.com.
+CATEGORIES:Hartwood
+LOCATION:Beban Park Social Centre\, 2300 Bowen Rd\, Nanaimo\, BC\, V9T 3K7\
+ , Canada
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=2300 Bowen Rd\, Nanaimo\, B
+ C\, V9T 3K7\, Canada;X-APPLE-RADIUS=100;X-TITLE=Beban Park Social Centre:g
+ eo:0,0
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8969@antir.org
+DTSTART;TZID=America/Los_Angeles:20261017T090000
+DTEND;TZID=America/Los_Angeles:20261017T160000
+DTSTAMP:20260904T023931Z
+URL:https://antir.org/events/st-crispins-festival/
+SUMMARY:St Crispins Festival
+DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
+ y business is expected to be conducted event.\n\n9:00 AM-4:00 PM\n\nHelp f
+ ind Lionsdale's next champions in Armoured combat\, Games\, A&amp;\;S and B
+ ardic
+CATEGORIES:Lionsdale
+LOCATION:Atchellitz Farmer's Institute\, 6542 Lickman Rd.\, Chilliwack\, BC
+ \, Canada
+GEO:49.1209219;-122.0067524
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=6542 Lickman Rd.\, Chilliwa
+ ck\, BC\, Canada;X-APPLE-RADIUS=100;X-TITLE=Atchellitz Farmer's Institute:
+ geo:49.1209219,-122.0067524
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8997@antir.org
+DTSTART;TZID=America/Los_Angeles:20261017T090000
+DTEND;TZID=America/Los_Angeles:20261017T190000
+DTSTAMP:20260717T040743Z
+URL:https://antir.org/events/amergins-revel-3/
+SUMMARY:Amergin's Revel
+DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
+ Kingdom interest) event.\n\n9:00 AM7:00 PM\n\nA day of arts and sciences\,
+  especially Bardic\, culminating in a feast.\n\nThere will be Championship
+ s ( bardic and Arts and Sciences) as well as youth bardic competitions.
+CATEGORIES:Adiantum,Kingdom of An Tir,Principality of the Summits
+LOCATION:Row River Grange\, 34360 Row River Rd\, Cottage Grove\, Oregon\, 9
+ 7424\, United States
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=34360 Row River Rd\, Cottag
+ e Grove\, Oregon\, 97424\, United States;X-APPLE-RADIUS=100;X-TITLE=Row Ri
+ ver Grange:geo:0,0
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8977@antir.org
+DTSTART;TZID=America/Los_Angeles;VALUE=DATE:20261024
+DTEND;TZID=America/Los_Angeles;VALUE=DATE:20261025
+DTSTAMP:20260612T044437Z
+URL:https://antir.org/events/samhain-26/
+SUMMARY:Samhain
+DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
+ Kingdom interest) event.\n\nCome to this special remembrance Samhain where
+  we celebrate the living while honoring the dead.
+CATEGORIES:Glyn Dwfn
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8889@antir.org
+DTSTART;TZID=America/Los_Angeles:20261024T100000
+DTEND;TZID=America/Los_Angeles:20261024T233000
+DTSTAMP:20251220T231142Z
+URL:https://antir.org/events/fall-masked-ball-5/
+SUMMARY:Fall Masked Ball
+DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
+ y business is expected to be conducted event.\n\n10:00 AM-11:30 PM\n\nJoin
+  us for a day of dancing\, feasting\, boffer combat\, Arts and Sciences Ch
+ ampionship and more. There will be an evening potluck style feast with mai
+ n dish (meat) provided and a tavern.
+CATEGORIES:Seagirt
+LOCATION:Eastern Star Hall\, 3281 Harriet St.\, Victoria\, BC\, V82 3S3\, C
+ anada
+GEO:48.4516513;-123.3821881
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=3281 Harriet St.\, Victoria
+ \, BC\, V82 3S3\, Canada;X-APPLE-RADIUS=100;X-TITLE=Eastern Star Hall:geo:
+ 48.4516513,-123.3821881
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8783@antir.org
+DTSTART;TZID=America/Los_Angeles:20261024T110000
+DTEND;TZID=America/Los_Angeles:20261024T200000
+DTSTAMP:20260920T222839Z
+URL:https://antir.org/events/autumn-colloquium-samhain/
+SUMMARY:Haust-Boð
+DESCRIPTION:The chill in the air\n\nThe crunch of the leaves\n\nA cauldron 
+ of soup bubbles over a crackling fire\n\nLet’s Celebrate the Fall season
+  with food\, friends and learning\n\nHaust-Boð\n\nThe name Haust-Boð (pr
+ onounced Howst-both) comes from Old Norse and can be translated as Autumn 
+ Feast.\n\nThe idea is to gather together and celebrate our wins over this 
+ last event season. Swap stories of your battles on the field\, retell your
+  best “there I was stories” share knowledge in the form of classes or 
+ game plan next event season.\n**Site Rules**\n\n 	No Weapons on site\n 	
+ “Discretely Wet” Although we have purchased a banquet license\, if you
+  decide to enjoy adult beverages please keep your sensibilities about your
+ self and remember your actions reflect upon the Barony and SCA as a whole.
+ \n\n&nbsp;\;\n\nThis is a Level 2: Branch Event where no Kingdom or Princip
+ ality business is expected to be conducted event.\n\n&nbsp;\;
+CATEGORIES:Madrone
+LOCATION:Fauntleroy United Church of Christ\, 9140 California Avenue SW\, S
+ eattle\, WA\, 98136\, Western\, United States
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=9140 California Avenue SW\,
+  Seattle\, WA\, 98136\, Western\, United States;X-APPLE-RADIUS=100;X-TITLE
+ =Fauntleroy United Church of Christ:geo:0,0
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8929@antir.org
+DTSTART;TZID=America/Los_Angeles;VALUE=DATE:20261106
+DTEND;TZID=America/Los_Angeles;VALUE=DATE:20261110
+DTSTAMP:20260301T072743Z
+URL:https://antir.org/events/feast-of-apple-and-song/
+SUMMARY:Feast of Apple and Song
+DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
+ y business is expected to be conducted event.\n\nThe Barony of Terra Pomar
+ ia's Annual Fall Celebration! Full of soup\, chivalry\, and fun\, there wi
+ ll be something for everyone. Including the chance to vie to become the ne
+ xt Rapier Champion or Arts &amp;\; Sciences Champion for Terra Pomaria! Wat
+ ch this space for further details as they are confirmed.
+CATEGORIES:Terra Pomaria
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8956@antir.org
+DTSTART;TZID=America/Los_Angeles:20261107T080000
+DTEND;TZID=America/Los_Angeles:20261107T180000
+DTSTAMP:20260911T001432Z
+URL:https://antir.org/events/wastekeep-collegium-3/
+SUMMARY:Wastekeep Collegium
+DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
+ Kingdom interest) event.\n\nPlease join Baron William and Baroness Anna al
+ ong with the populous of Wastekeep for another Wastekeep Collegium. There 
+ will be classes\, presentations\, discussions and much more. We will be re
+ turning to the Three Rivers Convention Center on Saturday November 7\, 202
+ 6.\n\nMore details will be coming\, but if you're interested in teaching\,
+  please fill out this survey or contact the class coordinator\, Sindri inn
+  hárfagri.
+CATEGORIES:Wastekeep
+LOCATION:Three Rivers Convention Center\, 7016 West Grandridge Blvd\, Kenne
+ wick\, WA\, 99336\, Inlands\, United States
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=7016 West Grandridge Blvd\,
+  Kennewick\, WA\, 99336\, Inlands\, United States;X-APPLE-RADIUS=100;X-TIT
+ LE=Three Rivers Convention Center:geo:0,0
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8960@antir.org
+DTSTART;TZID=America/Los_Angeles:20261107T090000
+DTEND;TZID=America/Los_Angeles:20261108T150000
+DTSTAMP:20260510T195929Z
+URL:https://antir.org/events/november-coronet-3/
+SUMMARY:Tir Righ November Coronet 2026
+DESCRIPTION:This is a Level 1: Coronet Event (Principality Coronet Tourname
+ nts and Investitures) event.\n\n9:00 AM-3:00 PM\n\nTir Right November Coro
+ net 2026
+CATEGORIES:Principality of Tir Righ
+LOCATION:Cowichan Exhibition Grounds\, 7380 Trans Canada Hwy\, Duncan\, BC\
+ , V9L 6B1\, Canada
+GEO:48.8485382;-123.7223522
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=7380 Trans Canada Hwy\, Dun
+ can\, BC\, V9L 6B1\, Canada;X-APPLE-RADIUS=100;X-TITLE=Cowichan Exhibition
+  Grounds:geo:48.8485382,-123.7223522
+END:VEVENT
+BEGIN:VEVENT
+UID:1-9009@antir.org
+DTSTART;TZID=America/Los_Angeles:20261107T100000
+DTEND;TZID=America/Los_Angeles:20261108T140000
+DTSTAMP:20260819T010657Z
+URL:https://antir.org/events/harvest-feast-and-as-day-camp/
+SUMMARY:Harvest Feast and A&amp;\;S Day Camp
+DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
+ y business is expected to be conducted event.\n\n10:00 AM2:00 PM\n\nBarony
+  of Blatha an Oir Harvest feast and Arts &amp;\; Sciences Day Camp\nSaturda
+ y is a day of classes and comradery and the First Feast for the new Baron 
+ and Baroness of Blatha an Oir. Sunday will be more classes by local and ta
+ lented teachers.
+CATEGORIES:Blatha An Oir,Kingdom of An Tir,Western Region
+LOCATION:Waller Grange\, 2708 E 64th St.\,  Tacoma\, WA\, 98404\, Western\,
+  United States
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=2708 E 64th St.\,  Tacoma\,
+  WA\, 98404\, Western\, United States;X-APPLE-RADIUS=100;X-TITLE=Waller Gr
+ ange:geo:0,0
+END:VEVENT
+BEGIN:VEVENT
+UID:1-9007@antir.org
+DTSTART;TZID=America/Los_Angeles:20261109T180000
+DTEND;TZID=America/Los_Angeles:20261109T200000
+DTSTAMP:20260810T033007Z
+URL:https://antir.org/events/tir-righ-curia-8/
+SUMMARY:Tir Righ Curia
+DESCRIPTION:
+CATEGORIES:Principality of Tir Righ
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8911@antir.org
+DTSTART;TZID=America/Los_Angeles;VALUE=DATE:20261114
+DTEND;TZID=America/Los_Angeles;VALUE=DATE:20261115
+DTSTAMP:20260717T035943Z
+URL:https://antir.org/events/frostbite-13/
+SUMMARY:Frostbite
+DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
+ y business is expected to be conducted event.\n\nFrostbite is the annual F
+ all event for the Shire of Southmarch. At Frostbite\, we have selected our
+  Heavy Fighter Champion\, Rapier Champion\, and Bardic Champion. There is 
+ traditionally a feast at the event.
+CATEGORIES:Southmarch
+END:VEVENT
+BEGIN:VEVENT
+UID:1-9000@antir.org
+DTSTART;TZID=America/Los_Angeles:20261114T090000
+DTEND;TZID=America/Los_Angeles:20261114T190000
+DTSTAMP:20260814T212329Z
+URL:https://antir.org/events/bubbas-birthday-party/
+SUMMARY:Bubba's Birthday Party
+DESCRIPTION:Baron John and Baroness Margaret invite you to join the Barony 
+ of Wyewood in celebrating the birthday of our beloved Mascot\, Bubba.\n\nW
+ yewood is taking a day to come together to celebrate our history and the b
+ arony with a potluck (main dish provided by the barony)\, and a panel disc
+ ussion of the History of Wyewood especially how Wyewood and Bubba came to 
+ be.&nbsp; There will be classes\, dance\, a scribal area\, and a prize rapier 
+ tournament as we celebrate the day together.\n\nAnd cake! There will be bi
+ rthday cake!\n\nMistress Symonne and her crew will be serving pork tenderl
+ oin roast with sauces and chicken. Please bring side dishes or desserts to
+  contribute\, and please include and ingredient list for safety.\n\n&nbsp;\
+ ;\n\n&nbsp;\;
+CATEGORIES:Kingdom of An Tir,Wyewood
+LOCATION:Maple Valley Community Center\, 22010 SE 248th St\, Maple Valley\,
+  WA\, 98038\, United States
+GEO:47.3796302;-122.0479618
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=22010 SE 248th St\, Maple V
+ alley\, WA\, 98038\, United States;X-APPLE-RADIUS=100;X-TITLE=Maple Valley
+  Community Center:geo:47.3796302,-122.0479618
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8968@antir.org
+DTSTART;TZID=America/Los_Angeles:20261114T100000
+DTEND;TZID=America/Los_Angeles:20261114T210000
+DTSTAMP:20260906T043945Z
+URL:https://antir.org/events/three-mountains-honor-feast-2/
+SUMMARY:Three Mountains Honor Feast
+DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
+ Kingdom interest) event.\n\n 	10:00 AM9:00 AM\n\nThree Mountains Honor Fea
+ st and Arts and Sciences Championship \nFee: $ 40.00 with members receivin
+ g a $10.00 discount\nParking is limited\, carpooling is highly recommended
+ \nCome join us for a day of feasting and classes in honor of Dame Be'akbel
+ le of Dumfries. Dame Be'akbell is well know for her love of fibre arts and
+  contributions to largesse and the classes planned reflect that love. The 
+ food will cover from Lisbon to Morocco.  \n\nThe Arts and Sciences Champio
+ nship is a large part of the event and has been designed to reflect Dame B
+ e'akbell's interests: Competitors will be asked to submit two entries in t
+ he following categories:\nBe'ak is a pillar of largesse making and organiz
+ ing\, so the first entery is a delightful duo in a medium of the competito
+ rs choice. This involes two high end items\, suitable to be given as prize
+ s or high end largesse. Time to show off your creative prowess! ( Entrants
+  will be allowed to pick an item from their competitors' duo to take home 
+ in recognition of their hardwork)\nBe'ak's second passion is fiber arts an
+ d requests the second entry to be a project based in the fibre arts. This 
+ can include " classic" examples of fibre arts like sewing\, knitting\, wea
+ ving etc but we would love to see creative interpetations.\nOur Honoree is
+  a proud 14th century Scotswoman\, bonus points will be awarded to items t
+ hat are 14th century or scottish in origin.\nJudges with be using the King
+ dom's Arts and Sciences rubrics found here: www.baronyofthreemountains.org
+ /documents/downloads/\nWe encourage you to consult the rubics to give the 
+ best possible entry.\nThe deadline for Entry is October 10\, so that appro
+ priate judges can be arranged. For further information or registration for
+  comepition please contact : Anne Southworth\, our current baronial champi
+ on.
+CATEGORIES:Three Mountains
+LOCATION:Eastgate Masonic Lodge\, 4812 NE 102nd\, Portland\, OR\, 97220\, R
+ IVERS\, United States
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=4812 NE 102nd\, Portland\, 
+ OR\, 97220\, RIVERS\, United States;X-APPLE-RADIUS=100;X-TITLE=Eastgate Ma
+ sonic Lodge:geo:0,0
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8328@antir.org
+DTSTART;TZID=America/Los_Angeles:20261121T120000
+DTEND;TZID=America/Los_Angeles:20261121T220000
+DTSTAMP:20260723T005939Z
+URL:https://antir.org/events/hartwood-yule-9/
+SUMMARY:Hartwood Yule
+DESCRIPTION:
+CATEGORIES:Hartwood
+LOCATION:Sunrise Ridge\, 1175 Resort Drive\, Parksville\, BC\, V9P 2E5\, Ca
+ nada
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=1175 Resort Drive\, Parksvi
+ lle\, BC\, V9P 2E5\, Canada;X-APPLE-RADIUS=100;X-TITLE=Sunrise Ridge:geo:0
+ ,0
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8729@antir.org
+DTSTART;TZID=America/Los_Angeles;VALUE=DATE:20261205
+DTEND;TZID=America/Los_Angeles;VALUE=DATE:20261206
+DTSTAMP:20260815T005131Z
+URL:https://antir.org/events/yule-feast-66/
+SUMMARY:Yule Feast
+DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
+ Kingdom interest) event.\n\nYule Feast with games\, tournaments\, and char
+ ity auction.
+CATEGORIES:Glymm Mere
+END:VEVENT
+BEGIN:VEVENT
+UID:1-9026@antir.org
+DTSTART;TZID=America/Los_Angeles:20261205T120000
+DTEND;TZID=America/Los_Angeles:20261205T220000
+DTSTAMP:20260913T222717Z
+URL:https://antir.org/events/cranehaven-yule/
+SUMMARY:Cranehaven Yule
+DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
+ y business is expected to be conducted event.\n\n12:00 PM10:00 PM\n\nEvent
+  Summary\n\nEvent Main Contact (Event Steward): Hrefna Völva of Bornholm\
+ nEvent Date(s): December 5\, 2026\nSite opens at: 12:00 PM on December 5\,
+  2026\nSite closes at: 10:00 PM\n\nEvent site:\n\nVFW Hall\n211 11th St NE
+ \nEast Wenatchee\, Washington\n\nThis is a Level 2: Other (Branch and Regi
+ onal) event.\n\n12:00 PM–10:00 PM\n\nSkadi has left her mountain\, and w
+ inter creeps upon us. It is time for Cranehaven to retreat into the hall!\
+ n\nJoin us for Cranehaven Yule\, a day of games\, dancing\, bardic competi
+ tion\, Arts &amp;\; Sciences\, and largess as we gather the bounty of the T
+ wo Rivers Valley to fill the Cranehaven and Kingdom largess trunks.\n\nCom
+ e warm yourself by the fire\, share your skills\, hear songs and stories\,
+  compete\, create\, dance\, and enjoy the fellowship of the Dream.\n\nThis
+  is a DRY site.\n\nCome out of the cold and into the hall. Cranehaven awai
+ ts!
+CATEGORIES:Cranehaven,Inlands Region,Kingdom of An Tir
+LOCATION:VFW Hall #3617\, 211 11th St ne\, East Wenatchee \, WA\, 98802\, I
+ nlands\, United States
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=211 11th St ne\, East Wenat
+ chee \, WA\, 98802\, Inlands\, United States;X-APPLE-RADIUS=100;X-TITLE=VF
+ W Hall #3617:geo:0,0
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8981@antir.org
+DTSTART;TZID=America/Los_Angeles:20261205T140000
+DTEND;TZID=America/Los_Angeles:20261205T210000
+DTSTAMP:20260622T010315Z
+URL:https://antir.org/events/seagirt-yule-9/
+SUMMARY:Seagirt Yule
+DESCRIPTION:This is a Level 1: Other (Branch primary events of regional or 
+ Kingdom interest) event.\n\n2:00 PM-9:00 PM\n\nSeagirt Yule is back again 
+ at the beautiful Metchosin Hall. There will be Bardic and Games Championsh
+ ips\, some fabulous activities are shaping up and the hybrid potluck that 
+ we have done for the past couple of years will be happening as well. (We w
+ ill supply main entrees and the sides and dessert by attendees. The feast 
+ of the immaculate confection is going to take place as is the popular inhe
+ ritance challenge as well as a yule tree! There is a tavern planned by the
+  Twisted Sisters.
+CATEGORIES:Seagirt
+LOCATION:Metchosin Community Hall\, 401 William Head Road\, Victoria\, Brit
+ ish Columbia\, V9C 4H3\, Canada
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=401 William Head Road\, Vic
+ toria\, British Columbia\, V9C 4H3\, Canada;X-APPLE-RADIUS=100;X-TITLE=Met
+ chosin Community Hall:geo:0,0
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8992@antir.org
+DTSTART;TZID=America/Los_Angeles:20261205T150000
+DTEND;TZID=America/Los_Angeles:20261205T230000
+DTSTAMP:20260922T033856Z
+URL:https://antir.org/events/baronial-banquet-lions-gate-2026/
+SUMMARY:Baronial Banquet Lions Gate 2026
+DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
+ y business is expected to be conducted event.\n\n3:00 PM-11:00 PM\n\nBaron
+ ess’ Banquet 2026: A Journey Along the Silk Road\nThe Barony of Lions Ga
+ te invites you into an evening of lantern light\, feast\, music\, story\, 
+ and splendour inspired by the Silk Road. Baroness’ Banquet will be imagi
+ ned as a journey through the great cultural hubs of that historic route\, 
+ with the hall transformed into a vibrant indoor market of rich décor\, wa
+ rmth\, and welcome. Guests can look forward to a feast shaped as a Path th
+ rough major Silk Road influences\, alongside dance\, storytelling\, and a 
+ joyful bardic close to the evening. We also warmly encourage those with pe
+ rsonas from lands along the Silk Road to dress in their finest and help ma
+ ke the night a celebration of garb\, culture\, and pageantry.
+CATEGORIES:Lions Gate
+LOCATION:Murrayville Hall\, 21667 48th Ave\, Langley\, BC\, V3A 3M8\, Canad
+ a
+GEO:49.0896932141798;-122.623050865555
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=21667 48th Ave\, Langley\, 
+ BC\, V3A 3M8\, Canada;X-APPLE-RADIUS=100;X-TITLE=Murrayville Hall:geo:49.0
+ 896932141798,-122.623050865555
+END:VEVENT
+BEGIN:VEVENT
+UID:1-9018@antir.org
+DTSTART;TZID=America/Los_Angeles:20261206T090000
+DTEND;TZID=America/Los_Angeles:20261206T210000
+DTSTAMP:20260914T004630Z
+URL:https://antir.org/events/tri-baronial-yule-3/
+SUMMARY:Tri-Baronial Yule
+DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
+ y business is expected to be conducted event.\n\n9:00 AM9:00 PM\n\nCome jo
+ in the baronies of Dragon's Mist\, Three Mountains\, and Stromgard for a Y
+ ule celebration!\nActivities to include largesse making\, dancing\, and sn
+ owball fights.\nFeast will be potluck.
+CATEGORIES:Dragon's Mist,Kingdom of An Tir,Rivers Region
+LOCATION:Clackamas County Fairgrounds (4-H Hall)\, 694 NE 4th Ave\, Canby\,
+  OR\, 97013\, United States
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=694 NE 4th Ave\, Canby\, OR
+ \, 97013\, United States;X-APPLE-RADIUS=100;X-TITLE=Clackamas County Fairg
+ rounds (4-H Hall):geo:0,0
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8970@antir.org
+DTSTART;TZID=America/Los_Angeles:20261210T190000
+DTEND;TZID=America/Los_Angeles:20261210T220000
+DTSTAMP:20260601T015756Z
+URL:https://antir.org/events/shire-winter-feast/
+SUMMARY:Shire Winter Feast
+DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
+ y business is expected to be conducted event.\n\n7:00 PM10:00 PM\n\nCome i
+ n from the cold and Celebrate the year that was as we toast out the old ye
+ ar and rejoice at the new
+CATEGORIES:Lionsdale
+LOCATION:Atchellitz Farmer's Institute\, 6542 Lickman Rd.\, Chilliwack\, BC
+ \, Canada
+GEO:49.1209219;-122.0067524
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=6542 Lickman Rd.\, Chilliwa
+ ck\, BC\, Canada;X-APPLE-RADIUS=100;X-TITLE=Atchellitz Farmer's Institute:
+ geo:49.1209219,-122.0067524
+END:VEVENT
+BEGIN:VEVENT
+UID:1-9017@antir.org
+DTSTART;TZID=America/Los_Angeles:20261212T090000
+DTEND;TZID=America/Los_Angeles:20261212T150000
+DTSTAMP:20260914T022819Z
+URL:https://antir.org/events/wastekeep-yule-2026/
+SUMMARY:Wastekeep Yule 2026
+DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
+ y business is expected to be conducted event.\n\n9:00 AM3:00 PM\n\nJoin th
+ e Barony of Wastekeep for our Annual no-cost Yule Feast and Celebration. T
+ he Barony will provide the main dish\, please bring a side dish or dessert
+  to serve 10. Santa Baron will be there to hand out gifts to children. If 
+ you have a child please bring a wrapped gift with their name on it. There 
+ will also be a gift exchange for those who chose to participate.
+CATEGORIES:Inlands Region,Kingdom of An Tir,Wastekeep
+LOCATION:Waitsburg Town Hall\, 121 N Main St\, Waitsburg\, WA\, 99361\, Uni
+ ted States
+GEO:46.2710257;-118.1549417
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=121 N Main St\, Waitsburg\,
+  WA\, 99361\, United States;X-APPLE-RADIUS=100;X-TITLE=Waitsburg Town Hall
+ :geo:46.2710257,-118.1549417
+END:VEVENT
+BEGIN:VEVENT
+UID:1-9008@antir.org
+DTSTART;TZID=America/Los_Angeles:20261212T090000
+DTEND;TZID=America/Los_Angeles:20261212T210000
+DTSTAMP:20260920T223730Z
+URL:https://antir.org/events/summits-winter-investiture-11th-night-4/
+SUMMARY:Summits Winter Investiture\, 11th Night
+DESCRIPTION:Come one\, Come all as we witness the Coronets of the Summits m
+ ove in succession to the heirs Viscount Sir William Geoffrey and HL Jack\n
+ \nFeel the strength of the blade while watching new champion of rapier win
+  the day in the Captain of Cats Tournament.\n\nShare the joys as His Royal
+  Majesty bestows bounteous awards.\n\n&nbsp;\;\n\nUnder the glowing pantheo
+ n of Glyn Dwfn\, do we invite you south: December 12\, 2026. The doors of 
+ the Pagdham Building at the Jackson County Expo will open at 9:00am\, clos
+ e at 9:00pm. (21 Peninger Rd\nCentral Point\, OR 97502)\n\nIn service - Yo
+ ur Event Steward\,\nHL Kanavati
+CATEGORIES:Glyn Dwfn,Kingdom of An Tir,Principality of the Summits
+LOCATION:Jackson County Expo - Padgham Pavillion\, 1 Peninger Rd\, Central 
+ Point\, OR\, 97502\, United States
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=1 Peninger Rd\, Central Poi
+ nt\, OR\, 97502\, United States;X-APPLE-RADIUS=100;X-TITLE=Jackson County 
+ Expo - Padgham Pavillion:geo:0,0
+END:VEVENT
+BEGIN:VEVENT
+UID:1-8998@antir.org
+DTSTART;TZID=America/Los_Angeles:20261212T090000
+DTEND;TZID=America/Los_Angeles:20261212T200000
+DTSTAMP:20260910T204508Z
+URL:https://antir.org/events/good-yule-2026/
+SUMMARY:Good Yule 2026
+DESCRIPTION:Site opens for event staff at 9am – gate for the populace wil
+ l open at 10am and ends at 8pm.\n\n&nbsp;\;\n\nCome one\, come all good gen
+ tles!\n\nYule is fast approaching\, and with that we invite you to come en
+ joy the festivities. We will be having a Celtic theme this year. We're luc
+ ky to have Aquaterra's own Oz Von Baekyn designing and preparing our glori
+ ous feast. What tasty treats will she present to us? Of course\, Bardic an
+ d A&amp;\;S championships will be happening. What stories and beauty will w
+ e see and hear? As per tradition the dessert auction will be continuing wi
+ th our donations going to Skagit Valley Humane Society. An amazing choice 
+ showcasing the kindness of our Baron and Baroness. Bring your best baked g
+ oods! The person with the highest selling goodie shall receive a delightfu
+ l prize. The silent auction will be happening\, too. Please feel free to d
+ onate and bid\, for the profits from this support An Tir’s Ravens travel
+  fund. There will be some new fun too\, such as medieval bingo and best dr
+ essed table competition. Yes\, there will be prizes!!! We will be taking s
+ ome time to honor and celebrate Lóft Jólgeirson’s being the newest Chi
+ valry Vigilant. We hope to see you all there to enjoy the feast\, the cama
+ raderie of friends\, family\, and some new friends\, too.\n\n&nbsp;\;\n\nSi
+ te Notes: \n\nThis site is ADA accessible.\n\nAlcohol will not be allowed 
+ at this event.\n\n&nbsp;\;\n\nLinks for preregistration and volunteering wi
+ ll be available soon!&nbsp;\n\n**Please note\, if you plan to attend the feast
+ \, you MUST preregister (there is an extra $5 discount when you do)!! Day 
+ trip attendance will only be available at the door with cash or check only
+ !! All adult members receive a $10 discount.&nbsp;\n\nSite Fees\n\n\n\nFee Typ
+ e **\nCost*\n\n\nAdult Feast\n$45\n\n\nYouth (12-17) Feast\n$15\n\n\nUnder
+  12\nFree\n\n\nFamily Cap\n$120\n\n\nAdult Day NO Feast (cash or check at 
+ door only)\n$20\n\n\nYouth/Child (Under 18) Day NO Feast\nFree\n\n\n\n\n*T
+ here is a $5 discount on all feast tickets when you preregister.\n\n&nbsp;\
+ ;\n** All adult members will get the $10 membership discount. Please bring
+  proof of current membership to avoid being charged the $10 at the door.\n
+ \n\n\n&nbsp;\n\nMeal Information – The menu will be posted as soon as availa
+ ble. Lady Oz Von Baekyn will be accommodating for food allergies and dieta
+ ry restrictions. There will be a space available in the prereg form that w
+ ill allow you to share your allergies and restrictions.\n\n&nbsp;\;\n\nBard
+ ic Championship Information \n\nRULES FOR IF YOU WIN:\n\n1) Be Prepared to
+  BRING THE FUN\n\n 	a) Where ever you go\, try and do at least ONE THING t
+ hat spreads joy. (Tell a joke\, lead a dance\, teach a silly game (Gurning
+  comes to mind). Whistle a happy tune.\n 	b) State loudly and proudly that
+  you are the Bardic Champion of the Great and Mighty Barony of Aquaterra!\
+ n\n&nbsp;\;\n\n2) Wear the Regalia PROUDLY. (and try really\, really hard n
+ ot to lose it).\n\n&nbsp;\;\n\n3) Be the Champion\, encourage Bardic Arts (
+ and there are DOZENS AND DOZENS of them) as you can.\n\n&nbsp;\;\n\n4) Show
+  up at the event to choose your successor and help run the contest. Hand o
+ ver the Regalia. Be a Bard.\n\n&nbsp;\;\n\nNow\, HOW DO I COMPETE TO BE CHA
+ MPION???\n\n 	A) Show Up at Aquaterra Good Yule DECEMBER 5\, 2026\n\nB ) T
+ ell me you are entering.\n\n 	C) Tell me WHAT you are doing to satisfy the
+  CHALLENGES OF A BARD for C-1\, C-2\, &amp;\; C-3!\n\n&nbsp;\;\n\nC-1) Do so
+ me sort of Bardic "THING" (™) that makes people joyful! Like\, teaching 
+ a dance or just play or sing or clap a jaunty song. Teach a MayPole (just 
+ a suggestion).\n\n&nbsp;\;\n\nC-2) Do some sort of Bardic "THING" (™) tha
+ t helps relieve tension\, shed a tear\, touch feelings. (Lullaby\, Story\,
+  Song\, Tune\, Poem...)\n\n&nbsp;\;\n\nC-3) There will be an Improvisationa
+ l Challenge. I will have a BUCKET OF MYSTERY there with many strange\, arc
+ ane\, and odd objects in it. You may pick 2 or 3 objects and make up a son
+ g\, story\, tune\, tale\, ... using those objects. Have fun.\n\n&nbsp;\;\n\
+ nBardic is like a LARGE Day Shade and can accommodate MANY an activity. Yo
+ u are free to PM me for ideas\, for that\, too\, is part of a Bard's job\,
+  to seek out information\, research\, and ask good questions.\n\n&nbsp;\;\n
+ \nThe MAIN THINGS being looked for are:\n\nCONNECTION with the Audience. B
+ E Your Persona and make the Audience feel SEEN.\n\nVERSATILITY of Performa
+ nce Style (one _can_ play pennywhistle for all their entries\, but if you 
+ can also do a speech\, lead a dance\, tell a story\, etc.\, that is even b
+ etter.)\n\nBring the JOY! Try something New-ish. Have FUN!\n\n&nbsp;\;\n\nI
+ n service to Crown\, Coronet\, and the Barony of Aquaterra.\n\nZahra\n\n&amp;n
+ bsp\;\n\nA&amp;\;S Championship Information – more coming soon. \n\nJoy &amp;
+ amp\; Dream – make something that brings you joy to share and spread joy
+  to the dream. More details coming soon!\n\n&nbsp;\n\nDetails for the Best Dre
+ ssed Table competition and An Tir Bingo will be coming soon!\n\n&nbsp;\;\n\
+ nThis is a Level 2: Branch Event where no Kingdom or Principality business
+  is expected to be conducted event.\n\n&nbsp;\n\n&nbsp;\;
+CATEGORIES:Aquaterra,Kingdom of An Tir,Western Region
+LOCATION:Hillcrest Lodge\, 1717 S 13th St\, Mt Vernon\, WA\, 98274\, United
+  States
+GEO:48.4081341;-122.3254304
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=1717 S 13th St\, Mt Vernon\
+ , WA\, 98274\, United States;X-APPLE-RADIUS=100;X-TITLE=Hillcrest Lodge:ge
+ o:48.4081341,-122.3254304
+END:VEVENT
+BEGIN:VEVENT
+UID:1-9039@antir.org
+DTSTART;TZID=America/Los_Angeles:20261215T180000
+DTEND;TZID=America/Los_Angeles:20261215T200000
+DTSTAMP:20260921T043801Z
+URL:https://antir.org/events/wealdsmere-yule/
+SUMMARY:Wealdsmere Yule
+DESCRIPTION:
+CATEGORIES:Wealdsmere
+LOCATION:USW 338 Union Hall\, 14015 E. Trent Ave\, Spokane Valley\, WA\, 99
+ 216\, Inlands\, United States
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=14015 E. Trent Ave\, Spokan
+ e Valley\, WA\, 99216\, Inlands\, United States;X-APPLE-RADIUS=100;X-TITLE
+ =USW 338 Union Hall:geo:0,0
+END:VEVENT
+BEGIN:VEVENT
+UID:1-9013@antir.org
+DTSTART;TZID=America/Los_Angeles:20261219T123000
+DTEND;TZID=America/Los_Angeles:20261219T200000
+DTSTAMP:20260826T004136Z
+URL:https://antir.org/events/thornwold-yule-3/
+SUMMARY:Thornwold Yule
+DESCRIPTION:This is a Level 2: Branch Event where no Kingdom or Principalit
+ y business is expected to be conducted event.\n\n12:30 PM8:00 PM\n\nThe Sh
+ ire's winter celebration - food\, fun\, revelry. More details to come as w
+ e make a plan (feel free to reach out with requests).
+CATEGORIES:Thornwold
+LOCATION:Rome Grange\, 2821 Mt Baker Hwy\, Bellingham\, WA\, 98226\, United
+  States
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS=2821 Mt Baker Hwy\, Belling
+ ham\, WA\, 98226\, United States;X-APPLE-RADIUS=100;X-TITLE=Rome Grange:ge
+ o:0,0
 END:VEVENT
 BEGIN:VTIMEZONE
 TZID:America/Los_Angeles
@@ -856,5 +1095,11 @@ TZOFFSETFROM:-0800
 TZOFFSETTO:-0700
 TZNAME:PDT
 END:DAYLIGHT
+BEGIN:STANDARD
+DTSTART:20261101T010000
+TZOFFSETFROM:-0700
+TZOFFSETTO:-0800
+TZNAME:PST
+END:STANDARD
 END:VTIMEZONE
 END:VCALENDAR
