@@ -573,6 +573,14 @@
     }
     .legend-clear:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
     .legend-readout { font-style: italic; color: #555; }
+    .big-toggle {
+      font: inherit; font-size: 0.78rem; cursor: pointer;
+      margin: 0.1rem 0 0.4rem; padding: 2px 10px;
+      border: 1px solid var(--sky-blue); border-radius: 10px;
+      background: #fff; color: var(--blue);
+    }
+    .big-toggle:hover { border-color: var(--blue); }
+    .big-toggle[aria-pressed="true"] { background: var(--blue); color: #fff; border-color: var(--blue); }
     /* Full-screen toggle sits at the right end of the colour-key row. */
     .fullscreen-btn {
       margin-left: auto; font: inherit; font-size: 0.74rem; cursor: pointer;
@@ -664,10 +672,6 @@
       Baronial (Practices)
     </label>
     <label class="check-label">
-      <input type="checkbox" id="chk-big" />
-      Big events only (wars &amp; Known World)
-    </label>
-    <label class="check-label">
       <input type="checkbox" id="chk-placeholders" />
       Show markers for groups without calendars
     </label>
@@ -722,6 +726,8 @@
     <span class="legend-readout" id="legend-readout" aria-live="polite">hover or tap a square to see what each colour means</span>
     <button type="button" id="fullscreen-btn" class="fullscreen-btn" title="Expand the map and event list to fill your screen">⛶ Full screen</button>
   </div>
+  <!-- Major-events toggle: overrides the Kingdom/Baronial checkboxes while on. -->
+  <button type="button" id="big-toggle" class="big-toggle" aria-pressed="false">Click to filter for only major events &amp; wars (displayed with a larger pin)</button>
 
   <section class="prose-section">
     <h2>About This Map</h2>
@@ -1777,10 +1783,11 @@ const KNOWN_WORLD_RE = /\bknowne?\s+worlde?\b/i;
 function isBigEvent(ev) {
   return !!ev.war_host || KNOWN_WORLD_RE.test(ev.title || '');
 }
+let bigOnlyActive = false;   // the "major events & wars" toggle under the key
 
 function applyFilters() {
   const query       = document.getElementById('search-input').value.toLowerCase().trim();
-  const bigOnly     = document.getElementById('chk-big').checked;
+  const bigOnly     = bigOnlyActive;
   const showKingdom = document.getElementById('chk-kingdom').checked;
   const showBaronial= document.getElementById('chk-baronial').checked;
   const showVirtual = document.getElementById('chk-virtual').checked;
@@ -1818,8 +1825,9 @@ function applyFilters() {
       // checkboxes (unchecking Baronial hides baronial business meetings here
       // too, not just on the map). The search box also applies further down.
       if (ev.is_virtual !== 'True') return false;
-      if (ev.calendar_type === 'kingdom'  && !showKingdom)  return false;
-      if (ev.calendar_type === 'baronial' && !showBaronial) return false;
+      // The major-events toggle is its own selection: it overrides these.
+      if (!bigOnly && ev.calendar_type === 'kingdom'  && !showKingdom)  return false;
+      if (!bigOnly && ev.calendar_type === 'baronial' && !showBaronial) return false;
       if (query) {
         const hay = [ev.title, ev.location, ev.clean_location, ev.source, ev.description]
           .join(' ').toLowerCase();
@@ -1828,8 +1836,8 @@ function applyFilters() {
       return true;
     }
     if (ev.is_virtual === 'True' && !showVirtual) return false;
-    if (ev.calendar_type === 'kingdom'  && !showKingdom)  return false;
-    if (ev.calendar_type === 'baronial' && !showBaronial) return false;
+    if (!bigOnly && ev.calendar_type === 'kingdom'  && !showKingdom)  return false;
+    if (!bigOnly && ev.calendar_type === 'baronial' && !showBaronial) return false;
     if (query) {
       const hay = [ev.title, ev.location, ev.clean_location, ev.source, ev.description]
         .join(' ').toLowerCase();
@@ -2493,7 +2501,11 @@ document.getElementById('date-reset').addEventListener('click', () => {
 
 document.getElementById('chk-kingdom').addEventListener('change', applyFilters);
 document.getElementById('chk-baronial').addEventListener('change', applyFilters);
-document.getElementById('chk-big').addEventListener('change', applyFilters);
+document.getElementById('big-toggle').addEventListener('click', e => {
+  bigOnlyActive = !bigOnlyActive;
+  e.currentTarget.setAttribute('aria-pressed', String(bigOnlyActive));
+  applyFilters();
+});
 document.getElementById('chk-placeholders').addEventListener('change', applyFilters);
 document.getElementById('chk-aggregate').addEventListener('change', applyFilters);
 document.getElementById('chk-virtual').addEventListener('change', applyFilters);
