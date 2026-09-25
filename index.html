@@ -1781,7 +1781,50 @@ function legendActiveColors() {
 // event, in all its spellings (Known/Knowne World/Worlde).
 const KNOWN_WORLD_RE = /\bknowne?\s+worlde?\b/i;
 function isBigEvent(ev) {
-  return !!ev.war_host || KNOWN_WORLD_RE.test(ev.title || '');
+  return !!ev.war_host || !!ev._crossListed || KNOWN_WORLD_RE.test(ev.title || '');
+}
+
+// Big cross-listing pins: an event posted to BIG_PIN_MIN_CALENDARS+ separate
+// calendars renders oversized (like a war), coloured by its hosting kingdom. The
+// same event geocodes a few km apart across calendars, so group by proximity +
+// date and count DISTINCT sources, not exact location. Returns
+// [{ members, host }] for each qualifying group. Used by the renderer (on the
+// filtered events) and, once at load, to tag members for the major-events toggle.
+function crossListedGroups(events) {
+  const listGroups = [];     // [{ lat, lng, date, evs: [] }]
+  events.forEach(ev => {
+    if (ev.war_host) return;                            // wars already get a big pin
+    const la = parseFloat(ev.lat), lo = parseFloat(ev.lng);
+    if (isNaN(la) || isNaN(lo)) return;
+    const date = (ev.start || '').slice(0, 10);
+    let g = listGroups.find(grp => grp.date === date &&
+      Math.hypot(grp.lat - la, (grp.lng - lo) * Math.cos(la * Math.PI / 180)) < 0.25);  // ~25 km
+    if (!g) { g = { lat: la, lng: lo, date, evs: [] }; listGroups.push(g); }
+    g.evs.push(ev);
+  });
+  // Cross-listings of ONE event share title words ("Known World Armoured Combat
+  // Collegium" in its many phrasings); five UNRELATED events that merely share a
+  // Saturday and a metro area don't. Before counting sources, keep only the
+  // largest subset whose titles overlap in 2+ significant words — otherwise a
+  // dense area's ordinary weekend could fake a "cross-listed on 5+ calendars" pin.
+  const sigTokens = t => new Set(String(t || '').toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
+    .filter(w => w.length >= 4 && w !== 'kingdom' && w !== 'event' && w !== 'events'));
+  const sharedTokens = (a, b) => { let n = 0; for (const w of a) if (b.has(w)) n++; return n; };
+  const out = [];
+  listGroups.forEach(({ evs }) => {
+    const toks = evs.map(e => sigTokens(e.title));
+    let best = [];
+    evs.forEach((_, i) => {
+      const members = evs.filter((__, j) => i === j || sharedTokens(toks[i], toks[j]) >= 2);
+      if (members.length > best.length) best = members;
+    });
+    if (new Set(best.map(e => e.source)).size < BIG_PIN_MIN_CALENDARS) return;
+    // Colour by the territory the event sits in (host_kingdom), like a war pin.
+    const host = best.map(e => e.host_kingdom).find(h => h && KINGDOM_COLORS[h]);
+    if (host) out.push({ members: best, host });
+  });
+  return out;
 }
 let bigOnlyActive = false;   // the "major events & wars" toggle under the key
 
@@ -1929,39 +1972,9 @@ function applyFilters() {
   // kingdom. The same event geocodes a few km apart across calendars, so group by
   // proximity + date and count DISTINCT sources, not exact location.
   const bigListColor = {};   // ev._idx -> host colour, set only on the big pin
-  const listGroups = [];     // [{ lat, lng, date, evs: [] }]
-  filtered.forEach(ev => {
-    if (ev.war_host) return;                            // wars already get a big pin
-    const la = parseFloat(ev.lat), lo = parseFloat(ev.lng);
-    if (isNaN(la) || isNaN(lo)) return;
-    const date = (ev.start || '').slice(0, 10);
-    let g = listGroups.find(grp => grp.date === date &&
-      Math.hypot(grp.lat - la, (grp.lng - lo) * Math.cos(la * Math.PI / 180)) < 0.25);  // ~25 km
-    if (!g) { g = { lat: la, lng: lo, date, evs: [] }; listGroups.push(g); }
-    g.evs.push(ev);
-  });
-  // Cross-listings of ONE event share title words ("Known World Armoured Combat
-  // Collegium" in its many phrasings); five UNRELATED events that merely share a
-  // Saturday and a metro area don't. Before counting sources, keep only the
-  // largest subset whose titles overlap in 2+ significant words — otherwise a
-  // dense area's ordinary weekend could fake a "cross-listed on 5+ calendars" pin.
-  const sigTokens = t => new Set(String(t || '').toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
-    .filter(w => w.length >= 4 && w !== 'kingdom' && w !== 'event' && w !== 'events'));
-  const sharedTokens = (a, b) => { let n = 0; for (const w of a) if (b.has(w)) n++; return n; };
-  listGroups.forEach(({ evs }) => {
-    const toks = evs.map(e => sigTokens(e.title));
-    let best = [];
-    evs.forEach((_, i) => {
-      const members = evs.filter((__, j) => i === j || sharedTokens(toks[i], toks[j]) >= 2);
-      if (members.length > best.length) best = members;
-    });
-    if (new Set(best.map(e => e.source)).size < BIG_PIN_MIN_CALENDARS) return;
-    // Colour by the territory the event sits in (host_kingdom), like a war pin.
-    const host = best.map(e => e.host_kingdom).find(h => h && KINGDOM_COLORS[h]);
-    if (!host) return;
+  crossListedGroups(filtered).forEach(({ members, host }) => {
     // Enlarge the host kingdom's own listing if it posted one, else the first.
-    const rep = best.find(e => e.source === host) || best[0];
+    const rep = members.find(e => e.source === host) || members[0];
     bigListColor[rep._idx] = KINGDOM_COLORS[host];
   });
 
@@ -2355,6 +2368,9 @@ Promise.all([
     // (whole word, so "uncancelled" stays) means it isn't happening, so it gets
     // no marker, list entry, or online badge anywhere.
     allEvents = allEvents.filter(ev => !/\bcancell?ed\b/i.test(ev.title || ''));
+    // Tag every listing of a 5+-calendar cross-listed event, so the major-events
+    // toggle keeps the whole group (and so its big pin) regardless of filters.
+    crossListedGroups(allEvents).forEach(g => g.members.forEach(e => { e._crossListed = true; }));
     capDateRangeToData();   // clamp the date picker to the span of data we actually hold
     // First render only once the map container has its settled size — on a fast
     // cache hit applyFilters() can otherwise run before layout, keying the canvas

@@ -132,7 +132,13 @@ def load_local_calendars(filepath: Path) -> list[dict]:
             source = (row.get("group") or "").strip()
             if not source or cal_id.lower() in NO_CALENDAR:
                 continue
-            calendars.append({"id": cal_id, "source": source, "type": "baronial"})
+            # type "aggregator": a regional calendar that re-posts other groups'
+            # events (e.g. a fighters' Facebook group calendar). Its events are
+            # tagged so clean_sca_events keeps only the ones no group's own
+            # calendar already has.
+            aggregator = (row.get("type") or "").strip().lower() == "aggregator"
+            calendars.append({"id": cal_id, "source": source, "type": "baronial",
+                              "aggregator": aggregator})
     print(f"Loaded {len(calendars)} local-group calendars from {filepath.name}\n")
     return calendars
 
@@ -449,6 +455,7 @@ def fetch_all_events(calendars: list[dict]) -> list[dict]:
                 # description, so events link to their own page rather than the
                 # kingdom calendar.
                 "event_url":     url_raw,
+                "is_aggregator": bool(calendar.get("aggregator")),
             })
             count += 1
 
@@ -483,6 +490,7 @@ def save_to_csv(events: list[dict], filename: Path):
     fieldnames = [
         "title", "start", "end", "location",
         "description", "source", "calendar_type", "is_virtual", "event_url",
+        "is_aggregator",
     ]
 
     with open(filename, "w", newline="", encoding="utf-8") as f:

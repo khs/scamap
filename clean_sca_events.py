@@ -45,6 +45,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 import kingdoms
+import private_addresses
 
 
 # ---------------------------------------------------------------------------
@@ -1154,6 +1155,62 @@ def preferred_source(group: pd.DataFrame) -> pd.Series:
     return candidates.iloc[0]
 
 
+_AGG_STOPWORDS = {"practice", "practices", "the", "and", "of", "a", "at", "recurring",
+                  "weekly", "meeting", "night", "barony", "shire", "canton", "baronial"}
+
+
+def _title_tokens(title) -> set:
+    """Significant title words, lightly stemmed ("Fighters" == "Fighter")."""
+    words = _normalize_title_for_match(title).split()
+    return {w[:-1] if len(w) > 3 and w.endswith("s") else w
+            for w in words if w not in _AGG_STOPWORDS}
+
+
+def _same_venue(a, b) -> bool:
+    """Loose venue match; an unknown venue on either side doesn't rule it out."""
+    a = _normalize_title_for_match(a)
+    b = _normalize_title_for_match(b)
+    if not a or not b:
+        return True
+    if a in b or b in a:
+        return True
+    num_a, num_b = re.match(r"\d+", a), re.match(r"\d+", b)
+    return bool(num_a and num_b and num_a.group() == num_b.group()
+                and a.split()[1:2] == b.split()[1:2])   # same number + street word
+
+
+def drop_aggregator_duplicates(df: pd.DataFrame) -> pd.DataFrame:
+    """Drop each aggregator-calendar event that a non-aggregator calendar
+    already lists: same day, shared significant words covering at least half
+    of the longer title, and a compatible venue. What's left is new information (e.g. an
+    armoured practice the barony's own calendar doesn't carry)."""
+    if "is_aggregator" not in df.columns:
+        return df
+    agg = df["is_aggregator"].astype(str).str.lower() == "true"
+    if not agg.any():
+        return df.drop(columns=["is_aggregator"])
+    day = df["start"].astype(str).str[:10]
+    own = df[~agg]
+    own_by_day: dict = {}
+    for idx in own.index:
+        own_by_day.setdefault(day[idx], []).append(
+            (_title_tokens(own.at[idx, "title"]), own.at[idx, "clean_location"]))
+    drop = []
+    for idx in df[agg].index:
+        tokens = _title_tokens(df.at[idx, "title"])
+        for o_tokens, o_loc in own_by_day.get(day[idx], []):
+            shared = len(tokens & o_tokens)
+            # Half of the LONGER title: a shared group prefix alone ("CAM Youth
+            # Practice" vs "CAM Rapier and Armored Practice") isn't a match.
+            if (shared and shared * 2 >= max(len(tokens), len(o_tokens))
+                    and _same_venue(df.at[idx, "clean_location"], o_loc)):
+                drop.append(idx)
+                break
+    print(f"  {int(agg.sum())} aggregator event(s): dropped {len(drop)} already on a "
+          f"group's own calendar, kept {int(agg.sum()) - len(drop)}.")
+    return df.drop(index=drop).drop(columns=["is_aggregator"])
+
+
 def deduplicate(df: pd.DataFrame) -> pd.DataFrame:
     """
     Remove duplicate events (same start date + same clean_location + same
@@ -1628,7 +1685,7 @@ def apply_location_corrections(df: pd.DataFrame) -> pd.DataFrame:
     for idx in df.index:
         src = str(df.at[idx, "source"]).strip()
         # Match the keyword against the title AND the event's location text: some
-        # venues (e.g. a barony's "the roost") are named only in the LOCATION
+        # venues (a barony's named practice site) are named only in the LOCATION
         # field, not the title, so a title-only match would never fire.
         haystack = " ".join((
             str(df.at[idx, "title"]),
@@ -2115,6 +2172,11 @@ def main():
     print(f"  low confidence:   {conf_counts.get('low', 0)}")
     print(f"  empty:            {conf_counts.get('empty', 0)}\n")
 
+    # Step 3b: aggregator calendars (locals.csv type "aggregator") re-post other
+    # groups' events; keep only the ones no group's own calendar already has.
+    print("Step 3b: Dropping aggregator-calendar duplicates ...")
+    df = drop_aggregator_duplicates(df)
+
     # Step 4: Deduplicate (OOK-aware, geography-aware)
     print("Step 4: Deduplicating (same date + location, OOK-aware) ...")
     ook_count = df["title"].apply(is_out_of_kingdom).sum()
@@ -2185,6 +2247,12 @@ def main():
     # placeholder when no calendar lists it yet.
     print("Step 6f: Applying wars.csv ...")
     df = apply_wars(df)
+
+    # Step 6g: addresses whose owners asked to be taken off the map
+    # (private_addresses.csv). Last, so no other correction can undo it, and
+    # before geocoding, so the address is never even looked up.
+    print("Step 6g: Withholding private addresses ...")
+    df = private_addresses.apply_to_events(df)
 
     # Step 7: For kingdoms whose calendars import from a Google Calendar
     # (and therefore lose the original WordPress event URL), backfill the

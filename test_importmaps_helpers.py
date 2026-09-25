@@ -230,8 +230,15 @@ class TestLoadLocalCalendars(unittest.TestCase):
         )
         self.assertEqual(m.load_local_calendars(p), [
             {"id": "abc@group.calendar.google.com",
-             "source": "Barony of Storvik", "type": "baronial"},
+             "source": "Barony of Storvik", "type": "baronial", "aggregator": False},
         ])
+
+    def test_aggregator_type_is_flagged(self):
+        p = self._write(
+            "kingdom,group,type,calendar_id,website,social,date_last_checked\n"
+            "Kingdom of Northshield,SE Wisconsin Armored Combat,aggregator,xyz@group.calendar.google.com,,,\n"
+        )
+        self.assertTrue(m.load_local_calendars(p)[0]["aggregator"])
 
     def test_skips_rows_missing_id_or_group(self):
         p = self._write(

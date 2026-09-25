@@ -129,15 +129,15 @@ class TestLocationCorrections(_TmpDirMixin):
 
     def test_keyword_matches_location_field(self):
         # The venue is named in the LOCATION field, not the title — the correction
-        # must still fire (the Caer Anterth Mawr "the roost" case).
-        self._corrections([{"source": "Barony of Caer Anterth Mawr", "keywords": "roost",
-                            "lat": "42.887382", "lng": "-88.286"}])
+        # must still fire (a venue known only by name, e.g. "the nest").
+        self._corrections([{"source": "Barony of Example", "keywords": "nest",
+                            "lat": "42.5", "lng": "-88.5"}])
         df = _df([{"title": "Thursday Fighter Practice",
-                   "source": "Barony of Caer Anterth Mawr",
-                   "location": "The Roost, 123 Main St, Town WI",
+                   "source": "Barony of Example",
+                   "location": "The Nest, 123 Main St, Town WI",
                    "clean_location": "123 Main St, Town WI"}])
         out = clean.apply_location_corrections(df)
-        self.assertAlmostEqual(float(out.iloc[0]["lat"]), 42.887382, places=5)
+        self.assertAlmostEqual(float(out.iloc[0]["lat"]), 42.5, places=5)
         self.assertEqual(out.iloc[0]["geocode_status"], "override")
 
     def test_kingdom_cross_listing_pinned_to_real_site(self):

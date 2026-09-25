@@ -198,6 +198,48 @@ this approximately — check with locals" note on the popup. A precise
 
 ---
 
+## Removing a private address — `private_addresses.csv`
+
+When a site owner asks for their address to come off the map but calendars
+still publish it, add it to the blocklist. Run this on your computer, writing
+the address the way the calendars write it:
+
+```bash
+python private_addresses.py add "123 Example Rd" "Sampletown, WI" 42.85 -88.32 "Owner asked 2026-09"
+```
+
+The arguments are: the address, what to show instead, a deliberately coarse
+public pin (the town, a park), and a note. Add the venue's name separately if
+calendars use it alone ("The Nest").
+
+- The file stores only a **fingerprint** (one-way hash) of the address's words,
+  never the address itself, so the blocklist doesn't publish what it hides.
+  Matching ignores case, spacing and punctuation.
+- Every run, any event whose title, location or description mentions the
+  address has that text replaced and is pinned at your public spot (no
+  geocoding). The last pipeline step also scrubs it from every committed
+  `*_cache.json`, so it can't come back from the next calendar download.
+- Commit `private_addresses.csv` and push; the next refresh applies it.
+- Limits: old git history still contains earlier copies; removing those needs
+  a history rewrite. A fingerprint of a short, guessable phrase (a venue name)
+  could be guessed, so treat it as "not displayed", not as a secret.
+
+---
+
+## Regional aggregator calendars — `type = aggregator` in `locals.csv`
+
+Some calendars re-post other groups' events (a regional fighters' calendar, say).
+Add them to `locals.csv` like any feed, with `type` = `aggregator` and
+`location` = `No location` (so the aggregator gets no "?" pin of its own).
+
+Each of its events is **dropped** if a group's own calendar already lists it:
+same day, similar title (shared words covering at least half of the longer
+title; "practice", "recurring", etc. ignored) and a compatible venue. What's
+left is information the groups' own calendars don't carry, which stays on the
+map under the aggregator's name.
+
+---
+
 ## Big wars with their own websites — `wars.csv`
 
 Gulf Wars, Pennsic and Lilies are listed on several kingdom calendars, each with

@@ -56,6 +56,7 @@ annotations in the Actions run summary.
 | `calendars.csv` | Kingdom feed list — one row per kingdom (`id,source,type`). |
 | `locals.csv` | Local-group registry — one row per known local group: its calendar feed (or `No Calendar Listed`/`No Calendar Available`; `No location` on a secondary feed = import its events but show no pin), plus type/website/social/`date_last_checked` and the placeholder-pin `location`/`lat`/`lng`. Add a group here, no code change needed. |
 | `event_overrides.csv` | Hand-maintained event corrections (see EDITING_EVENTS.md). |
+| `private_addresses.csv` | Fingerprinted blocklist of addresses owners asked us to remove; scrubbed from events and caches every run (see EDITING_EVENTS.md). |
 | `wars.csv` | Big wars with their own site + website (Gulf Wars, Pennsic, Lilies): merges their kingdom listings into one event (see EDITING_EVENTS.md). |
 | `sca_events_clean.csv` | The cleaned, geocoded events the map serves. **Generated — don't hand-edit.** |
 | `territory_kingdoms.csv` | Kingdom-colour overlay assignments (state/county/province/country → kingdom). Edit + reload for US rows; re-run `build_world_kingdoms.py` for province/country rows (see MAINTAINING.md). |

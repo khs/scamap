@@ -105,6 +105,10 @@ STEPS = [
     # map can size + colour the oversized war pin straight from the war_host
     # column. Runs after geocoding because it needs the events' coordinates.
     ("Tagging war host kingdoms",                        "annotate_war_hosts.py"),
+    # Last: strip any address on the private_addresses.csv blocklist from every
+    # file the cron commits (events CSV + all *_cache.json), so a calendar that
+    # still publishes it can't put it back on the site or in the repo.
+    ("Withholding private addresses",                    "private_addresses.py"),
     # NOTE: group placeholder-pin locations now live in locals.csv (the lat/lng
     # columns), hand-maintained rather than geocoded, so build_group_pins.py is
     # no longer part of the pipeline.
