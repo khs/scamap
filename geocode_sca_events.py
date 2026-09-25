@@ -96,6 +96,13 @@ USER_AGENT = geocoder.USER_AGENT
 # (1 = save after every geocode, higher = faster but more data loss if interrupted)
 SAVE_EVERY_N = 10
 
+# Wall-clock cap on NEW lookups per run (Nominatim runs at ~4 req/min). A big
+# batch of new feeds can bring 100+ unseen addresses; without a cap the refresh
+# job could hit its 3-hour limit and commit nothing, then start over next time.
+# Stopping early lets the run commit its progress; the rest are geocoded on the
+# following runs from where this one stopped.
+GEOCODE_TIME_BUDGET_MIN = float(os.getenv("GEOCODE_TIME_BUDGET_MIN", "100"))
+
 
 # Regex matching "<digit(s)> <Street Name> <street suffix>" — used by the
 # retry fallback to strip a leading venue name like "Burger's Lake 1200 …"
@@ -958,8 +965,16 @@ def main(retry_failed: bool = False):
     print(f"Starting geocoding {total} addresses ...\n")
 
     status_counts = {"ok": 0, "ok_retry": 0, "ok_photon": 0, "failed": 0}
+    deadline = time.time() + GEOCODE_TIME_BUDGET_MIN * 60
 
     for i, idx in enumerate(indices, start=1):
+        if time.time() >= deadline:
+            # Out of time for this run: stop cleanly so the refresh still
+            # finishes and commits. Rows not reached keep a blank status and
+            # are picked up next run (everything resolved so far is cached).
+            print(f"\n  Time budget ({GEOCODE_TIME_BUDGET_MIN:g} min) reached: "
+                  f"{total - i + 1} address(es) left for the next run.")
+            break
         row = df.loc[idx]
         address = str(row.get("clean_location", "")).strip()
         source  = str(row.get("source", "")).strip()

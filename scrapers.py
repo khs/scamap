@@ -17,6 +17,12 @@ Supported sources, recognised by URL prefix in calendars.csv:
                              <site-url>/wp-json/tribe/events/v1/events
                              and synthesise ICS from the JSON.
 
+    mycal:<page-url>       — the My Calendar WordPress plugin's REST API
+                             (recovers venues typed into the description).
+
+    (plus calon-json:, nuevent:, mec-rest:, eventprime:, drachenwald-json: —
+    see maybe_scrape. find_calendars.py detects which one a site needs.)
+
 URLs without one of these prefixes are returned to the caller unchanged
 (handled by ImportMaps.fetch_ics directly — Google Calendar IDs / direct ICS).
 
@@ -1090,6 +1096,151 @@ def scrape_drachenwald_json(url: str, name: str) -> Optional[str]:
 
 
 # ---------------------------------------------------------------------------
+# My Calendar (WordPress plugin by Joe Dolson) — REST API
+# ---------------------------------------------------------------------------
+#
+# My Calendar publishes /wp-json/my-calendar/v1/events?from=&to=, returning
+# every occurrence (recurrences already expanded) keyed by day, with true-UTC
+# timestamps (ts_occur_begin/end) and structured venue fields. Its iCal feed
+# (/feed/my-calendar-ics/) exists too, but ships an empty LOCATION and puts the
+# text only in an HTML X-ALT-DESC — which the importer can't use, so the REST
+# API is the better source.
+#
+# Many groups leave the venue fields blank and type the address into the
+# description ("Ovation Playhouse / 75 Stark St / Hudson PA 18705"), so
+# address_from_text() recovers it; without a location a local-group event would
+# be dropped by the importer.
+
+MYCAL_WINDOW_DAYS = 800   # ask for plenty; the importer trims to its own window
+
+_STREET_TYPES = (r"road|rd|street|st|avenue|ave|drive|dr|lane|ln|boulevard|blvd|way|"
+                 r"court|ct|place|pl|highway|hwy|parkway|pkwy|circle|cir|trail|trl|"
+                 r"pike|terrace|ter|square|sq|route|rte")
+_STREET_LINE_RE = re.compile(
+    rf"^\d+[A-Za-z]?\s+(?:[NSEW]\.?\s+)?[\w.'\- ]*?\b(?:{_STREET_TYPES})\b\.?", re.I)
+# "Hudson PA 18705", "Hudson, PA", "Hudson, Pennsylvania 18705"
+_TOWN_LINE_RE = re.compile(r"\b[A-Z]{2}\.?,?\s+\d{5}(?:-\d{4})?\b|,\s*[A-Z]{2}\b|\b\d{5}(?:-\d{4})?\b")
+_ONE_LINE_ADDRESS_RE = re.compile(
+    rf"\b\d+[A-Za-z]?\s+[\w.'\- ]+?\b(?:{_STREET_TYPES})\b\.?[\s,]+"
+    r"[A-Za-z][A-Za-z .'\-]*?,?\s+[A-Z]{2}\.?,?\s+\d{5}(?:-\d{4})?\b", re.I)
+
+
+def address_from_text(text: str) -> str:
+    """Find a postal address in free text — for calendars that type the venue
+    into the event description instead of the location field. Handles a
+    multi-line block ("Venue / 75 Stark St / Hudson PA 18705") and a one-line
+    "75 Stark St, Hudson PA 18705". A street with no town or ZIP is too
+    ambiguous to geocode, so it's ignored. Returns '' when nothing is found."""
+    text = re.sub(r"<br\s*/?>|</p>|</div>", "\n", text or "", flags=re.I)
+    text = re.sub(r"<[^>]+>", " ", text)
+    lines = [re.sub(r"\s+", " ", ln).strip() for ln in re.split(r"[\r\n]+", text)]
+    lines = [ln for ln in lines if ln]
+    for i, line in enumerate(lines):
+        if not _STREET_LINE_RE.match(line):
+            continue
+        parts = [line]
+        if not _TOWN_LINE_RE.search(line):
+            if i + 1 < len(lines) and _TOWN_LINE_RE.search(lines[i + 1]):
+                parts.append(lines[i + 1])
+            else:
+                continue
+        # A short, number-free line just above is the venue's name.
+        if i > 0 and len(lines[i - 1]) <= 60 and not re.search(r"\d", lines[i - 1]):
+            parts.insert(0, lines[i - 1])
+        return ", ".join(parts)
+    m = _ONE_LINE_ADDRESS_RE.search(" ".join(lines))
+    return m.group(0).strip() if m else ""
+
+
+def _mycal_location(rec: dict) -> str:
+    """Structured venue from a My Calendar record, or '' if it has none."""
+    town = " ".join(p for p in (rec.get("event_state"), rec.get("event_postcode")) if p)
+    parts = [rec.get("event_label"), rec.get("event_street"), rec.get("event_street2"),
+             rec.get("event_city"), town, rec.get("event_country")]
+    parts = [str(p).strip() for p in parts if p and str(p).strip()]
+    # A bare venue name with no street/town isn't geocodable on its own.
+    return ", ".join(parts) if len(parts) >= 2 else ""
+
+
+def _html_to_text(html: str) -> str:
+    text = re.sub(r"<br\s*/?>|</p>|</div>|</li>", "\n", html or "", flags=re.I)
+    text = re.sub(r"<[^>]+>", " ", text)
+    from html import unescape
+    text = unescape(text)
+    return re.sub(r"[ \t]+", " ", re.sub(r"\s*\n\s*", "\n", text)).strip()
+
+
+def _parse_mycal_records(data, page_url: str) -> list[dict]:
+    """Pure: My Calendar REST JSON (a {day: [occurrence, ...]} dict, or a
+    plain list) -> event dicts for _emit_calendar."""
+    records = ([r for day in data.values() for r in (day if isinstance(day, list) else [day])]
+               if isinstance(data, dict) else list(data or []))
+    events, seen = [], set()
+    for rec in records:
+        if not isinstance(rec, dict):
+            continue
+        occ = str(rec.get("occur_id") or "")
+        if not occ or occ in seen:
+            continue
+        seen.add(occ)
+        # Drafts / unapproved / trashed events stay off the map.
+        if str(rec.get("event_approved", "1")) != "1" or str(rec.get("event_status", "1")) != "1":
+            continue
+        # Local wall-clock times (naive), NOT the UTC timestamps: the importer
+        # keeps each event's local time so the stored date is the day it
+        # happens — a 7 PM practice in UTC would land on the next day.
+        try:
+            start = datetime.fromisoformat(str(rec["occur_begin"]).strip())
+            end = datetime.fromisoformat(str(rec.get("occur_end") or rec["occur_begin"]).strip())
+        except (KeyError, TypeError, ValueError):
+            continue
+        raw_desc = rec.get("event_desc") or rec.get("event_short") or ""
+        location = _mycal_location(rec) or address_from_text(raw_desc)
+        sep = "&" if "?" in page_url else "?"
+        events.append({
+            "uid": f"mycal-{occ}-{rec.get('event_id', '')}@{urlparse(page_url).netloc}",
+            "start": start,
+            "end": end,
+            "summary": _html_to_text(rec.get("event_title") or ""),
+            "location": location,
+            "description": _html_to_text(raw_desc),
+            # The event's own external link if it has one, else My Calendar's
+            # single-event view of this occurrence on the calendar page.
+            "url": (rec.get("event_link") or "").strip() or f"{page_url}{sep}mc_id={occ}",
+        })
+    return events
+
+
+def scrape_my_calendar(page_url: str, name: str) -> Optional[str]:
+    """Pull events from a My Calendar site's REST API. `page_url` is the page
+    that shows the calendar; the REST root is read from its <link
+    rel="https://api.w.org/"> tag, so sites installed in a subfolder work."""
+    session = requests.Session()
+    try:
+        page = _http_get(page_url, session=session)
+    except requests.RequestException as exc:
+        print(f"  WARNING: My Calendar page fetch failed for {name}: {exc}")
+        return None
+    m = re.search(r'<link[^>]+rel="https://api\.w\.org/"[^>]+href="([^"]+)"', page.text or "")
+    root = m.group(1) if m else urljoin(page_url, "/wp-json/")
+    today = datetime.now(timezone.utc).date()
+    params = {"from": (today - timedelta(days=1)).isoformat(),
+              "to": (today + timedelta(days=MYCAL_WINDOW_DAYS)).isoformat()}
+    try:
+        resp = _http_get(root.rstrip("/") + "/my-calendar/v1/events", session=session,
+                         expect_json=True, params=params)
+        resp.raise_for_status()
+        data = resp.json()
+    except (requests.RequestException, ValueError) as exc:
+        print(f"  WARNING: My Calendar REST fetch failed for {name}: {exc}")
+        return None
+    events = _parse_mycal_records(data, page_url)
+    if not events:
+        return None
+    return _emit_calendar(name, events)
+
+
+# ---------------------------------------------------------------------------
 # Dispatch — public entry point used by ImportMaps.fetch_ics
 # ---------------------------------------------------------------------------
 
@@ -1100,7 +1251,7 @@ def scrape_drachenwald_json(url: str, name: str) -> Optional[str]:
 # prefix here and a branch in maybe_scrape — nothing in ImportMaps to touch.
 SCRAPER_PREFIXES = (
     "simcal:", "tribe-rest:", "calon-json:", "nuevent:", "mec-rest:",
-    "eventprime:", "drachenwald-json:",
+    "eventprime:", "drachenwald-json:", "mycal:",
 )
 
 
@@ -1123,6 +1274,7 @@ def maybe_scrape(calendar_id: str, source_name: str) -> Optional[str]:
         mec-rest:<base-site-url>
         eventprime:<base-site-url>
         drachenwald-json:<json-feed-url>
+        mycal:<calendar-page-url>           (My Calendar WordPress plugin)
     """
     if calendar_id.startswith("simcal:"):
         return scrape_simple_calendar(calendar_id[len("simcal:"):], source_name)
@@ -1138,4 +1290,6 @@ def maybe_scrape(calendar_id: str, source_name: str) -> Optional[str]:
         return scrape_eventprime(calendar_id[len("eventprime:"):], source_name)
     if calendar_id.startswith("drachenwald-json:"):
         return scrape_drachenwald_json(calendar_id[len("drachenwald-json:"):], source_name)
+    if calendar_id.startswith("mycal:"):
+        return scrape_my_calendar(calendar_id[len("mycal:"):], source_name)
     return None

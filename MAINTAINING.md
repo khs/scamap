@@ -146,8 +146,29 @@ Google-Calendar or ICS feed:
   local groups.
 
 For either file, the `id`/`calendar_id` is the Google-Calendar ICS id/URL; a
-WordPress site may need a scraper prefix (`scrapers.py` lists them, and
-`reference/probe_baronial_calendars.py` can hunt for a feed). Source/group
+WordPress site may need a scraper prefix (`scrapers.py` lists them).
+
+**Finding a group's feed: `find_calendars.py`.** Give it the group's website
+and it looks for an importable calendar behind the page, checks it through the
+real importer, and prints the exact `calendar_id` to paste:
+
+```bash
+python find_calendars.py https://ansteorra.org/elfsea/
+```
+
+It recognises embedded / linked Google Calendars (including the event links
+Simple Calendar prints, which encode the calendar's ID), and the WordPress
+plugins My Calendar, The Events Calendar, Modern Events Calendar, EventPrime,
+Event Organiser and Events Manager, plus Outlook published calendars and any
+`.ics` link. Each find is marked `own` (import it), `empty` (public but nothing
+scheduled yet), `no-location`, `kingdom` (the site embeds the kingdom calendar,
+so it would only duplicate), `duplicate` (already used by another feed),
+`holiday`, or `failed` (not public).
+
+`python find_calendars.py --sweep [kingdom …]` checks every group still marked
+`No Calendar Listed` / `No Calendar Available`, writing all results to
+`calendar_candidates.csv`; add `--apply` to fill the `own` ones into
+`locals.csv` (only those rows are touched). Source/group
 names must match the names used elsewhere (the colour map in `index.html`, the
 home-state tables in `kingdoms.py`). After adding, run the workflow once and
 check the new group's events appear.

@@ -35,6 +35,11 @@ in calendars.csv. Re-run if a batch of new baronies stand up websites.
 
 probe_baronial_calendars.py
 ---------------------------
+SUPERSEDED by find_calendars.py in the project root (more platforms, checks
+each feed through the real importer, and writes locals.csv's current format;
+this script appends rows in an old 7-column layout that would now corrupt
+locals.csv). Kept for reference only.
+
 Walks the baronies in group_locations.csv for a configurable set of kingdoms
 and hunts for any ICS or scrape-able calendar feed: Tribe Events `?ical=1`,
 R34 plugin, MEC, Simple Calendar, embedded Google Calendar URLs. Appends

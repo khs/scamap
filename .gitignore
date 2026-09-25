@@ -47,3 +47,6 @@ Thumbs.db
 
 # Readable private-address list: maintainer's computer only (see private_addresses.py)
 private_addresses.local.csv
+
+# find_calendars.py --sweep report (regenerated each run)
+calendar_candidates.csv
