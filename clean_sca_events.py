@@ -73,6 +73,8 @@ NON_EVENT_PATTERNS = [
     r"\breminder\b",
     r"\bdue\s+date\b",
     r"^cancelled\b",
+    # A calendar shared as free/busy only shows every entry as just "Busy".
+    r"^busy$",
 ]
 
 # "cancelled" / "canceled" as a whole word — a real cancellation marker. Matched
@@ -232,7 +234,8 @@ def is_cancelled(title, description="") -> bool:
 # before we fall a no-address baronial event back to its barony's coordinates, so
 # a video-call event never gets a physical pin. Mirrors the spec: the word
 # "virtual"/"online", a Zoom link, or a Google Meet link.
-_VIRTUAL_HINTS = ("virtual", "online", "zoom", "meet.google.com", "google meet")
+_VIRTUAL_HINTS = ("virtual", "online", "zoom", "meet.google.com", "google meet",
+                  "googlemeet", "microsoft teams", "teams.microsoft.com")
 
 
 def _looks_virtual(title, description) -> bool:
@@ -1226,7 +1229,12 @@ def deduplicate(df: pd.DataFrame) -> pd.DataFrame:
     df["_start_date"] = pd.to_datetime(df["start"], errors="coerce", format="mixed").dt.date
     df["_loc_key"] = df["clean_location"].fillna("").str.strip().str.lower()
 
+    # An online event's "location" ("Zoom", "Online") names no place, so two
+    # groups' different Zoom meetings on the same evening must not collapse
+    # into one: online events are never de-duplicated by location.
     has_loc = df["_loc_key"] != ""
+    if "is_virtual" in df.columns:
+        has_loc &= df["is_virtual"].astype(str) != "True"
     df_with_loc = df[has_loc].copy()
     df_no_loc   = df[~has_loc].copy()
 
@@ -2148,8 +2156,11 @@ def main():
     # there (set after the geocode merge by apply_baronial_coords) and marked
     # approximate — better than the coarse state centroid the next fallback gives.
     _src_coords = _load_source_coords()
+    # An online event never gets a physical pin: neither one the importer
+    # flagged virtual nor one whose text says so.
     baronial_fb = (df["address_confidence"] == "empty") & \
         (df["calendar_type"] == "baronial") & \
+        (df["is_virtual"].astype(str) != "True") & \
         df["source"].apply(lambda s: str(s).strip() in _src_coords) & \
         ~df.apply(lambda r: _looks_virtual(r.get("title"), r.get("description")), axis=1)
     df.loc[baronial_fb, "location_specificity"] = "vague"

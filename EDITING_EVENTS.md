@@ -188,13 +188,24 @@ Applied by `clean_sca_events.py` → `apply_location_corrections()` as **Step 6d
 
 ### Automatic fallback for address-less baronial events
 
-Separately, and with **no file to edit**: if a baronial event has no findable
-address and doesn't look virtual, the pipeline pins it at that barony's own
-coordinates (the same spot as its "?" placeholder pin) rather than dropping it or
-flinging it to a state centroid. Such pins are marked `geocode_status =
-ok_fallback` and `location_specificity = vague`, and the map shows a "we placed
-this approximately — check with locals" note on the popup. A precise
-`location_corrections` / `event_overrides` pin always wins over this fallback.
+Separately, and with **no file to edit**: if a local group's event has no
+findable address (including calendars that give no location at all) and isn't
+online, the pipeline pins it at that group's own coordinates in `locals.csv`
+(the same spot as its "?" placeholder pin, which then disappears because the
+group has events on the map). Such pins are marked `geocode_status =
+ok_fallback` and `location_specificity = vague`, and the popup says: "This
+group's calendar does not include precise location information - please check
+with the local group for details." A precise `location_corrections` /
+`event_overrides` pin always wins over this fallback. If the group has no
+coordinates in `locals.csv`, the event can't be placed and doesn't show.
+
+### Local groups' online events
+
+A local group's online meetings (Zoom, Google Meet, "virtual", …) are imported
+too. They never get a map pin; they're listed on the **Online Only** tab, but
+only when the map is zoomed in (zoom 8+, `LOCAL_ONLINE_MIN_ZOOM` in
+`index.html`) with that group's `locals.csv` pin in view, since they matter to
+people nearby. Kingdom-level online events show on that tab at any zoom.
 
 ---
 

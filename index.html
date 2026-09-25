@@ -405,6 +405,15 @@
       flex-shrink: 0;
     }
 
+    /* Online tab: note that local groups' meetings appear once zoomed in. */
+    .online-zoom-hint {
+      padding: 0.5rem 1rem;
+      font-size: 0.8rem;
+      font-style: italic;
+      color: #476369;
+      border-bottom: 1px solid var(--border-grey);
+    }
+
     .virtual-tag {
       display: inline-block;
       font-size: 0.62rem;
@@ -1116,6 +1125,7 @@ function warPinScale() { return MOBILE_MQ.matches ? WAR_PIN_SCALE_MOBILE : WAR_P
 // pin (like a war), coloured by its hosting kingdom (host_kingdom = the territory
 // it sits in; precomputed in annotate_war_hosts.py).
 const BIG_PIN_MIN_CALENDARS = 4;
+const BIG_PIN_MIN_KINGDOM_CALENDARS = 3;   // ...of which at least this many are kingdom calendars
 
 // ── Cluster icon ─────────────────────────────────────────────────
 // "Number events in the same location" collapses co-located markers into one
@@ -1425,7 +1435,7 @@ function buildPopup(ev) {
   // coordinates and flagged "vague" by the pipeline. Warn the reader (verbatim copy
   // from the maintainer) so the approximate pin isn't mistaken for an exact one.
   const vague = /^vague$/i.test(ev.location_specificity || '')
-    ? `<p class="vague-warn" style="margin:0 0 0.5rem;"><strong>EventScout placed a marker in what we believe is the correct area, but could not find an exact address for this event. Please check with locals.</strong></p>`
+    ? `<p class="vague-warn" style="margin:0 0 0.5rem;"><strong>This group's calendar does not include precise location information - please check with the local group for details.</strong></p>`
     : '';
   // A wars.csv placeholder: no kingdom calendar lists this war yet, so the dates
   // are the usual time of year, not this year's real dates.
@@ -1768,6 +1778,9 @@ function buildPlaceholderPopup(pin, onlineEvents) {
 
 // ── Render ────────────────────────────────────────────────────────
 let sidebarMode = "map";  // "map" or "online"
+// A local group's online meetings are listed on the Online tab only from this
+// zoom in (≈ a region a few hundred km across), with the group's pin in view.
+const LOCAL_ONLINE_MIN_ZOOM = 8;
 let lastFiltered = [];    // last filtered+sorted events, reused for viewport re-renders
 
 // Colour-key filter: the legend doubles as a filter. `legendFilter` holds the
@@ -1823,7 +1836,12 @@ function crossListedGroups(events) {
       const members = evs.filter((__, j) => i === j || sharedTokens(toks[i], toks[j]) >= 2);
       if (members.length > best.length) best = members;
     });
-    if (new Set(best.map(e => e.source)).size < BIG_PIN_MIN_CALENDARS) return;
+    // Big means big across KINGDOMS: at least BIG_PIN_MIN_KINGDOM_CALENDARS of
+    // the calendars must be kingdom calendars. A practice that a barony and its
+    // three cantons all list (NYC's) is still a local practice.
+    const sources = new Set(best.map(e => e.source));
+    const kingdomSources = new Set(best.filter(e => e.calendar_type === 'kingdom').map(e => e.source));
+    if (sources.size < BIG_PIN_MIN_CALENDARS || kingdomSources.size < BIG_PIN_MIN_KINGDOM_CALENDARS) return;
     // Colour by the territory the event sits in (host_kingdom), like a war pin.
     const host = best.map(e => e.host_kingdom).find(h => h && KINGDOM_COLORS[h]);
     if (host) out.push({ members: best, host });
@@ -2170,22 +2188,31 @@ function renderSidebarList() {
         return marker && bounds.contains(marker.getLatLng());
       })
     : lastFiltered.filter(ev => {
-        // Online tab: kingdom-level online events always show; a baronial online
-        // event shows only when its parent group sits in the current view (or we
-        // couldn't locate the group — then we don't hide it).
+        // Online tab: kingdom-level online events always show. A local group's
+        // online event only matters to people near that group, so it shows only
+        // when you're zoomed in (LOCAL_ONLINE_MIN_ZOOM) with the group's pin in
+        // view — and not at all if we can't place the group.
         if (ev.calendar_type !== 'baronial') return true;
-        if (ev._parentLat == null) return true;
+        if (ev._parentLat == null) return false;
+        if (map.getZoom() < LOCAL_ONLINE_MIN_ZOOM) return false;
         return bounds.contains([ev._parentLat, ev._parentLng]);
       });
+  const hiddenLocalOnline = !inMapMode && map.getZoom() < LOCAL_ONLINE_MIN_ZOOM
+    && lastFiltered.some(ev => ev.calendar_type === 'baronial' && ev._parentLat != null);
 
+  // On the Online tab, say that local groups' meetings appear once zoomed in.
+  const zoomHint = hiddenLocalOnline
+    ? `<div class="online-zoom-hint">Zoom in on an area to also see local groups' online meetings there.</div>`
+    : '';
   if (shown.length === 0) {
     const msg = inMapMode
       ? 'No events in this part of the map — zoom out or pan.'
       : (lastFiltered.length
           ? 'No online events for groups in this map view — zoom out or pan.'
           : 'No online events match your search.');
-    list.innerHTML = `<div style="padding:1rem;color:#888;font-style:italic;font-size:0.85rem;">${msg}</div>`;
+    list.innerHTML = zoomHint + `<div style="padding:1rem;color:#888;font-style:italic;font-size:0.85rem;">${msg}</div>`;
   } else {
+    if (zoomHint) list.insertAdjacentHTML('beforeend', zoomHint);
     shown.forEach(ev => {
       const color = eventColor(ev);
       const item = document.createElement('div');

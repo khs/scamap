@@ -77,6 +77,12 @@ VIRTUAL_KEYWORDS = [
     "virtual",
     "online",
     "zoom",
+    # Video-call platforms, as calendars actually write them ("Via GoogleMeet").
+    "google meet",
+    "googlemeet",
+    "meet.google.com",
+    "microsoft teams",
+    "teams.microsoft.com",
 ]
 # "discord", "remote", "livestream", "live stream" deliberately NOT here -- they
 # are weak signals dominated by false positives. SCA groups routinely run their
@@ -417,7 +423,7 @@ def fetch_all_events(calendars: list[dict]) -> list[dict]:
         components = expand_events(cal, TODAY, end_date, calendar["source"])
 
         count = 0
-        skipped_virtual = 0
+        n_virtual = n_no_location = 0
 
         for component in components:
             if component.name != "VEVENT":
@@ -432,13 +438,14 @@ def fetch_all_events(calendars: list[dict]) -> list[dict]:
 
             virtual = is_virtual_event(title, location, desc)
 
-            # Baronial: skip virtual events and events with no location
+            # Local groups' online events and location-less events are kept:
+            # the map lists a group's online meetings on the Online tab when
+            # you're zoomed in near the group, and clean_sca_events pins a
+            # location-less event at the group's own spot (with a "check with
+            # the local group" note). Both used to be dropped here.
             if is_baronial:
-                if virtual:
-                    skipped_virtual += 1
-                    continue
-                if not location:
-                    continue
+                n_virtual += bool(virtual)
+                n_no_location += not location and not virtual
 
             all_events.append({
                 "title":         title,
@@ -459,8 +466,10 @@ def fetch_all_events(calendars: list[dict]) -> list[dict]:
             })
             count += 1
 
-        skip_note = f" ({skipped_virtual} virtual skipped)" if skipped_virtual else ""
-        print(f"  → {count} events collected{skip_note}")
+        notes = [f"{n} {what}" for n, what in ((n_virtual, "online"),
+                                               (n_no_location, "without a location"))
+                 if n]
+        print(f"  → {count} events collected" + (f" ({', '.join(notes)})" if notes else ""))
 
     # Hand the failed-source list to clean_sca_events (always rewrite it, even
     # when empty, so a stale file from a previous run can't carry events forward

@@ -1,7 +1,7 @@
 kingdom,group,type,calendar_id,website,social,date_last_checked,location,lat,lng
 Kingdom of AEthelmearc,Barony of Blackstone Mountain,barony,https://calendar.google.com/calendar/ical/c_d6453db8285ea1492aab076fe4949bcacfb84af6b4ac35188ca7b0e1bbeba2f2%40group.calendar.google.com/public/basic.ics,https://blackstonemountain.aethelmearc.org/index.html,,2026-06-22,"South-Central, WV",39.34563,-81.522901
 Kingdom of AEthelmearc,Barony of Delftwood,barony,https://calendar.google.com/calendar/ical/bni344ah5mpqqut0m4b3gsshos%40group.calendar.google.com/public/basic.ics,http://delftwood.aethelmearc.org/,,2026-06-22,"Syracuse, NY",43.048122,-76.147424
-Kingdom of AEthelmearc,Barony of Endless Hills,barony,mycal:https://endlesshills.aethelmearc.org/calendar-events/,http://endlesshills.aethelmearc.org/,,2026-09-25,"Northeastern, PA",40.064833,-76.715664
+Kingdom of AEthelmearc,Barony of Endless Hills,barony,mycal:https://endlesshills.aethelmearc.org/calendar-events/,http://endlesshills.aethelmearc.org/,,2026-09-25,Northeastern Pennsylvania (Scranton / Wilkes-Barre area),41.408969,-75.662412
 Kingdom of AEthelmearc,Barony of Rhydderich Hael,barony,https://calendar.google.com/calendar/ical/c_hk52o44q9htpbnme5lrhh07cms%40group.calendar.google.com/public/basic.ics,http://hael.aethelmearc.org/,,2026-06-22,"Niagara Frontier, NY",42.919431,-78.830998
 Kingdom of AEthelmearc,Barony of St. Swithin’s Bog,barony,https://calendar.google.com/calendar/ical/c_8d6a8f3d25875c3a684c1b9d9183385297df27a629a58cf35e5df3ca84929486%40group.calendar.google.com/public/basic.ics,http://stswithinsbog.aethelmearc.org/,,2026-06-22,"Cambria, Somerset, Bedford and Westmoreland Co, PA",40.24118,-78.880202
 Kingdom of AEthelmearc,Barony of Thescorre,barony,https://calendar.google.com/calendar/ical/thescorre%40aethelmearc.org/public/basic.ics,http://thescorre.aethelmearc.org/,,2026-06-22,"Rochester, NY",43.157285,-77.615214
@@ -76,7 +76,7 @@ Kingdom of An Tir,Shire of Thornwold,shire,No Calendar Available,http://thornwol
 Kingdom of An Tir,Shire of Tir Bannog,shire,No Calendar Listed,https://antir.org/branches/kingdom-of-an-tir/principality-of-tir-righ/shire-of-tir-bannog/,,2026-06-22,"Prince George, BC, Canada",53.912864,-122.74537
 Kingdom of An Tir,Shire of Tymberhavene,shire,No Calendar Available,https://tymberhavene.antir.org/,,2026-06-22,"Klamath Falls, OR",42.224867,-121.78167
 Kingdom of Ansteorra,Barony of Bjornsborg,barony,https://calendar.google.com/calendar/ical/c_e863653ceb37804fdc9176f7fdcdf4900285828b8883122a9ed647b45e2761b6%40group.calendar.google.com/public/basic.ics,https://ansteorra.org/bjornsborg,,2026-06-22,"San Antonio, Texas",29.4246,-98.495141
-Kingdom of Ansteorra,Barony of Bonwicke,barony,No Calendar Listed,https://ansteorra.org/bonwicke,,2026-06-22,"Lubbock, Texas",33.585568,-101.847021
+Kingdom of Ansteorra,Barony of Bonwicke,barony,https://calendar.google.com/calendar/ical/webminister%40bonwicke.ansteorra.org/public/basic.ics,https://ansteorra.org/bonwicke,,2026-09-25,"Lubbock, Texas",33.585568,-101.847021
 Kingdom of Ansteorra,Barony of Bordermarch,barony,https://calendar.google.com/calendar/ical/webminister%40bordermarch.ansteorra.org/public/basic.ics,https://ansteorra.org/bordermarch,,2026-06-22,"Beaumont, Texas",30.082934,-94.098428
 Kingdom of Ansteorra,Barony of Bryn Gwlad,barony,https://calendar.google.com/calendar/ical/webminister%40bryn-gwlad.ansteorra.org/public/basic.ics,https://ansteorra.org/bryn-gwlad,,2026-06-22,"Austin, Texas",30.271129,-97.7437
 Kingdom of Ansteorra,Barony of Elfsea,barony,https://calendar.google.com/calendar/ical/elfsea.ansteorra.org_ghoosc4f2mg7ovhfdi4mpe5qng%40group.calendar.google.com/public/basic.ics,https://ansteorra.org/elfsea/,,2026-09-25,"Fort Worth, Texas",32.753177,-97.332746
@@ -93,8 +93,8 @@ Kingdom of Ansteorra,Canton of Myrgenfeld,canton,No Calendar Listed,https://anst
 Kingdom of Ansteorra,Canton of Skorragarðr,canton,No Calendar Listed,https://ansteorra.org/skorragardr/,,2026-06-22,"Shawnee, Oklahoma",35.327293,-96.9253
 Kingdom of Ansteorra,Province of Mooneschadowe,province,https://calendar.google.com/calendar/ical/seneschal-er%40mooneschadowe.ansteorra.org/public/basic.ics,https://ansteorra.org/mooneschadowe/,,2026-09-25,"Stillwater, Oklahoma",36.115631,-97.058572
 Kingdom of Ansteorra,Riding of Marata,riding,No Calendar Listed,https://ansteorra.org/marata/,,2026-06-22,"Enid, Oklahoma",36.396762,-97.879134
-Kingdom of Ansteorra,Shire of Adlersruhe,shire,No Calendar Listed,https://ansteorra.org/adlersruhe/,,2026-06-22,"Amarillo, Texas",35.20729,-101.837119
-Kingdom of Ansteorra,Shire of Brad Leah,shire,No Calendar Listed,https://ansteorra.org/brad-leah,,2026-06-22,"Wichita Falls, Texas",33.900457,-98.502078
+Kingdom of Ansteorra,Shire of Adlersruhe,shire,https://calendar.google.com/calendar/ical/seneschal%40adlersruhe.ansteorra.org/public/basic.ics,https://ansteorra.org/adlersruhe/,,2026-09-25,"Amarillo, Texas",35.20729,-101.837119
+Kingdom of Ansteorra,Shire of Brad Leah,shire,https://calendar.google.com/calendar/ical/webminister%40brad-leah.ansteorra.org/public/basic.ics,https://ansteorra.org/brad-leah,,2026-09-25,"Wichita Falls, Texas",33.900457,-98.502078
 Kingdom of Ansteorra,Shire of Ffynnon Gath,shire,https://calendar.google.com/calendar/ical/c_bd804455995783731ffed4a340159026180218b12089ba423db6ea0b9d12bba8%40group.calendar.google.com/public/basic.ics,https://ansteorra.org/ffynnon-gath/,,2026-09-25,"San Marcos, Texas",29.882644,-97.940583
 Kingdom of Ansteorra,Shire of Graywood,shire,https://calendar.google.com/calendar/ical/8b12875c8b9f74c7f3f6c29920a550691b26465ffb414eab4a802688030c1401%40group.calendar.google.com/public/basic.ics,https://ansteorra.org/graywood/,,2026-09-25,"Lufkin, Texas",31.338624,-94.728856
 Kingdom of Ansteorra,Shire of Rosenfeld,shire,No Calendar Listed,https://ansteorra.org/rosenfeld,,2026-06-22,"Tyler, Texas",32.35126,-95.301062
@@ -172,7 +172,7 @@ Kingdom of Avacal,Barony of Montengarde – events,barony,https://calendar.googl
 Kingdom of Avacal,Barony of Myrgan Wood,barony,No Calendar Available,http://www.myrganwood.org/,,2026-06-22,Saskatoon,52.131802,-106.660767
 Kingdom of Avacal,Shire of Ayresgarde,shire,No Calendar Listed,https://www.facebook.com/groups/Ayresgarde/&ved=2ahUKEwje9taXpN2TAxVQv4kEHaNAIrYQFnoECBwQAQ&usg=AOvVaw3hNmWbioYbU_NtjDkwYrPg,,2026-06-22,"Cranbrook and Kimberly, BC and area",49.510748,-115.767277
 Kingdom of Avacal,Shire of Bordergate,shire,No Calendar Listed,https://quadwar.avacal.org/shire-of-bordergate/,,2026-06-22,"Cold Lake, AB and area",54.46046,-110.192871
-Kingdom of Avacal,Shire of Sigelhundas,shire,No Calendar Available,https://sigelhundas.avacal.org/,,2026-06-22,"Regina, SK and area",50.447973,-104.615876
+Kingdom of Avacal,Shire of Sigelhundas,shire,https://outlook.office365.com/owa/calendar/52018fc091cd4723bf0c32ec5f039591@sigelhundas.org/93b5a894ec2a42439c61a13fa3d2d2998897842732211213587/calendar.ics,https://sigelhundas.avacal.org/,,2026-09-25,"Regina, SK and area",50.447973,-104.615876
 Kingdom of Avacal,Shire of Valley Wold,shire,No Calendar Listed,https://www.facebook.com/groups/valleywold,,2026-06-22,"Moose Jaw, SK and area",50.396721,-105.535666
 Kingdom of Avacal,Shire of Vinjar,shire,No Calendar Listed,https://www.facebook.com/groups/274358419340188,,2026-06-22,"Grande Prairie, AB and area",55.17108,-118.794987
 Kingdom of Avacal,Shire of Windwyrm,shire,No Calendar Listed,https://shire-of-windwyrm.carrd.co/,,2026-06-22,"Lethbridge, AB and area",49.842087,-112.678755
@@ -208,7 +208,7 @@ Kingdom of Calontir,Shire of Lost Moor,shire,No Calendar Available,https://lostm
 Kingdom of Calontir,Shire of Amlethsmor,shire,No Calendar Available,http://www.amlesmore.org/meetings.htm,,,"Hallsville, MO",39.119444,-92.226667
 Kingdom of Drachenwald,Barony of Aarnimetsä,barony,No Calendar Listed,http://www.aarnimetsa.org,,2026-06-22,"Helsinki, Finland",60.16662,24.943541
 Kingdom of Drachenwald,Barony of Eplaheimr,barony,No Calendar Listed,http://eplaheimr.org,,2026-06-22,"Athlone, Ireland",53.422843,-7.94259
-Kingdom of Drachenwald,Barony of Gotvik,barony,No Calendar Listed,http://www.gotvik.se,,2026-06-22,"Gothenburg, Sweden",57.707233,11.967017
+Kingdom of Drachenwald,Barony of Gotvik,barony,https://gotvik.se/feed/eo-events/,http://www.gotvik.se,,2026-09-25,"Gothenburg, Sweden",57.707233,11.967017
 Kingdom of Drachenwald,Barony of Knights Crossing,barony,No Calendar Listed,https://www.knightscrossing.org,,2026-06-22,"Kaiserslautern, Germany",49.443217,7.768995
 Kingdom of Drachenwald,Barony of Styringheim,barony,No Calendar Listed,https://www.styringheim.se,,2026-06-22,"Visby, Sweden",57.637936,18.297982
 Kingdom of Drachenwald,Canton of Drei Eichen,canton,No Calendar Listed,http://dreieichen.jimdo.com,,2026-06-22,"Köln, Germany",50.938361,6.959974
@@ -228,7 +228,7 @@ Kingdom of Drachenwald,Shire of Aros,shire,No Calendar Listed,http://aros.nordma
 Kingdom of Drachenwald,Shire of Attemark,shire,No Calendar Listed,https://attemark.se,,2026-06-22,Skåne,55.84723,13.633929
 Kingdom of Drachenwald,Shire of Baggeholm,shire,No Calendar Listed,http://www.baggeholm.se,,2026-06-22,"Karlskrona, Sweden",56.162107,15.586642
 Kingdom of Drachenwald,Shire of Depedene under Wychwood,shire,No Calendar Listed,https://www.depedene.org,,2026-06-22,UK: northern England,53.481691,-2.233755
-Kingdom of Drachenwald,Shire of Dun in Mara,shire,No Calendar Available,https://duninmara.org,,2026-06-22,"Dublin, Ireland",53.349379,-6.260559
+Kingdom of Drachenwald,Shire of Dun in Mara,shire,https://calendar.google.com/calendar/ical/i31bddi251gl9evo2oiualkn94%40group.calendar.google.com/public/basic.ics,https://duninmara.org,,2026-09-25,"Dublin, Ireland",53.349379,-6.260559
 Kingdom of Drachenwald,Shire of Fjellom,shire,No Calendar Listed,,,2026-06-22,"Östersund, Sweden",63.179366,14.635706
 Kingdom of Drachenwald,Shire of Flintheath,shire,No Calendar Listed,https://www.flintheath.org.uk,,2026-06-22,UK: east Anglia,52.461724,0.697564
 Kingdom of Drachenwald,Shire of Frostheim,shire,No Calendar Listed,http://www.frostheim.se,,2026-06-22,"Luleå, Sweden",65.583119,22.145954
@@ -255,7 +255,7 @@ Kingdom of Ealdormere,Barony of Ramshaven,barony,No Calendar Available,https://e
 Kingdom of Ealdormere,Barony of Rising Waters,barony,https://calendar.google.com/calendar/ical/ghkivii1vp5bo1lsat9ieqad1o%40group.calendar.google.com/public/basic.ics,https://ealdormere.ca/barony-of-rising-waters/,,2026-06-22,"Niagara Falls, Ontario, Canada",43.10656,-79.063904
 Kingdom of Ealdormere,Barony of Septentria,barony,No Calendar Available,https://ealdormere.ca/barony-of-septentria,,2026-06-22,"Toronto, Ontario, Canada",43.653482,-79.383935
 Kingdom of Ealdormere,Barony of Skraeling Althing,barony,No Calendar Available,http://www.skraelingalthing.com/,,2026-06-22,"Ottawa, Ontario, Canada",45.420878,-75.690111
-Kingdom of Ealdormere,Canton of Ardchreag,canton,No Calendar Available,https://ardchreag.wordpress.com/,,2026-06-22,"Scarborough, Ontario, Canada",43.772974,-79.257648
+Kingdom of Ealdormere,Canton of Ardchreag,canton,https://calendar.google.com/calendar/ical/jsktiblkleikd0he279ihg5qbk%40group.calendar.google.com/public/basic.ics,https://ardchreag.wordpress.com/,,2026-09-25,"Scarborough, Ontario, Canada",43.772974,-79.257648
 Kingdom of Ealdormere,Canton of Beremere,canton,No Calendar Available,https://ealdormere.ca/beremere/,,2026-06-22,"Belleville, Ontario, Canada",44.243633,-77.36076
 Kingdom of Ealdormere,Canton of Bryniau Tywynnog,canton,No Calendar Available,https://ealdormere.ca/bryniau-tywynnog/,,2026-06-22,"Renfrew County, Ontario, Canada",45.730056,-77.27937
 Kingdom of Ealdormere,Canton of Caldrithig,canton,No Calendar Available,https://ealdormere.ca/caldrithig/,,2026-06-22,"Carleton Place, Ontario, Canada",45.140337,-76.146567
@@ -286,7 +286,7 @@ Kingdom of Gleann Abhann,Shire of Ravenshold,shire,No Calendar Listed,https://ww
 Kingdom of Gleann Abhann,Shire of Smythkepe,shire,No Calendar Available,https://www.facebook.com/Smythkepe,,2026-06-22,"Fort Smith, AR and surrounding areas",35.388034,-94.426501
 Kingdom of Gleann Abhann,Shire of Tor An Riogh,shire,No Calendar Listed,https://toranriogh.gleannabhann.net/,,2026-06-22,"Starkville/Columbus/Tupelo, MS and surrounding area",33.463875,-88.815207
 Kingdom of Gleann Abhann,Shire of Troll Fen,shire,No Calendar Listed,http://troll-fen.org,https://www.facebook.com/profile.php?id=100081319014431,2026-06-22,"Lafayette, LA and surrounding area",30.226219,-92.01782
-Kingdom of Gleann Abhann,Shire of Vogelburg,shire,No Calendar Listed,http://vogelburg.gleannabhann.net/,https://www.facebook.com/groups/TheShireofVogelburg,2026-06-22,"Alexandria, LA and surrounding area",31.311946,-92.445356
+Kingdom of Gleann Abhann,Shire of Vogelburg,shire,https://calendar.google.com/calendar/ical/robertleegrant1970%40gmail.com/public/basic.ics,http://vogelburg.gleannabhann.net/,https://www.facebook.com/groups/TheShireofVogelburg,2026-09-25,"Alexandria, LA and surrounding area",31.311946,-92.445356
 Kingdom of Gleann Abhann,Shire of Wyrmgeist,shire,No Calendar Listed,http://www.wyrmgeist.org/,https://www.facebook.com/Wyrmgeist,2026-06-22,"Baton Rouge, LA and surrounding area",30.449416,-91.186966
 Kingdom of Lochac,Barony of Aneala,barony,No Calendar Listed,https://aneala.lochac.sca.org/,,2026-06-22,"Perth, Western Australia",-31.955897,115.860578
 Kingdom of Lochac,Barony of Ildhafn,barony,https://calendar.google.com/calendar/ical/ildhafn%40gmail.com/public/basic.ics,https://ildhafn.lochac.sca.org/,,2026-06-22,"Auckland, New Zealand",-36.852095,174.76318
@@ -341,7 +341,7 @@ Kingdom of Meridies,Shire of Loch Cairn,shire,No Calendar Listed,http://lochcair
 Kingdom of Meridies,Shire of Loch an Fhraoich,shire,No Calendar Available,https://lakeofheather.meridies.org,,2026-06-22,Bowling Green,36.99292,-86.442868
 Kingdom of Meridies,Shire of Marion Glen,shire,No Calendar Listed,https://marionglen.meridies.org/,,2026-06-22,Columbus / Americus,33.758157,-86.753326
 Kingdom of Meridies,Shire of Nant-y-Derwyddon,shire,https://calendar.google.com/calendar/ical/web.nyd%40meridies.org/public/basic.ics,https://nyd.meridies.org/,,2026-09-25,NE Tennessee and the SW Corner of Virginia,36.595969,-82.188501
-Kingdom of Meridies,Shire of Okeborne Keep,shire,No Calendar Listed,https://okebornekeep.meridies.org/,,2026-06-22,Tuscaloosa,33.209561,-87.567526
+Kingdom of Meridies,Shire of Okeborne Keep,shire,https://calendar.google.com/calendar/ical/d8dkld81d0mjpfk687obl5qt58%40group.calendar.google.com/public/basic.ics,https://okebornekeep.meridies.org/,,2026-09-25,Tuscaloosa,33.209561,-87.567526
 Kingdom of Meridies,Shire of Owl's Nest,shire,https://calendar.google.com/calendar/ical/c_0156768613f1682f941eb68ba23dc4f2451a77ccc2d80719c3ebd4bae23f984e%40group.calendar.google.com/public/basic.ics,https://owlsnest.meridies.org/,,2026-09-25,"Bartow, Cherokee, Cobb, Gordon, Paulding, and Pickens",34.161761,-84.728295
 Kingdom of Meridies,Shire of Phoenix Glade,shire,https://calendar.google.com/calendar/ical/web.phoenixglade%40meridies.org/public/basic.ics,https://phoenixglade.meridies.org/,,2026-09-25,"Fort Walton Beach, Niceville, Destin, Crestview, and surrounding areas",34.438934,-85.759717
 Kingdom of Meridies,Shire of Redewolfden,shire,No Calendar Available,http://redewolfden.meridies.org/,,2026-06-22,Murray,34.785186,-84.735226
@@ -385,7 +385,7 @@ Kingdom of Trimaris,Canton of Amurgorod (An Crosaire),canton,No Calendar Listed,
 Kingdom of Trimaris,Shire of Sangre del Sol,shire,No Calendar Available,,https://www.facebook.com/groups/sangre.del.sol/,2026-06-22,Broward County Florida,30.679978,-86.21886
 Kingdom of Trimaris,Shire of Sea March,shire,No Calendar Available,,https://www.facebook.com/groups/SeaMarchPopulace/,2026-06-22,Palm Beach County,26.62798,-80.449417
 Kingdom of Trimaris,Shire of Southkeep,shire,https://calendar.google.com/calendar/ical/f91e0f3f46d35dc76e5b577f15f00fd02a5e9e46eba48d204db306a52e47c4e6%40group.calendar.google.com/public/basic.ics,https://southkeep.trimaris.org/,,2026-09-25,Miami-Dade County / Florida Keys,24.67362,-81.498179
-Kingdom of Trimaris,Shire of Tri Os,shire,No Calendar Listed,https://trios.trimaris.org/,,2026-06-22,"Martin, St. Lucie, and Indian Counties",27.067371,-80.399441
+Kingdom of Trimaris,Shire of Tri Os,shire,https://calendar.google.com/calendar/ical/webminister%40trios.trimaris.org/public/basic.ics,https://trios.trimaris.org/,,2026-09-25,"Martin, St. Lucie, and Indian Counties",27.067371,-80.399441
 Kingdom of Trimaris,Shire of Sudrholt,shire,https://calendar.google.com/calendar/ical/sudrholt.org_d1adj1c6repb9ls22u6jq3lqb4%40group.calendar.google.com/public/basic.ics,https://www.sudrholt.org/events,,,"Clay County, Florida",,
 Kingdom of Trimaris,Barony of Marcaster,barony,https://calendar.google.com/calendar/ical/c_4536d12b6f9bfcd89abfce77744e5afc95ae8b8be6b463a48afb56f94bebc35c%40group.calendar.google.com/public/basic.ics,https://www.marcaster.com/,,,"Pinellas County, Florida",,
 Kingdom of Trimaris,Canton of Loch Gryffyn,canton,https://calendar.google.com/calendar/ical/webminister%40lochgryffyn.org/public/basic.ics,https://www.lochgryffyn.org/,,,"Lake County, Florida",,
@@ -485,10 +485,10 @@ Kingdom of the Middle,Shire of Mynydd Seren,shire,https://calendar.google.com/ca
 Kingdom of the Middle,Shire of Narrental,shire,No Calendar Available,https://narrental.midrealm.org/,,2026-06-22,"Logansport, Indiana",40.754238,-86.362519
 Kingdom of the Middle,Shire of Ravenslake,shire,No Calendar Available,https://ravenslake.org/,,2026-06-22,"Crystal Lake, Illinois",42.241134,-88.316197
 Kingdom of the Middle,Shire of Rivenvale,shire,https://calendar.google.com/calendar/ical/k2dnert6nh5067snq5h57e8vm4%40group.calendar.google.com/public/basic.ics,https://rivenvale.org/,,2026-06-22,"Youngstown, Ohio",41.103579,-80.652016
-Kingdom of the Middle,Shire of Rokkehealden,shire,No Calendar Available,https://rokkehealden.midrealm.org/,,2026-06-22,"Chicago, Illinois",41.875562,-87.624421
+Kingdom of the Middle,Shire of Rokkehealden,shire,mec-rest:https://rokkehealden.midrealm.org,https://rokkehealden.midrealm.org/,,2026-09-25,"Chicago, Illinois",41.875562,-87.624421
 Kingdom of the Middle,Barony of Shadowed Stars,barony,https://calendar.google.com/calendar/ical/c_393f54bd20f4bf28a35be583eb88a317afe5418d277d25f296b2ca4327446e50%40group.calendar.google.com/public/basic.ics,https://shadowedstars.midrealm.org/,,2026-06-22,"Fort Wayne, Indiana",41.07999,-85.138601
 Kingdom of the Middle,Shire of Swordcliff,shire,No Calendar Available,https://swordcliff.midrealm.org/,,2026-06-22,"Springfield, Illinois",39.799017,-89.643957
-Kingdom of the Middle,Marche of Tirnewydd,shire,No Calendar Available,https://tirnewydd.midrealm.org/,,2026-06-22,"Columbus, OH",39.96226,-83.000707
+Kingdom of the Middle,Marche of Tirnewydd,shire,mec-rest:https://tirnewydd.midrealm.org,https://tirnewydd.midrealm.org/,,2026-09-25,"Columbus, OH",39.96226,-83.000707
 Kingdom of the Middle,Shire of Caer Gwyn,shire,https://calendar.google.com/calendar/ical/6qvfu9tj2q4evup4eevh9pj90s%40group.calendar.google.com/public/basic.ics,https://caergwyn.midrealm.org/,,,"Urbana-Champaign, IL",40.113159,-88.211105
 Kingdom of the Outlands,Barony of Aarquelle,barony,https://www.google.com/calendar/ical/aarquelle%40gmail.com/public/basic.ics,https://aarquelle.outlands.org,,2026-06-22,"Pueblo, CO",38.263995,-104.614187
 Kingdom of the Outlands,Barony of Caer Galen,barony,https://calendar.google.com/calendar/ical/caergalen.org_9ligefbmldnohvbm86fmththt0%40group.calendar.google.com/public/basic.ics,https://caergalen.outlands.org,,2026-06-22,"Boulder, CO",40.014986,-105.270545
