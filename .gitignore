@@ -44,3 +44,6 @@ Thumbs.db
 
 # Claude Code local state (per-machine permission allowlist, not portable)
 .claude/
+
+# Readable private-address list: maintainer's computer only (see private_addresses.py)
+private_addresses.local.csv

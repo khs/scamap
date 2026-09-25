@@ -85,30 +85,60 @@ class TestAggregatorDuplicates(unittest.TestCase):
 
 class TestPrivateAddresses(unittest.TestCase):
     # A made-up address: tests must never contain a real blocklisted one.
+    SK = {"Barony of Example": "Kingdom of Northshield",
+          "Barony of Elsewhere": "Kingdom of Ansteorra"}
+
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())
         self.csv = self.tmp / "private_addresses.csv"
-        pa.add("The Nest", "Sampletown, WI", "42.5", "-88.5", "", path=self.csv)
-        pa.add("N12W3456 Example Rd", "Sampletown, WI", "42.5", "-88.5", "", path=self.csv)
+        self.local = self.tmp / "private_addresses.local.csv"
+        pa.add("The Nest", "Kingdom of Northshield", "42.5", "-88.5", "",
+               path=self.csv, local_path=self.local)
+        pa.add("N12W3456 Example Rd", "everywhere", "42.5", "-88.5", "",
+               path=self.csv, local_path=self.local)
         self.rows = pa.load(self.csv)
 
-    def test_file_holds_no_address(self):
+    def _event(self, source="Barony of Example", **kw):
+        e = {"title": "Summer Camp", "source": source, "location": "The Nest",
+             "clean_location": "The Nest", "description": "", "lat": "42.9", "lng": "-88.2",
+             "geocode_status": "ok", "location_specificity": ""}
+        e.update(kw)
+        return pd.DataFrame([e])
+
+    def test_committed_file_holds_no_address_local_file_does(self):
         raw = self.csv.read_text(encoding="utf-8").lower()
         for word in ("nest", "3456", "example"):
             self.assertNotIn(word, raw)
+        self.assertIn("N12W3456 Example Rd", self.local.read_text(encoding="utf-8"))
 
-    def test_text_scrubbed_and_pinned(self):
-        df = pd.DataFrame([{
-            "title": "Summer Camp", "location": "The Nest, N12 W3456 example rd.",
-            "clean_location": "N12W3456 Example Rd, Sampletown, WI 00000",
-            "description": "Address The Nest N12W3456 Example Rd Sampletown, WI",
-            "lat": "42.9", "lng": "-88.2", "geocode_status": "ok"}])
-        r = pa.apply_to_events(df, self.rows).iloc[0]
+    def test_text_scrubbed_marked_private_and_pinned(self):
+        df = self._event(location="The Nest, N12 W3456 example rd.",
+                         clean_location="N12W3456 Example Rd, Sampletown, WI 00000",
+                         description="Address The Nest N12W3456 Example Rd Sampletown, WI")
+        r = pa.apply_to_events(df, self.rows, self.SK).iloc[0]
         for col in ("location", "clean_location", "description"):
             self.assertNotIn("3456", r[col])
             self.assertNotIn("nest", r[col].lower())
+        self.assertEqual((r["location"], r["clean_location"]), ("Private location",) * 2)
+        self.assertEqual(r["location_specificity"], "private")
         self.assertEqual((r["lat"], r["lng"], r["geocode_status"]), ("42.5", "-88.5", "override"))
-        self.assertEqual(r["description"].count("Sampletown, WI"), 1)   # collapsed
+        self.assertEqual(r["description"].count("[private location]"), 1)   # collapsed
+
+    def test_scoped_entry_leaves_other_kingdoms_alone(self):
+        # "The Nest" is blocked only in Northshield; a same-named venue in
+        # another kingdom still shows.
+        r = pa.apply_to_events(self._event(source="Barony of Elsewhere"), self.rows, self.SK).iloc[0]
+        self.assertEqual((r["clean_location"], r["location_specificity"]), ("The Nest", ""))
+        r = pa.apply_to_events(self._event(source="Kingdom of Ansteorra"), self.rows, self.SK).iloc[0]
+        self.assertEqual(r["location_specificity"], "")
+        # ...while the kingdom's own calendar in scope IS covered.
+        r = pa.apply_to_events(self._event(source="Kingdom of Northshield"), self.rows, self.SK).iloc[0]
+        self.assertEqual(r["location_specificity"], "private")
+
+    def test_unscoped_street_address_blocked_everywhere(self):
+        r = pa.apply_to_events(self._event(source="Barony of Elsewhere",
+                                           location="N12W3456 Example Rd"), self.rows, self.SK).iloc[0]
+        self.assertEqual(r["location_specificity"], "private")
 
     def test_similar_words_untouched(self):
         for s in ("Bathe Nesters daily", "The Nesting Ground"):
@@ -118,8 +148,18 @@ class TestPrivateAddresses(unittest.TestCase):
 
     def test_replacement_containing_text_is_refused(self):
         bad = self.tmp / "bad.csv"
-        pa.add("The Nest", "The Nest (private)", "1", "2", path=bad)
-        self.assertEqual(pa.load(bad)[0]["replace_with"], "[address withheld]")
+        pa.add("The Nest", "", "1", "2", replace_with="The Nest (private)",
+               path=bad, local_path=self.tmp / "bad.local.csv")
+        self.assertEqual(pa.load(bad)[0]["replace_with"], "[private location]")
+
+    def test_caches_skip_scoped_entries(self):
+        # Caches carry no calendar, so a scoped venue name is left in them (it
+        # could be the Texas one); only unscoped entries are scrubbed there.
+        (self.tmp / "desc_cache.json").write_text(
+            json.dumps({"u": "Meet at The Nest"}, indent=0, ensure_ascii=False, sort_keys=True),
+            encoding="utf-8")
+        pa.scrub_files(self.rows, self.tmp)
+        self.assertIn("The Nest", (self.tmp / "desc_cache.json").read_text(encoding="utf-8"))
 
     def test_caches_scrubbed_keys_dropped_format_kept(self):
         geo = {"nom:The Nest, N12W3456 Example Rd, Sampletown||us|0": {"lat": None},

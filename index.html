@@ -1115,7 +1115,7 @@ function warPinScale() { return MOBILE_MQ.matches ? WAR_PIN_SCALE_MOBILE : WAR_P
 // An event cross-listed on this many separate calendars also gets the oversized
 // pin (like a war), coloured by its hosting kingdom (host_kingdom = the territory
 // it sits in; precomputed in annotate_war_hosts.py).
-const BIG_PIN_MIN_CALENDARS = 5;
+const BIG_PIN_MIN_CALENDARS = 4;
 
 // ── Cluster icon ─────────────────────────────────────────────────
 // "Number events in the same location" collapses co-located markers into one
@@ -1415,7 +1415,11 @@ function buildPopup(ev) {
   const desc = ev.description
     ? `<div class="desc">${escapeHtml(ev.description.substring(0, 420))}${ev.description.length > 420 ? '…' : ''}</div>`
     : '';
-  const loc = ev.clean_location
+  // location_specificity="private": the site's owner asked for the address to be
+  // withheld (private_addresses.csv); the pin is only a coarse public spot.
+  const loc = /^private$/i.test(ev.location_specificity || '')
+    ? `<div class="loc">📍 The location of this event is private. Please inquire with the local group.</div>`
+    : ev.clean_location
     ? `<div class="loc">📍 ${escapeHtml(ev.clean_location)}</div>` : '';
   // Baronial events with no findable street address are pinned at the barony's own
   // coordinates and flagged "vague" by the pipeline. Warn the reader (verbatim copy
@@ -1803,10 +1807,10 @@ function crossListedGroups(events) {
     g.evs.push(ev);
   });
   // Cross-listings of ONE event share title words ("Known World Armoured Combat
-  // Collegium" in its many phrasings); five UNRELATED events that merely share a
+  // Collegium" in its many phrasings); four UNRELATED events that merely share a
   // Saturday and a metro area don't. Before counting sources, keep only the
   // largest subset whose titles overlap in 2+ significant words — otherwise a
-  // dense area's ordinary weekend could fake a "cross-listed on 5+ calendars" pin.
+  // dense area's ordinary weekend could fake a "cross-listed on 4+ calendars" pin.
   const sigTokens = t => new Set(String(t || '').toLowerCase()
     .replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
     .filter(w => w.length >= 4 && w !== 'kingdom' && w !== 'event' && w !== 'events'));
@@ -1991,7 +1995,7 @@ function applyFilters() {
     const lat = parseFloat(ev.lat), lng = parseFloat(ev.lng);
     if (isNaN(lat) || isNaN(lng)) return;
     const [plotLat, plotLng] = spiralOffset(lat, lng);
-    const hostColor = warHostColor[ev._idx] || bigListColor[ev._idx];   // the one big pin (war or 5+ cross-listing)
+    const hostColor = warHostColor[ev._idx] || bigListColor[ev._idx];   // the one big pin (war or 4+ cross-listing)
     const color = hostColor || eventColor(ev);
     const icon = makeIcon(color, hostColor ? warPinScale() : 1);
     // Territory ("hosting") kingdom colour for this event, read by makeClusterIcon
@@ -2368,7 +2372,7 @@ Promise.all([
     // (whole word, so "uncancelled" stays) means it isn't happening, so it gets
     // no marker, list entry, or online badge anywhere.
     allEvents = allEvents.filter(ev => !/\bcancell?ed\b/i.test(ev.title || ''));
-    // Tag every listing of a 5+-calendar cross-listed event, so the major-events
+    // Tag every listing of a 4+-calendar cross-listed event, so the major-events
     // toggle keeps the whole group (and so its big pin) regardless of filters.
     crossListedGroups(allEvents).forEach(g => g.members.forEach(e => { e._crossListed = true; }));
     capDateRangeToData();   // clamp the date picker to the span of data we actually hold

@@ -205,21 +205,36 @@ still publish it, add it to the blocklist. Run this on your computer, writing
 the address the way the calendars write it:
 
 ```bash
-python private_addresses.py add "123 Example Rd" "Sampletown, WI" 42.85 -88.32 "Owner asked 2026-09"
+python private_addresses.py add "123 Example Rd" "everywhere" 42.85 -88.32 "Owner asked 2026-09"
+python private_addresses.py add "The Nest" "Kingdom of Northshield" 42.85 -88.32 "Same site, venue name"
 ```
 
-The arguments are: the address, what to show instead, a deliberately coarse
-public pin (the town, a park), and a note. Add the venue's name separately if
-calendars use it alone ("The Nest").
+The arguments are: the address, the **scope**, a deliberately coarse public pin
+(the town, a park), and a note.
 
-- The file stores only a **fingerprint** (one-way hash) of the address's words,
-  never the address itself, so the blocklist doesn't publish what it hides.
-  Matching ignores case, spacing and punctuation.
-- Every run, any event whose title, location or description mentions the
-  address has that text replaced and is pinned at your public spot (no
-  geocoding). The last pipeline step also scrubs it from every committed
-  `*_cache.json`, so it can't come back from the next calendar download.
-- Commit `private_addresses.csv` and push; the next refresh applies it.
+- **Scope** = a kingdom name: only events from that kingdom's calendar or its
+  local groups' calendars are affected, so a same-named venue elsewhere (a
+  different "The Nest" in Texas) still shows. Use this for venue names.
+  `everywhere` = any calendar; use it for a full street address, which is
+  unique anyway and may be cross-listed by other kingdoms.
+- On the map, affected events show **"The location of this event is private.
+  Please inquire with the local group."** instead of an address, at your
+  coarse pin. In descriptions the address becomes `[private location]`.
+- **Where the list lives:** the committed `private_addresses.csv` stores only
+  a **fingerprint** (one-way hash) of each address, so the public repo doesn't
+  publish what it hides. The readable list is `private_addresses.local.csv`,
+  which `add` writes **on your computer only** (git ignores it). Keep it; if
+  it's lost, the fingerprints still work, but you'd only know each entry by
+  its note.
+- **Checking it isn't hiding too much:** `python private_addresses.py report`
+  lists every entry (readable, from your local list), and every event the map
+  currently shows as private. After a local `python refresh.py`, it also shows
+  the exact text each entry matched in each event. Each refresh's log prints
+  the event titles each entry hid.
+- Every run it's re-applied before geocoding, and the last pipeline step
+  scrubs unscoped entries from every committed `*_cache.json`, so a calendar
+  that still publishes the address can't put it back.
+- To remove an entry, delete its row from both CSVs.
 - Limits: old git history still contains earlier copies; removing those needs
   a history rewrite. A fingerprint of a short, guessable phrase (a venue name)
   could be guessed, so treat it as "not displayed", not as a secret.
