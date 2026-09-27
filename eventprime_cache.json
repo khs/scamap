@@ -1100,6 +1100,16 @@
 },
 "lastmod": "2026-03-06T21:27:23+00:00"
 },
+"https://avacal.org/calendar/?event=3654": {
+"event": {
+"description": "",
+"end": "20270725T235900Z",
+"location": "",
+"start": "20270724T000000Z",
+"summary": "Midsummer Mischief"
+},
+"lastmod": "2026-03-06T21:27:36+00:00"
+},
 "https://avacal.org/calendar/?event=3655": {
 "event": {
 "description": "",
@@ -1109,6 +1119,16 @@
 "summary": "Fall Crown"
 },
 "lastmod": "2026-03-06T21:27:46+00:00"
+},
+"https://avacal.org/calendar/?event=3656": {
+"event": {
+"description": "",
+"end": "20270822T235900Z",
+"location": "",
+"start": "20270821T000000Z",
+"summary": "Valley War"
+},
+"lastmod": "2026-03-06T21:28:01+00:00"
 },
 "https://avacal.org/calendar/?event=3657": {
 "event": {
@@ -1129,6 +1149,36 @@
 "summary": "Myrganwood Anniversary"
 },
 "lastmod": "2026-03-06T21:28:36+00:00"
+},
+"https://avacal.org/calendar/?event=3659": {
+"event": {
+"description": "",
+"end": "20271031T235900Z",
+"location": "",
+"start": "20271030T000000Z",
+"summary": "Snow Eaters"
+},
+"lastmod": "2026-03-06T21:28:58+00:00"
+},
+"https://avacal.org/calendar/?event=3660": {
+"event": {
+"description": "",
+"end": "20271107T235900Z",
+"location": "",
+"start": "20271106T000000Z",
+"summary": "Samhain"
+},
+"lastmod": "2026-03-06T21:29:08+00:00"
+},
+"https://avacal.org/calendar/?event=3661": {
+"event": {
+"description": "",
+"end": "20271121T235900Z",
+"location": "",
+"start": "20271120T000000Z",
+"summary": "Winter Coronation"
+},
+"lastmod": "2026-03-06T21:29:28+00:00"
 },
 "https://avacal.org/calendar/?event=3663": {
 "event": {
