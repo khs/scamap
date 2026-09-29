@@ -1180,6 +1180,16 @@
 },
 "lastmod": "2026-03-06T21:29:28+00:00"
 },
+"https://avacal.org/calendar/?event=3662": {
+"event": {
+"description": "",
+"end": "20271128T235900Z",
+"location": "",
+"start": "20271127T000000Z",
+"summary": "A Very Aryesgarde Christmas"
+},
+"lastmod": "2026-03-06T21:29:36+00:00"
+},
 "https://avacal.org/calendar/?event=3663": {
 "event": {
 "description": "",
@@ -1189,6 +1199,16 @@
 "summary": "Krampus"
 },
 "lastmod": "2026-03-06T21:29:51+00:00"
+},
+"https://avacal.org/calendar/?event=3664": {
+"event": {
+"description": "",
+"end": "20271212T235900Z",
+"location": "",
+"start": "20271211T000000Z",
+"summary": "Yule"
+},
+"lastmod": "2026-03-06T21:30:05+00:00"
 },
 "https://avacal.org/calendar/?event=3665": {
 "event": {
@@ -1249,6 +1269,16 @@
 "summary": "Kingdom Curia"
 },
 "lastmod": "2026-08-12T03:08:55+00:00"
+},
+"https://avacal.org/calendar/?event=4136": {
+"event": {
+"description": "Webpage: https://tinyurl.com/2026KWNS-Webpage Facebook Event: https://tinyurl.com/2026KWNS-Facebook Teacher/Moderator Sign-Up Form: https://tinyurl.com/2026KWNS-Teachers Student Registration Link: https://tinyurl.com/2026KWNS-Registration Time Zone Converter – https://tinyurl.com/2026KWNS-Timetable Google Calendar to set reminders: tinyurl.com/SCA-classes",
+"end": "20261128T235900Z",
+"location": "https://sites.google.com/view/kwhss2023/",
+"start": "20261128T000000Z",
+"summary": "2026 Virtual Known World Newcomers Symposium"
+},
+"lastmod": "2026-09-24T02:29:43+00:00"
 }
 }
 }
