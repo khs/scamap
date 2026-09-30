@@ -35,6 +35,8 @@ then classified:
   ambiguous  the site lists several Google calendars (a directory page), so
              which is this group's is left to a human
   holiday    a public-holiday calendar
+  rejected   ruled out by hand in rejected_calendars.csv (add one with
+             `python find_calendars.py --reject <calendar_id> "<group>" "<reason>"`)
   failed     not public / not a calendar / fetch error
 
 Usage (from the project folder):
@@ -287,8 +289,41 @@ def remember(known: dict, c: Candidate, source: str) -> None:
         known.setdefault((day, _norm(title)), []).append((source, loc))
 
 
+REJECTED_FILE = SCRIPT_DIR / "rejected_calendars.csv"
+
+
+def rejected_fingerprint(cid: str) -> str:
+    import hashlib
+    return hashlib.sha256(_id_key(cid).encode("utf-8")).hexdigest()
+
+
+def _rejected() -> dict:
+    """Calendars a human has ruled out (personal calendars, free/busy-only,
+    deadline-only...) -> reason. Stored as fingerprints of the calendar id so
+    the list doesn't itself publish e.g. a personal Gmail address."""
+    out = {}
+    if REJECTED_FILE.exists():
+        for r in csv.DictReader(open(REJECTED_FILE, encoding="utf-8", newline="")):
+            if (r.get("fingerprint") or "").strip():
+                out[r["fingerprint"].strip()] = (r.get("reason") or "").strip()
+    return out
+
+
+def reject(cid: str, group: str, reason: str) -> None:
+    new = not REJECTED_FILE.exists()
+    with open(REJECTED_FILE, "a", encoding="utf-8", newline="") as f:
+        w = csv.writer(f)
+        if new:
+            w.writerow(["fingerprint", "group", "reason"])
+        w.writerow([rejected_fingerprint(cid), group, reason])
+
+
 def verify(c: Candidate, name: str, used: dict, known: dict) -> Candidate:
     key = _id_key(c.calendar_id)
+    why = _rejected().get(rejected_fingerprint(c.calendar_id))
+    if why is not None:
+        c.verdict, c.note = "rejected", f"ruled out by hand: {why}"
+        return c
     if "#holiday@" in key or key.endswith("holiday@group.v.calendar.google.com"):
         c.verdict, c.note = "holiday", "public-holiday calendar"
         return c
@@ -453,6 +488,10 @@ def sweep(filters: list[str], apply: bool) -> None:
 def main(argv: list[str]) -> None:
     if not argv or argv[0] in ("-h", "--help"):
         print(__doc__)
+        return
+    if argv[0] == "--reject" and len(argv) >= 4:
+        reject(argv[1], argv[2], argv[3])
+        print(f"Recorded: {argv[2]}'s calendar won't be proposed again ({argv[3]}).")
         return
     if argv[0] == "--sweep":
         rest = [a for a in argv[1:] if a != "--apply"]

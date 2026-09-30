@@ -1301,8 +1301,12 @@ def merge_recurring(df: pd.DataFrame) -> pd.DataFrame:
     df["_start_dt"]  = pd.to_datetime(df["start"], errors="coerce", format="mixed")
     df["_loc_key_r"] = df["clean_location"].fillna("").str.strip().str.lower()
 
+    # Merge only within one calendar (source): location-less and online events
+    # ("Populace Meeting", no address) from different groups share a title and a
+    # blank location, and must not collapse into one group's row.
     result_rows = []
-    for (title, loc_key), group in df.groupby(["title", "_loc_key_r"]):
+    for (_src, title, loc_key), group in df.groupby(["source", "title", "_loc_key_r"],
+                                                    dropna=False):
         if len(group) == 1:
             result_rows.append(group.iloc[0].drop(["_start_dt", "_loc_key_r"]))
             continue

@@ -95,6 +95,18 @@ class TestOnlineMeetingsNotMerged(unittest.TestCase):
         self.assertEqual(len(clean.deduplicate(df)), 1)
 
 
+class TestRecurringMergeStaysWithinAGroup(unittest.TestCase):
+    def test_same_title_blank_location_different_groups_not_merged(self):
+        rows = []
+        for src in ("Barony of Bonwicke", "Shire of Elsewhere"):
+            for d in ("2099-10-01", "2099-10-08", "2099-10-15"):     # weekly
+                rows.append({"title": "Populace Meeting", "start": f"{d} 20:00:00",
+                             "clean_location": "", "source": src, "description": ""})
+        out = clean.merge_recurring(pd.DataFrame(rows))
+        self.assertEqual(sorted(out["source"]), ["Barony of Bonwicke", "Shire of Elsewhere"])
+        self.assertTrue(all(t.endswith("(RECURRING)") for t in out["title"]))
+
+
 class TestNonEvents(unittest.TestCase):
     def test_free_busy_blocks(self):
         self.assertTrue(clean.is_non_event("Busy"))
