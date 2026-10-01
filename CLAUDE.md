@@ -8,6 +8,10 @@ hand-edited data files) and ROADMAP.md (plan + decisions) before larger work.
   maintainer has tried them.** They run `python -m http.server 8766` in this
   folder and open http://localhost:8766 (localhost, so "Near me" works).
   Pipeline/data fixes and things they explicitly approve can be pushed directly.
+- **The maintainer writes all text shown to users** (page copy, labels,
+  messages). Use their wording verbatim; if new UI needs words, propose a
+  draft and flag it for them to rewrite, and point out (don't silently fix)
+  issues in their text. The site states AI wasn't used for user-facing text.
 - Explain in plain language; the maintainer is not a confident git user.
   Approvals for any future submission workflow happen on GitHub's website
   (pull requests), never via git commands.

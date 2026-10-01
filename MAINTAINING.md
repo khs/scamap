@@ -18,7 +18,7 @@ feed breaking.
   when the feed recovers. Watch the repo so you're emailed when one opens.
 - **Almost every "my event is wrong" report is not yours to fix** — the map
   mirrors the kingdom's own calendar, so the fix is made there. The public
-  [About](about.html) and [How to Help](how-to-help.html) pages already say this,
+  [FAQ](faq.html) page already says this,
   which deflects most reports before they reach you.
 
 ---
@@ -337,8 +337,8 @@ can transfer. Do these so the new maintainer is fully self-sufficient and
       Issues) so the automatic health-alert issues actually reach them.
 - [ ] **Confirm GitHub Pages is still serving** after the transfer: *Settings →
       Pages*.
-- [ ] **(Optional) Update the GitHub links** in `README.md`, `about.html`, and
-      `how-to-help.html` if the repo URL changes on transfer. GitHub redirects
+- [ ] **(Optional) Update the GitHub links** in `README.md` and `faq.html`
+      if the repo URL changes on transfer. GitHub redirects
       the old URL, so this is cosmetic.
 - [ ] Nothing in the site or code references a personal email, so there's no
       inbox to migrate — just don't add one.

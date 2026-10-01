@@ -129,6 +129,33 @@ article a:hover { color: var(--sky-blue); }
   main { padding: 1.2rem 1rem 2.5rem; }
 }
 
+/* FAQ: each question is a click-to-expand <details>, its answer indented
+   under a rule. Scoped to .faq so the other pages are untouched. */
+.faq .faq-controls { margin-bottom: 0.6rem; }
+.faq .faq-controls button {
+  font: inherit; font-size: 0.9rem; cursor: pointer;
+  padding: 2px 12px; border: 1px solid var(--sky-blue); border-radius: 10px;
+  background: #fff; color: var(--blue);
+}
+.faq .faq-controls button:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
+details.faq-item { border-top: 1px solid rgba(96,156,185,0.45); padding: 0.2rem 0; }
+details.faq-item:last-of-type { border-bottom: 1px solid rgba(96,156,185,0.45); }
+details.faq-item > summary {
+  list-style: none; cursor: pointer;
+  display: flex; align-items: baseline; gap: 0.5em;
+  padding: 0.5rem 0;
+}
+details.faq-item > summary::-webkit-details-marker { display: none; }
+details.faq-item > summary::before {
+  content: '\25B8';                 /* ▸ when collapsed */
+  color: var(--sky-blue); font-size: 0.9em; flex-shrink: 0;
+}
+details.faq-item[open] > summary::before { content: '\25BE'; }   /* ▾ when open */
+details.faq-item > summary > h2 { display: inline; margin: 0; font-size: 1.25rem; }
+details.faq-item > summary:hover > h2 { color: var(--sky-blue); }
+details.faq-item > :not(summary) { margin-left: 1.4em; }
+details.faq-item[open] { padding-bottom: 0.6rem; }
+
 /* "Choosing Your First Event" formatting — a rule under each section title, the
    section bodies as click-to-collapse <details>, and a fleur-de-lys marker on
    each labelled paragraph. Scoped to .fe-section / .section-rule so about.html

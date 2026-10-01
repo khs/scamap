@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FAQ | EventScout</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Unicase:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="subpage.css" />
+  <script defer src="header-bg.js"></script>
+</head>
+<body>
+
+<header>
+  <h1 class="site-title"><a href="index.html">EventScout</a></h1>
+</header>
+
+<nav aria-label="Main navigation">
+  <ul>
+    <li><a href="index.html">Home</a></li>
+    <li><a href="faq.html" aria-current="page">FAQ</a></li>
+    <li><a href="first-event.html">Choosing Your First Event</a></li>
+    <li><a href="https://forms.gle/5CZkWRa14NBPQmQ79" target="_blank" rel="noopener noreferrer">Submit a Calendar</a></li>
+  </ul>
+</nav>
+
+<main>
+  <article class="faq">
+    <h1>Frequently Asked Questions</h1>
+    <p class="faq-controls"><button type="button" id="faq-toggle-all">Expand all</button></p>
+
+    <details class="faq-item" id="how-it-works">
+      <summary><h2>How does EventScout work?</h2></summary>
+      <p><strong>The simple answer:</strong> We automatically combine the data from different SCA groups' publicly-available calendars so that we can show you all of the events, practices, demonstrations and other activities in one place. Click on any individual map marker to see details about the event and a link to the host group's site. The tool isn't perfect, and relies on the accuracy of the information we can import from local groups' websites. Before attending an event, please check the hosting group's website or social media to find accurate and up-to-date information.</p>
+      <p><strong>The technical answer:</strong> Most SCA groups have calendars in ICS formats we can just import with an ical link. Once we have all of the calendars in a big spreadsheet, we have to turn the "location" field of each event into a latitude and longitude so that we can place a pin on a map. This is called "geocoding" and it's actually the trickiest part, since people fill out the "location" field in all kinds of ways, and the computer doesn't know where "the usual place" or "Sir John Smith's barn" or "Heavenly Coffee Shop on twelfth street" are. The data goes through lots of code that cleans it up, strips out things like "placeholder event" or "deadline for officer reports", marks events as virtual if their locations include keywords like "zoom", and repeatedly tries to geocode each address. If we can't geocode "11 Renaissance Road, Medievaltown, Oldland" then we'll try putting a pin in the center of "Medievaltown, Oldland" - and if we also can't find "Medievaltown", we'll pin the event to our best guess of where the hosting group is located. The centre of a region is used if an address has nothing but the region - like if the "location" field just says "Texas" or "Northshield". The code then runs some sanity checks and automatically rejects events that tried to code on a different continent from the host group, or outside of a kingdom's borders.</p>
+      <p>We use tools including Nominatim, Leaflet, OpenStreetMap and Photon for geocoding and mapping events.</p>
+      <p>We couldn't find any kind of database that listed every SCA group, let alone every SCA calendar, so almost all of the calendars were put into the database by hand. Forannán just went to the website of almost every barony in the Knowne Worlde. It took a while. We're now working on getting some automation going, thankfully!</p>
+      <p>Full disclosure: Claude AI was used in the creation of this website. We only used Claude to assist with writing code - never with writing text like this, and never to generate "AI art". The data on the map is pulled from human-written Google calendars, and not AI-generated, but we don't have control over whether individual baronies or kingdoms use AI in creating Google Calendar events. We are concerned about the potential harms of AI upon society and support regulation preventing ever-more-powerful AIs from being built.</p>
+    </details>
+
+    <details class="faq-item" id="group-missing">
+      <summary><h2>Why is my barony/shire/canton/group missing?</h2></summary>
+      <p>There's a few possibilities.</p>
+      <ol>
+        <li>It's not missing, but your calendar isn't importing any events. Some groups don't add their local practices to their calendars, so it'll just look to us like nothing's happening right now. We don't have the time to constantly monitor every website and every Facebook group in the knowne worlde; we will only know about your events if you add them to your calendar. Please encourage your webminister or SMO to add them!</li>
+        <li>We missed it because, unfortunately, Forannán is a single human being, and finding every group in the Knowne Worlde without any kind of master database was a lot of work. Please feel free to <a href="https://forms.gle/5CZkWRa14NBPQmQ79" target="_blank" rel="noopener noreferrer">submit a calendar</a> and we'll get your group added straight away.</li>
+        <li>We had to remove your group from our list because we received a report that your public calendar contained private information that somebody wanted taken down (eg. group members' private home addresses). We will have emailed your webminister if we did this; please ask them to check their inbox.</li>
+        <li>We can't import your calendar because your group doesn't have a calendar we can import. A "calendar" page on your website doesn't work; we need a format we can import automatically, which keeps updating without us having to constantly check back. Google Calendar is the most common free tool, but we can import others if your webminister or SMO gives us the correct API / link.</li>
+        <li>We're importing your calendar, but you're not seeing any events show up on the map because of another issue (eg. all your events are duplicates of a larger group next door, or your webminister/SMO doesn't fill out the "location" field when they create events, or we're filtering out all of your events because they look like officer report deadlines). Feel free to <a href="https://forms.gle/gcdRyUnVv8FbLqG3A" target="_blank" rel="noopener noreferrer">contact us</a> and we'll look into it.</li>
+      </ol>
+    </details>
+
+    <details class="faq-item" id="event-missing">
+      <summary><h2>Why is my event missing?</h2></summary>
+      <p>There's a few possibilities.</p>
+      <ol>
+        <li>If nobody added it to any of the sources we import from, then we don't know about it. Check to see if it's on your kingdom's or barony's calendar, and if your kingdom/barony calendar is in a format we can import (something automatically updating and exportable, like a Google Calendar, works best).</li>
+        <li>It's not missing, but your calendar event doesn't include a location, so it isn't displaying on the map. Please ask your webminister/SMO to add a location to the event.</li>
+        <li>We're automatically filtering it out because it looks like one of the categories of things we try to automatically filter out (eg. placeholders, officers' report deadlines, private events). <a href="https://forms.gle/gcdRyUnVv8FbLqG3A" target="_blank" rel="noopener noreferrer">Let us know</a> if you think we might be incorrectly filtering your event.</li>
+      </ol>
+    </details>
+
+    <details class="faq-item" id="wrong-location">
+      <summary><h2>I see an event/group in the wrong location. Why is it wrong?</h2></summary>
+      <p>Geocoding is the process of taking a human-readable address and turning it into latitude &amp; longitude coordinates so that the pin can be placed on a map. It's actually quite difficult, and the really good geocoding tools cost money. We use a free geocoding tool, but we politely limit how many attempts we make at geocoding each address so that we don't use more than our fair share of the free API.</p>
+      <p>We cannot force everyone in the SCA to use the same calendar formatting, and people put all kinds of things in the "location" field of events. The computer doesn't know where "the usual place" or "Sir John Smith's barn" or "Heavenly Coffee Shop on twelfth street" are, so it tries to guess. First of all we strip out events that have locations like "virtual" or "zoom", then we try smaller and smaller pieces of the address. So if we can't geocode "11 Renaissance Road, Medievaltown, Oldland" then we'll try putting a pin in the center of "Medievaltown, Oldland" - and if we also can't find "Medievaltown", it'll go in the center of "Oldland". We think it's better to display a vague location than no location at all.</p>
+      <p>Sometimes addresses that make perfect sense to humans won't be recognised by a computer. Even a nicely-formatted address like "Heavenly Coffee Shop, Twelfth Street, Citytown, State" might not help if we're looking up the location in a database that doesn't include Heavenly Coffee Shop and only includes the actual street address (which might be something boring and less human-friendly, like 1503 Unit B Twelfth Street). We also run into issues with places named the same thing; at one point an Outlands event displayed in Aethelmearc because the computer mixed up the state of Wyoming with the county of Wyoming in Pennsylvania.</p>
+      <p>The easiest way to help us is to make sure that the "location" field of your event, in your calendar, is a specific numbered street address. If you want to add more clarification, like "entrance behind the church" or "parking lot to the right", do it in the description field. Alternately, put a latitude &amp; longitude in your event description and we'll try to pick it up.</p>
+      <p>If that doesn't fix it, wait a few days for our database refresh to run. If that doesn't fix it, please <a href="https://forms.gle/gcdRyUnVv8FbLqG3A" target="_blank" rel="noopener noreferrer">contact us</a> with the correction. We're working on a better method for users to submit location corrections.</p>
+      <p>(Alternatively, we may have the location set to be deliberately vague. We do this for some gatherings held at members' houses, if the individual would prefer that we aren't accurate about their exact address.)</p>
+    </details>
+
+    <details class="faq-item" id="official">
+      <summary><h2>Is this an SCA website?</h2></summary>
+      <p>We created EventScout to help people join the SCA, but we aren't officially endorsed by the SCA, and non-SCA groups or unofficial SCA groups are welcome to ask us to add their events to our map if their events would be of interest to SCA members (see our policy below).</p>
+    </details>
+
+    <details class="faq-item" id="non-sca-events">
+      <summary><h2>Can you add my non-SCA event?</h2></summary>
+      <p>We will add non-SCA events if they meet 3 criteria:</p>
+      <ol>
+        <li>They are allied to the goals of promoting education about pre-1600s history and recreation of pre-1600s skills</li>
+        <li>They are inclusive and welcoming to all races, religions, genders, sexualities, classes, nationalities, citizenship statuses, backgrounds, etc. We are interested in medieval skills and aesthetics, not in medieval bigotry.</li>
+        <li>We don't host events using non-SCA combat conventions. Nothing against HEMA, Buhurt, Olympic fencing, etc; we just wouldn't want someone showing up at your event with the wrong safety gear, expecting a different ruleset, or surprised to find that they're not authorised to compete.</li>
+      </ol>
+      <p>Feel free to <a href="https://forms.gle/gcdRyUnVv8FbLqG3A" target="_blank" rel="noopener noreferrer">contact us</a> if you meet our criteria and you'd like us to add your event.</p>
+    </details>
+
+    <details class="faq-item" id="why-non-sca">
+      <summary><h2>Why host non-SCA events? How does that benefit your SCA audience?</h2></summary>
+      <p>We aren't officially endorsed by the SCA and we don't want to get in any kind of legal trouble by implying that we are. We also don't want "unofficial" events to get in trouble. The moment an event is advertised in an official SCA publication, that event becomes an "official event", which means all sorts of paperwork kicks in and you might have to pay somebody money or follow some extra rules. It is better for everyone if it's clear that non-SCA events are welcome here, and you shouldn't assume that an event on EventScout is endorsed by the SCA.</p>
+    </details>
+
+    <details class="faq-item" id="just-show-up">
+      <summary><h2>Can I really just show up at an SCA event?</h2></summary>
+      <p>The SCA tries to be as welcoming and inclusive as possible; it’s possible to just show up at most events, pay at the door (bring cash), borrow some medieval-looking clothes to wear over your mundane outfit, and join in with activities. There is no entrance exam or application, and no test of whether you know enough or have done enough. However, some events do require you to buy a ticket in advance, and some events might not have loaner kit; check with locals. If you can do one thing to prepare yourself for the event, make sure that you have an outfit which makes an attempt to look like it is from before the year 1600 (even if it's a bedsheet folded in half, with a neckhole cut in it and a rope tied around it for a belt) and that you have any supplies you'll need for your own health and safety (eg. ID, important medications, a tent and sleeping bag if you'll be camping, sunscreen and insect repellent).</p>
+    </details>
+
+    <details class="faq-item" id="accurate-info">
+      <summary><h2>How can I find accurate, up-to-date information about events?</h2></summary>
+      <p>EventScout is a tool to help you plan your schedule, and shouldn't be relied upon to be accurate. We aim to help you find an interesting event and then send you to the correct group's website for more information; we can't be relied upon to know about last-minute cancellations, precisely correct locations, private addresses, weather conditions, etc.</p>
+      <p>Some events will have specific webpages, which you'll find links to on the relevant Kingdom calendar. Others will be smaller. Keep in mind that the SCA is an all-volunteer organization made mostly of people who prefer going outdoors to sitting on a computer, and sometimes websites get pretty out-of-date. Sometimes the best source of information is social media; you can usually search the name of your local Kingdom or Barony on Facebook to find a useful group, and make a post asking what you should know as a first-time attendee.</p>
+    </details>
+
+    <details class="faq-item" id="who">
+      <summary><h2>Who maintains EventScout?</h2></summary>
+      <p><a href="https://forannanglorach.wordpress.com/" target="_blank" rel="noopener noreferrer">Lord Forannán Glórach</a>, mka Fabian Scholl, and Ricardo Pesci, mka Keller Scholl. We are former residents of Atlantia, now found in the West. You can <a href="https://forms.gle/gcdRyUnVv8FbLqG3A" target="_blank" rel="noopener noreferrer">contact us</a> with issues or questions, <a href="https://forms.gle/5CZkWRa14NBPQmQ79" target="_blank" rel="noopener noreferrer">submit a calendar</a> if we are missing your Barony or Kingdom, or <a href="https://ko-fi.com/fabianscholl" target="_blank" rel="noopener noreferrer">buy us a coffee</a> to help us maintain this site. We're also interested in recruiting one volunteer from each kingdom to serve as a liaison and make sure that we get event locations correct; <a href="https://forms.gle/gcdRyUnVv8FbLqG3A" target="_blank" rel="noopener noreferrer">let us know</a> if you're interested!</p>
+      <p>The header image was sourced from <a href="https://en.wikipedia.org/wiki/File:Co%C3%ABtivy_Master_-_Leaf_from_a_Book_of_Hours-_Angel_Chasing_a_Devil_(recto)_-_2005.206.a_-_Cleveland_Museum_of_Art.tif" target="_blank" rel="noopener noreferrer">Wikipedia</a>.</p>
+      <p>Full disclosure: Claude AI was used in the creation of this website. We only used Claude to assist with writing code - never with writing text like this, and never to generate "AI art". The data on the map is pulled from human-written Google calendars, and not AI-generated, but we don't have control over whether individual baronies or kingdoms use AI in creating Google Calendar events. We are concerned about the potential harms of AI upon society and support regulation preventing ever-more-powerful AIs from being built.</p>
+    </details>
+
+    <details class="faq-item" id="linking">
+      <summary><h2>Can I put a link to EventScout on my barony webpage / kingdom webpage / personal webpage / social media / SCA flyer / poster / bathroom wall?</h2></summary>
+      <p><strong>Short answer:</strong> yes.</p>
+      <p><strong>Long answer:</strong> Our work is licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC-BY-SA</a>. Information imported from SCA branch calendars belongs to the SCA or to its authors. If the SCA organization tells you to knock it off, then you probably should knock it off. We're an unofficial, unaffiliated resource.</p>
+    </details>
+
+    <details class="faq-item" id="embedding">
+      <summary><h2>Can I embed EventScout's map in my webpage?</h2></summary>
+      <p><strong>Short answer:</strong> yes. <a href="https://forms.gle/gcdRyUnVv8FbLqG3A" target="_blank" rel="noopener noreferrer">Contact us</a> if you need any technical assistance. We'd love credit but we're not going to sue you if we don't get it, and a link back here suffices.</p>
+      <p><strong>Long answer:</strong> Our work is licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC-BY-SA</a>. Information imported from SCA branch calendars belongs to the SCA or to its authors. If the SCA organization tells you to knock it off, then you probably should knock it off. We're an unofficial, unaffiliated resource. SCA websites might not be allowed to embed non-SCA websites, so check your Kingdom policies. We'll happily hand over the code if it makes your webminister happy. Webministers are precious and valuable people and we have no desire to make them any more stressed than they have to be.</p>
+    </details>
+
+    <details class="faq-item" id="other-uses">
+      <summary><h2>Can I do something else with EventScout, like make QR codes linking to it, or download your database of SCA groups, or write a thinkpiece article about how it represents the downfall of society, or copy some of the code for another allied project, or use it as inspiration for my interpretive dance performance?</h2></summary>
+      <p>We made the website to help you. The information on it is all public, pulled from public websites elsewhere. You can do whatever you want so long as you're not breaking any laws, not causing any SCA officers undue headaches and stress due to flagrant policy violations, not being a dick, and not trying to sell the data. If you're feeling kind and helpful, you can credit us.</p>
+    </details>
+
+    <details class="faq-item" id="help">
+      <summary><h2>How can I help make EventScout even better?</h2></summary>
+      <ol>
+        <li>If your local group doesn't currently have a calendar, we recommend you create one! This isn't just useful for resources like EventScout; it also makes it easier for your group's members and newcomers to keep track of when and where your different practices are. We recommend embedding a Google Calendar in your group's website and marking any cancellations clearly on the Google Calendar. This lets people subscribe directly to your calendar, so they can get reminders about practices or get a notification if you put an extra A&amp;S night on the calendar - without having to check Facebook. Best practice is to create the calendar using your webminister's email rather than your personal email, so it's easy to hand it off to the next officer and ensure it stays maintained; you can give edit access to any other officers who need to be able to edit events if a practice is moved or cancelled. If you create one, just <a href="https://forms.gle/gcdRyUnVv8FbLqG3A" target="_blank" rel="noopener noreferrer">let us know</a> and we'll embed it!</li>
+        <li>If you're an event steward or help maintain Kingdom or Baronial calendars, the best thing you can do to help us is make sure that your calendar is easy for us to import.
+          <ol type="a">
+            <li>Put a link on your website to where people can actually import your calendar into their own personal calendars. If it's a Google calendar, you can just embed it as a Google calendar; putting a complicated web interface over the top sometimes just removes functionality or hides the import options.</li>
+            <li>Put a simple address in the 'location' field - eg. "123 Medieval Road, Historytown, Dreamland" - not "Sir John's farm, you know, the usual place, turn left off highway 16 after the big oak tree". Any additional text - such as directions, entry passcodes, or credit to the owner of the site - should go in the description field, never in the location field. This helps everyone's GPS as well as our geocoding!</li>
+            <li>Using a consistent format for items that shouldn't be mapped, like deadlines for officers' reports, will help tools like ours to filter those events out - and also help your newcomers know which things on your calendar they don't need to worry about.</li>
+            <li>Try to create events with best-guess locations. If you don't have an exact site pinned down yet but you know it'll be vaguely somewhere in northern Colorado, putting "northern Colorado" is much better than nothing - both for us and for others trying to plan!</li>
+            <li>If an event ought to be private - for example, it's a peerage meeting - consider putting it on a private calendar, if the relevant group has one.</li>
+          </ol>
+        </li>
+        <li>You can <a href="https://ko-fi.com/fabianscholl" target="_blank" rel="noopener noreferrer">buy us a coffee</a> if you'd like.</li>
+        <li>If you've spotted an error, we want to know about it! It's impossible for us to know the location of every event in the Known World, so we're relying on our geocoding service to interpret addresses correctly. You can <a href="https://forms.gle/5CZkWRa14NBPQmQ79" target="_blank" rel="noopener noreferrer">submit a calendar</a> if we're missing your local group, or <a href="https://forms.gle/gcdRyUnVv8FbLqG3A" target="_blank" rel="noopener noreferrer">contact us</a> with any other issues or questions.</li>
+        <li>We're recruiting for a liaison in each kingdom who will take the lead on maintenance for that kingdom. That means things like: noticing when the code has put an event in the wrong location and issuing a correction, noticing when events are missing or wrong (and either adding them to EventScout or asking the relevant webmin to add them to the kingdom/barony calendars), checking corrections reports, adding new baronies/shires/groups as they're created, and marking baronies/shires/groups that go dormant. If you're interested, <a href="https://forms.gle/gcdRyUnVv8FbLqG3A" target="_blank" rel="noopener noreferrer">contact us</a> and we'll get you up to speed on how to handle this. You don't need to be able to code, so long as you're not intimidated by a spreadsheet.</li>
+        <li>Do you have a lead on a better geocoding service? We'd love to hear about it. Please <a href="https://forms.gle/gcdRyUnVv8FbLqG3A" target="_blank" rel="noopener noreferrer">contact us</a>.</li>
+        <li>Do you have a relevant resource? We'd love to be able to link to other resources which may help (eg. a guide for webministers on how to create a Google Calendar for your group and embed it into your group's website) - <a href="https://forms.gle/gcdRyUnVv8FbLqG3A" target="_blank" rel="noopener noreferrer">let us know</a> if you have a resource we should link to!</li>
+      </ol>
+    </details>
+
+    <details class="faq-item" id="knight">
+      <summary><h2>Who's your knight?</h2></summary>
+      <p>Forannán is squired to Sir Marcus de Rath.</p>
+      <p>(If you've never had a red belt then you might not think this is a Frequently Asked Question, but trust me, it is a very frequently asked question. Sometimes five times at the same campfire.)</p>
+      <p>(Ricardo doesn't have his AoA yet.)</p>
+    </details>
+  </article>
+</main>
+
+<script>
+  // Open the question named in the address (faq.html#embedding), so a link can
+  // point straight at one answer; and an "Expand all / Collapse all" toggle.
+  (function () {
+    const items = [...document.querySelectorAll('details.faq-item')];
+    const openFromHash = () => {
+      const target = location.hash && document.getElementById(location.hash.slice(1));
+      if (target && target.tagName === 'DETAILS') { target.open = true; target.scrollIntoView(); }
+    };
+    openFromHash();
+    window.addEventListener('hashchange', openFromHash);
+    const btn = document.getElementById('faq-toggle-all');
+    const sync = () => { btn.textContent = items.every(d => d.open) ? 'Collapse all' : 'Expand all'; };
+    btn.addEventListener('click', () => {
+      const open = !items.every(d => d.open);
+      items.forEach(d => { d.open = open; });
+      sync();
+    });
+    items.forEach(d => d.addEventListener('toggle', sync));
+  })();
+</script>
+
+</body>
+</html>
