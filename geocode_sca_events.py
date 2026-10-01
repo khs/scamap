@@ -837,7 +837,99 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
 # "ok_fallback" = a baronial no-address event pinned at its barony's own coords by
 # clean_sca_events.apply_baronial_coords.
 SUCCESS_STATUSES = {"ok", "ok_retry", "ok_photon", "cached", "override",
-                    "ok_organizer", "ok_published", "ok_fallback"}
+                    "ok_organizer", "ok_published", "ok_fallback", "ok_group"}
+
+
+# ---------------------------------------------------------------------------
+# Last resorts when an address can't be geocoded
+# ---------------------------------------------------------------------------
+
+def address_in_description(description: str, tried: str) -> str:
+    """A different, geocodable-looking address written in the description
+    (labelled "Location:"/"Address:" or a full street address), or ''."""
+    import clean_sca_events as clean
+    addr, conf = clean.extract_location_from_description(str(description or ""))
+    if not addr or conf != "high":
+        return ""
+    return "" if addr.strip().lower() == str(tried).strip().lower() else addr.strip()
+
+
+_GROUP_TYPE_RE = re.compile(r"^(?:barony|shire|canton|province|college|stronghold|riding|"
+                            r"march|marche|crown province|principality|hamlet|dominion)\s+of\s+",
+                            re.IGNORECASE)
+
+
+def _group_key(name: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", str(name).lower().replace("’", "'")).strip()
+
+
+def load_host_groups(path: Path | None = None) -> dict:
+    """locals.csv groups with coordinates: group -> (lat, lng, location, kingdom)."""
+    path = path or SCRIPT_DIR / "locals.csv"
+    groups = {}
+    if path.exists():
+        with open(path, encoding="utf-8", newline="") as f:
+            for r in csv.DictReader(f):
+                g = (r.get("group") or "").strip()
+                try:
+                    lat, lng = float(r.get("lat") or ""), float(r.get("lng") or "")
+                except ValueError:
+                    continue
+                if g and g not in groups:
+                    groups[g] = (str(lat), str(lng), (r.get("location") or "").strip(),
+                                 (r.get("kingdom") or "").strip())
+    return groups
+
+
+def host_group_for(row, groups: dict):
+    """The group whose spot should stand in for this event's location: a local
+    group's own; for a kingdom event, a group of that kingdom named in the
+    title ("Fall Crown (Darach)") or description ("hosted by the Barony of X").
+    Returns (lat, lng, location) or None."""
+    source = str(row.get("source", "")).strip()
+    if str(row.get("calendar_type", "")) != "kingdom":
+        g = groups.get(source)
+        return g[:3] if g else None
+    candidates = []
+    for name, g in groups.items():
+        if g[3] != source:
+            continue
+        short = _group_key(_GROUP_TYPE_RE.sub("", name))
+        if len(short) >= 4:
+            candidates.append((short, _group_key(name), g))
+    # Short names ("Burnfield") count in the title; in the free-text
+    # description only a group's FULL name does ("the bridge" is just words,
+    # "Barony of the Bridge" is a group).
+    title = str(row.get("title", ""))
+    texts = [(_group_key(m), True) for m in re.findall(r"\(([^()]+)\)", title)]
+    texts += [(_group_key(title), True), (_group_key(row.get("description", "")), False)]
+    for text, short_ok in texts:             # parenthetical, then title, then description
+        hits = [(full, g) for short, full, g in candidates
+                if (short_ok and f" {short} " in f" {text} ") or f" {full} " in f" {text} "]
+        if hits:
+            return max(hits, key=lambda h: len(h[0]))[1][:3]
+    return None
+
+
+def pin_failed_at_host_group(df, groups: dict | None = None) -> int:
+    """Every in-person event whose geocoding failed is pinned at its hosting
+    group's spot, flagged location_specificity="vague" so the popup warns."""
+    groups = load_host_groups() if groups is None else groups
+    n = 0
+    for idx in df.index[df["geocode_status"] == "failed"]:
+        if str(df.at[idx, "is_virtual"]) == "True":
+            continue
+        hit = host_group_for(df.loc[idx], groups)
+        if not hit:
+            continue
+        df.at[idx, "lat"], df.at[idx, "lng"] = hit[0], hit[1]
+        df.at[idx, "geocode_status"] = "ok_group"
+        if "location_specificity" in df.columns:
+            df.at[idx, "location_specificity"] = "vague"
+        n += 1
+    if n:
+        print(f"  Pinned {n} event(s) whose address failed at their hosting group's location.")
+    return n
 
 
 # A location made only of these words ("Zoom", "Online via Zoom", "Virtual
@@ -941,9 +1033,10 @@ def main(retry_failed: bool = False):
     print()
 
     if to_geocode.sum() == 0:
-        if published or online.any():   # pre-passes changed rows; nothing to geocode
+        rescued = pin_failed_at_host_group(df)
+        if published or online.any() or rescued:   # changed rows; nothing to geocode
             df.to_csv(OUTPUT_FILE, index=False, quoting=csv.QUOTE_ALL)
-            print(f"  Saved {published + int(online.sum())} pre-pass update(s).")
+            print(f"  Saved {published + int(online.sum()) + rescued} pre-pass update(s).")
         print("Nothing to do — all rows already have geocode_status set.")
         return
 
@@ -994,6 +1087,16 @@ def main(retry_failed: bool = False):
 
         lat, lng, status = try_geocode_with_fallbacks(address, session, source)
 
+        # The location field failed: an address written in the DESCRIPTION is
+        # often the real one ("Location: Mandt Center, 400 Mandt Pkwy, …").
+        if lat is None:
+            desc_addr = address_in_description(row.get("description", ""), address)
+            if desc_addr:
+                print(f"           → trying the address in the description: {desc_addr[:60]}")
+                lat, lng, status = try_geocode_with_fallbacks(desc_addr, session, source)
+                if lat is not None:
+                    df.at[idx, "clean_location"] = desc_addr
+
         if lat is not None:
             df.at[idx, "lat"]            = str(lat)
             df.at[idx, "lng"]            = str(lng)
@@ -1014,6 +1117,10 @@ def main(retry_failed: bool = False):
             save_geo_cache()
             print(f"  [Progress saved at {i}/{total}]")
 
+
+    # Anything still failed: pin it at the hosting group (no API calls, so this
+    # also rescues events that failed on earlier runs).
+    pin_failed_at_host_group(df)
 
     # Final save
     df.to_csv(OUTPUT_FILE, index=False, quoting=csv.QUOTE_ALL)

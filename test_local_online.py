@@ -144,6 +144,50 @@ class TestLocalCopiesOfKingdomEvents(unittest.TestCase):
         self.assertEqual(len(clean.drop_local_copies_of_kingdom_events(df)), 2)
 
 
+class TestFailedGeocodeRescue(unittest.TestCase):
+    import geocode_sca_events as geo
+    GROUPS = {"Barony of Here": ("40.0", "-80.0", "Town, PA", "Kingdom of X"),
+              "Canton of Burnfield": ("-24.87", "152.35", "Bundaberg", "Kingdom of Lochac"),
+              "Canton of Other": ("-37.8", "144.9", "Melbourne", "Kingdom of Lochac")}
+
+    def _df(self, rows):
+        base = {"is_virtual": "False", "description": "", "lat": "", "lng": "",
+                "geocode_status": "failed", "location_specificity": ""}
+        return pd.DataFrame([dict(base, **r) for r in rows])
+
+    def test_local_event_goes_to_its_own_group(self):
+        df = self._df([{"title": "Practice", "source": "Barony of Here", "calendar_type": "baronial"}])
+        self.assertEqual(self.geo.pin_failed_at_host_group(df, self.GROUPS), 1)
+        r = df.iloc[0]
+        self.assertEqual((r["lat"], r["geocode_status"], r["location_specificity"]),
+                         ("40.0", "ok_group", "vague"))
+
+    def test_kingdom_event_goes_to_the_group_it_names(self):
+        df = self._df([{"title": "Last Stand of the Pirates (Burnfield)", "source": "Kingdom of Lochac",
+                        "calendar_type": "kingdom"},
+                       {"title": "Crown Tourney", "source": "Kingdom of Lochac", "calendar_type": "kingdom",
+                        "description": "Hosted by the Canton of Other."}])
+        self.geo.pin_failed_at_host_group(df, self.GROUPS)
+        self.assertEqual(list(df["lat"]), ["-24.87", "-37.8"])
+
+    def test_no_named_group_or_online_stays_failed(self):
+        df = self._df([{"title": "Crown Tourney", "source": "Kingdom of Lochac", "calendar_type": "kingdom"},
+                       {"title": "Council", "source": "Barony of Here", "calendar_type": "baronial",
+                        "is_virtual": "True"},
+                       # a group of ANOTHER kingdom named in the title doesn't count
+                       {"title": "Feast (Here)", "source": "Kingdom of Lochac", "calendar_type": "kingdom"},
+                       # a short name as ordinary words in the description doesn't count
+                       {"title": "Yule", "source": "Kingdom of Lochac", "calendar_type": "kingdom",
+                        "description": "Bring other food to share."}])
+        self.assertEqual(self.geo.pin_failed_at_host_group(df, self.GROUPS), 0)
+        self.assertEqual(set(df["geocode_status"]), {"failed"})
+
+    def test_address_in_description(self):
+        desc = "Join us! Location: Mandt Center, 400 Mandt Parkway, Stoughton, WI 53589. Bring food."
+        self.assertIn("400 Mandt Parkway", self.geo.address_in_description(desc, "the usual place"))
+        self.assertEqual(self.geo.address_in_description("No address here, just fun.", "x"), "")
+
+
 class TestNonEvents(unittest.TestCase):
     def test_free_busy_blocks(self):
         self.assertTrue(clean.is_non_event("Busy"))
