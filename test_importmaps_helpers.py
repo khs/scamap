@@ -99,8 +99,13 @@ class TestIsVirtualEvent(unittest.TestCase):
         self.assertFalse(m.is_virtual_event("Meeting", "", "Come join us in person"))
 
     def test_discord_alone_is_not_a_keyword(self):
-        # "discord" is deliberately excluded from VIRTUAL_KEYWORDS.
-        self.assertFalse(m.is_virtual_event("Meeting", "discord", ""))
+        # "discord" is deliberately excluded from VIRTUAL_KEYWORDS: an in-person
+        # event that merely MENTIONS its Discord stays in person...
+        self.assertNotIn("discord", m.VIRTUAL_KEYWORDS)
+        self.assertFalse(m.is_virtual_event("Meeting", "Town Hall, 1 Main St (details on Discord)", ""))
+        self.assertFalse(m.is_virtual_event("Meeting", "", "Posted to our Discord event page"))
+        # ...but a location that is NOTHING but Discord is an online meeting.
+        self.assertTrue(m.is_virtual_event("Meeting", "discord", ""))
 
 
 class TestGetDatetime(unittest.TestCase):

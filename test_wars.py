@@ -124,6 +124,17 @@ class TestApplyWars(unittest.TestCase):
         self.assertEqual(len(out), 2)
         self.assertEqual(set(out["geocode_status"]), {"ok"})
 
+    def test_local_relisting_during_the_war_is_merged(self):
+        self._wars(GULF)
+        out = self._run([
+            _ev(title="Gulf Wars XXXV", source="Kingdom of Gleann Abhann",
+                start="2027-03-13", end="2027-03-21"),
+            _ev(title="Gulf Wars", calendar_type="baronial", source="Barony of X",
+                start="2027-03-13", end="2027-03-21"),
+        ])
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out.iloc[0]["source"], "Kingdom of Gleann Abhann")
+
     def test_each_year_is_its_own_event(self):
         self._wars(GULF)
         out = self._run([

@@ -1214,6 +1214,34 @@ def drop_aggregator_duplicates(df: pd.DataFrame) -> pd.DataFrame:
     return df.drop(index=drop).drop(columns=["is_aggregator"])
 
 
+def drop_local_copies_of_kingdom_events(df: pd.DataFrame) -> pd.DataFrame:
+    """A barony often re-lists the kingdom-calendar event it hosts ("Bacon Bash
+    2026" on both Bryn Madoc's and Meridies' calendars). deduplicate() keeps the
+    two calendar types apart (so a practice is never swallowed by a kingdom
+    event at the same park), so drop the LOCAL copy here only when it's the
+    same event: same day, same venue AND a similar title."""
+    is_virtual = df["is_virtual"].astype(str) == "True" if "is_virtual" in df.columns \
+        else pd.Series(False, index=df.index)
+    loc = df["clean_location"].fillna("").str.strip()
+    day = df["start"].astype(str).str[:10]
+    kingdom = df[(df["calendar_type"] == "kingdom") & (loc != "") & ~is_virtual]
+    by_day: dict = {}
+    for idx in kingdom.index:
+        by_day.setdefault(day[idx], []).append((_title_tokens(df.at[idx, "title"]), loc[idx]))
+    drop = []
+    for idx in df[(df["calendar_type"] == "baronial") & (loc != "") & ~is_virtual].index:
+        tokens = _title_tokens(df.at[idx, "title"])
+        for k_tokens, k_loc in by_day.get(day[idx], []):
+            shared = len(tokens & k_tokens)
+            if (shared and shared * 2 >= max(len(tokens), len(k_tokens))
+                    and _same_venue(loc[idx], k_loc)):
+                drop.append(idx)
+                break
+    if drop:
+        print(f"  Dropped {len(drop)} local listing(s) of events already on their kingdom calendar.")
+    return df.drop(index=drop)
+
+
 def deduplicate(df: pd.DataFrame) -> pd.DataFrame:
     """
     Remove duplicate events (same start date + same clean_location + same
@@ -1785,9 +1813,8 @@ def _event_days(start, end) -> float:
 
 
 def _is_war_listing(row, keywords) -> bool:
-    """A kingdom-calendar, multi-day event whose title names this war."""
-    if str(row.get("calendar_type", "")).strip() != "kingdom":
-        return False
+    """A multi-day event, on any calendar (a barony re-listing the war too),
+    whose title names this war."""
     title = f" {_normalize_title_for_match(row.get('title', ''))} "
     if not any(f" {k} " in title for k in keywords):
         return False
@@ -1840,11 +1867,19 @@ def apply_wars(df: pd.DataFrame, today=None) -> pd.DataFrame:
     for war in wars:
         mask = df.apply(lambda r: _is_war_listing(r, war["keywords"]), axis=1)
         mask &= ~df.index.isin(consumed)
+        is_kingdom = df["calendar_type"].astype(str) == "kingdom"
         by_year: dict[str, list] = {}
-        for idx in df[mask].index:
+        for idx in df[mask & is_kingdom].index:
             by_year.setdefault(str(df.at[idx, "start"])[:4], []).append(idx)
+        local = df[mask & ~is_kingdom]
         for year, idxs in sorted(by_year.items()):
             rep = _pick_war_listing(df.loc[idxs], war["host"])
+            # A local calendar re-listing the war joins it too, but only when its
+            # dates overlap the war's (not a "Gulf Wars prep practice" weeks earlier).
+            r_start, r_end = str(rep["start"])[:10], str(rep["end"] or rep["start"])[:10]
+            idxs = idxs + [i for i in local.index
+                           if str(local.at[i, "start"])[:10] <= r_end
+                           and str(local.at[i, "end"] or local.at[i, "start"])[:10] >= r_start]
             ev = _war_event(rep.to_dict(), war)
             # Keep the fullest write-up among the listings, not a placeholder.
             ev["description"] = max(df.loc[idxs, "description"].astype(str), key=len)
@@ -2198,6 +2233,7 @@ def main():
     print(f"  {ook_count} events marked OUT OF KINGDOM (will lose priority to duplicates)")
     before = len(df)
     df = deduplicate(df)
+    df = drop_local_copies_of_kingdom_events(df)
     print(f"  Removed {before - len(df)} duplicates. {len(df)} remain.\n")
 
     # Step 5: Merge recurring events

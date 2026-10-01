@@ -141,6 +141,13 @@ def extract_state_from_address(address: str) -> str | None:
         code = m.group(1).upper()
         if code in US_STATE_BBOX:
             return code
+    # A spelled-out state (", Wyoming, 82007"). Without this, "Cheyenne,
+    # Wyoming" had no expected state and a hit in Wyoming County, PA was
+    # accepted. Longest names first so "West Virginia" beats "Virginia".
+    for code, name in sorted(kingdoms.US_STATE_NAMES.items(), key=lambda kv: -len(kv[1])):
+        if code in US_STATE_BBOX and re.search(rf",\s*{re.escape(name)}\s*(?:,|\d{{5}}|$)",
+                                               address, re.IGNORECASE):
+            return code
     return None
 
 

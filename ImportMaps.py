@@ -337,6 +337,23 @@ def clean_text(text: str) -> str:
     return text.strip()
 
 
+# A LOCATION made only of these words names a platform, not a place ("Discord",
+# "Discord server", "Online via Zoom"). "discord" stays out of VIRTUAL_KEYWORDS
+# (in-person events mention their Discord in passing), but a location that is
+# nothing BUT Discord is an online meeting.
+_ONLINE_PLATFORMS = {"online", "zoom", "virtual", "discord", "webex", "teams", "meet",
+                     "googlemeet", "skype", "jitsi", "livestream"}
+_ONLINE_FILLER = _ONLINE_PLATFORMS | {"via", "on", "the", "our", "and", "or", "only", "google",
+                                      "microsoft", "server", "channel", "call", "meeting",
+                                      "live", "stream", "link", "see", "description", "a"}
+
+
+def is_online_only_location(location: str) -> bool:
+    words = re.findall(r"[a-z]+", (location or "").lower())
+    return bool(words) and any(w in _ONLINE_PLATFORMS for w in words) \
+        and all(w in _ONLINE_FILLER for w in words)
+
+
 def is_virtual_event(title: str, location: str, description: str) -> bool:
     """Return True if the event appears to be virtual/online.
 
@@ -351,6 +368,8 @@ def is_virtual_event(title: str, location: str, description: str) -> bool:
     if any(kw in (title or "").lower() for kw in VIRTUAL_KEYWORDS):
         return True
     if any(kw in (location or "").lower() for kw in VIRTUAL_KEYWORDS):
+        return True
+    if is_online_only_location(location):
         return True
     if not (location or "").strip():
         return any(kw in (description or "").lower() for kw in VIRTUAL_KEYWORDS)

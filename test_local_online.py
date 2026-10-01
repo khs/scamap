@@ -70,6 +70,12 @@ class TestVirtualKeywords(unittest.TestCase):
             self.assertTrue(ImportMaps.is_virtual_event("Meeting", "", desc), desc)
             self.assertTrue(clean._looks_virtual("Meeting", desc), desc)
 
+    def test_platform_only_location_is_virtual(self):
+        for loc in ("Discord", "Our Discord server", "Online via Zoom", "Teams"):
+            self.assertTrue(ImportMaps.is_virtual_event("Populace Meeting", loc, ""), loc)
+        # ...but a place that merely mentions Discord is in person.
+        self.assertFalse(ImportMaps.is_virtual_event("Practice", "Town Hall (see Discord)", ""))
+
     def test_in_person_with_a_place_is_not_virtual(self):
         self.assertFalse(ImportMaps.is_virtual_event(
             "Meeting", "Town Hall, 1 Main St, Ely MN", "Minutes shared on Google Meet later"))
@@ -105,6 +111,37 @@ class TestRecurringMergeStaysWithinAGroup(unittest.TestCase):
         out = clean.merge_recurring(pd.DataFrame(rows))
         self.assertEqual(sorted(out["source"]), ["Barony of Bonwicke", "Shire of Elsewhere"])
         self.assertTrue(all(t.endswith("(RECURRING)") for t in out["title"]))
+
+
+class TestLocalCopiesOfKingdomEvents(unittest.TestCase):
+    def _df(self, rows):
+        base = {"is_virtual": "False", "description": ""}
+        return pd.DataFrame([dict(base, **r) for r in rows])
+
+    def test_barony_relisting_the_kingdom_event_is_dropped(self):
+        df = self._df([
+            {"title": "Bacon Bash 2026", "start": "2099-10-02", "clean_location": "1 Elm St, Ely, MN 55731",
+             "source": "Kingdom of Meridies", "calendar_type": "kingdom"},
+            {"title": "Bacon Bash 2026", "start": "2099-10-02", "clean_location": "1 Elm St, Ely, MN 55731",
+             "source": "Barony of Bryn Madoc", "calendar_type": "baronial"}])
+        out = clean.drop_local_copies_of_kingdom_events(df)
+        self.assertEqual(list(out["source"]), ["Kingdom of Meridies"])
+
+    def test_practice_at_the_same_venue_is_kept(self):
+        df = self._df([
+            {"title": "Crown Tourney", "start": "2099-10-02", "clean_location": "1 Elm St, Ely, MN 55731",
+             "source": "Kingdom of X", "calendar_type": "kingdom"},
+            {"title": "Archery Practice", "start": "2099-10-02", "clean_location": "1 Elm St, Ely, MN 55731",
+             "source": "Barony of Y", "calendar_type": "baronial"}])
+        self.assertEqual(len(clean.drop_local_copies_of_kingdom_events(df)), 2)
+
+    def test_same_title_elsewhere_is_kept(self):
+        df = self._df([
+            {"title": "Crown Tourney", "start": "2099-10-02", "clean_location": "1 Elm St, Ely, MN 55731",
+             "source": "Kingdom of X", "calendar_type": "kingdom"},
+            {"title": "Crown Tourney", "start": "2099-10-02", "clean_location": "500 Oak Ave, Austin, TX",
+             "source": "Barony of Y", "calendar_type": "baronial"}])
+        self.assertEqual(len(clean.drop_local_copies_of_kingdom_events(df)), 2)
 
 
 class TestNonEvents(unittest.TestCase):
