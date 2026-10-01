@@ -1538,33 +1538,82 @@ OVERRIDE_COLUMNS = [
 ]
 
 
-def _load_overrides() -> list[dict]:
-    """Read event_overrides.csv. Skips blank rows, `#` comment rows, and any
-    row with no usable match key (so an empty row can't match every event)."""
-    if not OVERRIDES_FILE.exists():
+# corrections.csv: the one hand-maintained corrections file (see
+# EDITING_EVENTS.md). Columns: applies_to, calendar, match, date, lat, lng,
+# location, link, note.
+#   applies_to=event    one event: `match` is its link, or its exact title on
+#                       `calendar` (optionally limited to `date`, YYYY-MM-DD)
+#   applies_to=keyword  every event on `calendar` whose title or location
+#                       contains `match`
+# Its rows are translated into the two long-standing correction steps (event
+# overrides, then keyword corrections), so behaviour is exactly as before. The
+# old event_overrides.csv / location_corrections.csv are still read if present.
+CORRECTIONS_FILE = None      # None = SCRIPT_DIR / "corrections.csv" (patchable in tests)
+CORRECTION_COLUMNS = ["applies_to", "calendar", "match", "date", "lat", "lng",
+                      "location", "link", "note"]
+
+
+def _corrections_rows(kind: str) -> list[dict]:
+    """corrections.csv rows whose applies_to is `kind` ("event"/"keyword")."""
+    path = CORRECTIONS_FILE or SCRIPT_DIR / "corrections.csv"
+    if not path.exists():
         return []
-    out = []
+    rows = []
     try:
-        with open(OVERRIDES_FILE, encoding="utf-8", newline="") as f:
+        with open(path, encoding="utf-8", newline="") as f:
             for raw in csv.DictReader(f):
-                row = {k: (raw.get(k) or "").strip() for k in OVERRIDE_COLUMNS}
-                if row["match_event_url"].startswith("#"):
-                    continue                                    # comment line
-                if not (row["match_event_url"] or row["match_source"]
-                        or row["match_title"]):
-                    continue                                    # no match key
-                if not (row["match_event_url"] or row["match_title"]):
-                    # Source (+date) alone would re-pin a whole kingdom's
-                    # calendar. For "every X on this calendar", use
-                    # location_corrections.csv's keyword match instead.
-                    print(f"  WARNING: override for '{row['match_source']}' has no "
-                          f"match_event_url or match_title — it would move every "
-                          f"event on that calendar, so it's skipped. Use "
-                          f"location_corrections.csv for keyword matches.")
+                r = {k: (raw.get(k) or "").strip() for k in CORRECTION_COLUMNS}
+                if r["applies_to"].startswith("#"):
                     continue
-                out.append(row)
+                if r["applies_to"].lower() == kind:
+                    rows.append(r)
+                elif kind == "event" and r["applies_to"].lower() not in ("event", "keyword", ""):
+                    print(f"  WARNING: corrections.csv: unknown applies_to "
+                          f"{r['applies_to']!r} for {r['match']!r} — skipped")
     except Exception as e:
-        print(f"  WARNING: could not read {OVERRIDES_FILE.name}: {e}")
+        print(f"  WARNING: could not read {path.name}: {e}")
+    return rows
+
+
+def _override_from_correction(r: dict) -> dict:
+    """An applies_to=event row in event-override form."""
+    is_url = r["match"].lower().startswith(("http://", "https://"))
+    return {
+        "match_event_url": r["match"] if is_url else "",
+        "match_source": "" if is_url else r["calendar"],
+        "match_title": "" if is_url else r["match"],
+        "match_date": r["date"],
+        "new_location": r["location"], "new_lat": r["lat"], "new_lng": r["lng"],
+        "new_event_url": r["link"], "note": r["note"],
+    }
+
+
+def _load_overrides() -> list[dict]:
+    """Event overrides: corrections.csv applies_to=event rows, plus the legacy
+    event_overrides.csv if present. Skips blank rows, `#` comment rows, and any
+    row with no usable match key (so an empty row can't match every event)."""
+    raws = [_override_from_correction(r) for r in _corrections_rows("event")]
+    if OVERRIDES_FILE.exists():
+        try:
+            with open(OVERRIDES_FILE, encoding="utf-8", newline="") as f:
+                raws += list(csv.DictReader(f))
+        except Exception as e:
+            print(f"  WARNING: could not read {OVERRIDES_FILE.name}: {e}")
+    out = []
+    for raw in raws:
+        row = {k: (raw.get(k) or "").strip() for k in OVERRIDE_COLUMNS}
+        if row["match_event_url"].startswith("#"):
+            continue                                    # comment line
+        if not (row["match_event_url"] or row["match_source"] or row["match_title"]):
+            continue                                    # no match key
+        if not (row["match_event_url"] or row["match_title"]):
+            # Calendar (+date) alone would re-pin a whole kingdom's calendar.
+            # For "every X on this calendar", use an applies_to=keyword row.
+            print(f"  WARNING: correction for '{row['match_source']}' names no event "
+                  f"(no link or title) — it would move every event on that "
+                  f"calendar, so it's skipped. Use applies_to=keyword instead.")
+            continue
+        out.append(row)
     return out
 
 
@@ -1664,7 +1713,7 @@ def apply_event_overrides(df: pd.DataFrame) -> pd.DataFrame:
         except Exception as e:                    # one bad row can't break cleaning
             print(f"  WARNING: override '{label}' failed to apply: {e}")
     if applied:
-        print(f"  Applied {applied} event change(s) from {OVERRIDES_FILE.name}.")
+        print(f"  Applied {applied} single-event correction(s) from corrections.csv.")
     return df
 
 
@@ -1702,23 +1751,26 @@ def apply_location_corrections(df: pd.DataFrame) -> pd.DataFrame:
     The optional `location` column also replaces the event's displayed address, so
     the popup names the real venue (e.g. every "Gulf Wars" listing on Gleann
     Abhann's calendar -> King's Arrow Ranch) instead of a vague area."""
+    # Rows: corrections.csv applies_to=keyword (calendar, match = keyword), plus
+    # the legacy location_corrections.csv (source, keywords) if present.
+    raws = [{"source": r["calendar"], "keywords": r["match"], "lat": r["lat"],
+             "lng": r["lng"], "location": r["location"]} for r in _corrections_rows("keyword")]
     path = SCRIPT_DIR / "location_corrections.csv"
-    if not path.exists():
-        return df
+    if path.exists():
+        try:
+            with open(path, encoding="utf-8", newline="") as f:
+                raws += list(csv.DictReader(f))
+        except Exception as e:
+            print(f"  WARNING: could not read location_corrections.csv: {e}")
     corrections = []
-    try:
-        with open(path, encoding="utf-8", newline="") as f:
-            for r in csv.DictReader(f):
-                src = (r.get("source") or "").strip()
-                kw  = (r.get("keywords") or "").strip().lower()
-                coords = _valid_override_coords((r.get("lat") or "").strip(),
-                                                (r.get("lng") or "").strip())
-                loc = (r.get("location") or "").strip()
-                if src and kw and coords:
-                    corrections.append((src, kw, coords, loc))
-    except Exception as e:
-        print(f"  WARNING: could not read location_corrections.csv: {e}")
-        return df
+    for r in raws:
+        src = (r.get("source") or "").strip()
+        kw  = (r.get("keywords") or "").strip().lower()
+        coords = _valid_override_coords((r.get("lat") or "").strip(),
+                                        (r.get("lng") or "").strip())
+        loc = (r.get("location") or "").strip()
+        if src and kw and coords:
+            corrections.append((src, kw, coords, loc))
     if not corrections:
         return df
     applied = 0
@@ -1746,7 +1798,7 @@ def apply_location_corrections(df: pd.DataFrame) -> pd.DataFrame:
                 applied += 1
                 break
     if applied:
-        print(f"  Applied {applied} location correction(s) from location_corrections.csv.")
+        print(f"  Applied {applied} keyword correction(s) from corrections.csv.")
     return df
 
 
@@ -2279,13 +2331,13 @@ def main():
     # AFTER carry-forward so restored events get corrected too, and AFTER the
     # geocode merge/invalidation so a human pin is never second-guessed). See
     # EDITING_EVENTS.md.
-    print("Step 6c: Applying event_overrides.csv corrections ...")
+    print("Step 6c: Applying corrections.csv (single events) ...")
     df = apply_event_overrides(df)
 
     # Step 6d: per-(source, title-keyword) coordinate fixes from
     # location_corrections.csv — precise pins for specific events on calendars we
     # otherwise auto-import in full.
-    print("Step 6d: Applying location_corrections.csv ...")
+    print("Step 6d: Applying corrections.csv (keyword matches) ...")
     df = apply_location_corrections(df)
 
     # Step 6e: baronial events still without an address (flagged 'vague' in Step 3)

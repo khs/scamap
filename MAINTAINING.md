@@ -35,7 +35,7 @@ Work down this list; you'll almost always stop at step 1.
 
 2. **Is only the location/pin wrong**, and the kingdom can't or won't improve the
    address? Add a correction yourself — this is the one case you actually touch.
-   Edit **`event_overrides.csv`** following **[EDITING_EVENTS.md](EDITING_EVENTS.md)**:
+   Edit **`corrections.csv`** following **[EDITING_EVENTS.md](EDITING_EVENTS.md)**:
    give a better address, or drop an exact pin. It persists and survives the
    kingdom editing the event.
 

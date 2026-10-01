@@ -1,0 +1,16 @@
+applies_to,calendar,match,date,lat,lng,location,link,note
+event,Kingdom of Gleann Abhann,Gleann Abhann Fall Crown List,,32.038867,-90.993114,"Warner-Tulley Memorial YMCA Camp, 5184 Y Camp Road, Port Gibson, MS 39150",,ZIP was Georgia's; pin from US Census (2026-09)
+event,Kingdom of Atlantia,Autumn Training Camp (Windmasters' Hill),,36.418422,-78.740252,"Scupperdog Farms, 7536 Goshen Rd, Oxford, NC 27565",,Calendar said DC; pin from US Census (2026-09)
+event,Kingdom of An Tir,"A Three Mountains ""Battle of the Bands""",,45.167815,-122.640478,"Bear Creek Tree Farm, 30300 S Elisha Rd, Molalla, OR 97038",https://antirsca.wixsite.com/battlebands,Region name in the address; event's own site (2026-09)
+event,Kingdom of Ansteorra,Bordermarch War of the Rams,,30.964827,-94.329245,"Border Keep (Jones Country Music Park), 5754 Recreational Road 255, Colmesneil, TX 75938",,Per waroftherams.org; pin from US Census (2026-09)
+event,Kingdom of Drachenwald,Bows and Blows V,,42.0432306,23.360726,"Kartala Ski Resort, Blagoevgrad, Bulgaria",,Misspelt town; maintainer's Google Maps pin (2026-09)
+event,Kingdom of Drachenwald,Gyllengran Fencing camp,,62.054382,17.243787,"Södra Vägen 32, 829 60 Gnarp, Sweden",,"Extra ""Sundsvall or Hudiksvall"" text (2026-09)"
+event,Kingdom of Lochac,Fox Hunt Fencing Tournament Ynys Fawr (Ynys Fawr),,-42.973062,147.28474,"Kingston Scout Hall, 10 Kingston View Drive, Kingston TAS 7050, Australia",,Address per maintainer; pinned at Twin Ovals Rd corner (2026-09)
+event,Kingdom of Lochac,River Haven Baronial Changeover (River Haven),,-27.203558,152.962837,"Narangba Community Hall, 227-229 Mackie Rd, Narangba QLD 4504, Australia",,Two venues listed; main day is Saturday at Narangba (2026-09)
+event,,https://www.outlands.org/event/windkeep-yule-2/,,41.098584,-104.810422,,,"""Wyoming"" read as Wyoming County PA; Cheyenne venue via US Census (2026-10)"
+event,Barony of Lyondemere,Archery Practice - Weeknight (RECURRING),,34.044,-118.4163,"Rancho Park Archery Range, Los Angeles, CA 90064",,Venue name won't geocode; pinned by hand
+keyword,Barony of Bright Hills,practices,,39.416485,-76.505546,,,
+keyword,Province of the Mists,Rockridge Bart,,37.844514,-122.252972,,,
+keyword,Barony of Caer Anterth Mawr,roost,,42.851725,-88.321701,"Mukwonago, WI",,
+keyword,Barony of Loch Salann,fighter practice,,40.672561,-111.842107,,,
+keyword,Barony of Three Mountains,battle of the bands,,45.167815,-122.640478,"Bear Creek Tree Farm, 30300 S Elisha Rd, Molalla, OR 97038",,

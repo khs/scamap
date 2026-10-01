@@ -73,12 +73,13 @@ class TestOverrideMatching(unittest.TestCase):
 class TestApplyOverrides(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
-        self.f = Path(self.tmp) / "event_overrides.csv"
-        self._orig = clean.OVERRIDES_FILE
+        self.f = Path(self.tmp) / "event_overrides.csv"     # legacy format, still read
+        self._orig = clean.OVERRIDES_FILE, clean.CORRECTIONS_FILE
         clean.OVERRIDES_FILE = self.f
+        clean.CORRECTIONS_FILE = Path(self.tmp) / "corrections.csv"   # none: don't mix in real rows
 
     def tearDown(self):
-        clean.OVERRIDES_FILE = self._orig
+        clean.OVERRIDES_FILE, clean.CORRECTIONS_FILE = self._orig
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def _write(self, body: str):
@@ -205,15 +206,68 @@ class TestApplyOverrides(unittest.TestCase):
         self.assertIsNone(clean._valid_override_coords("12.3", ""))      # incomplete
 
 
-class TestCommittedOverridesFile(unittest.TestCase):
-    """Guards on the real, committed event_overrides.csv so it can't drift from
-    the code or ship an accidentally-live override."""
+class TestCorrectionsFile(unittest.TestCase):
+    """corrections.csv rows become exactly the override / keyword rows the two
+    correction steps have always used."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self._orig = clean.CORRECTIONS_FILE, clean.OVERRIDES_FILE, clean.SCRIPT_DIR
+        clean.CORRECTIONS_FILE = self.tmp / "corrections.csv"
+        clean.OVERRIDES_FILE = self.tmp / "no_event_overrides.csv"
+        clean.SCRIPT_DIR = self.tmp
+
+    def tearDown(self):
+        clean.CORRECTIONS_FILE, clean.OVERRIDES_FILE, clean.SCRIPT_DIR = self._orig
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _write(self, rows):
+        header = ",".join(clean.CORRECTION_COLUMNS) + "\n"
+        clean.CORRECTIONS_FILE.write_text(header + "".join(r + "\n" for r in rows), encoding="utf-8")
+
+    def test_event_by_title_and_by_link(self):
+        self._write(['event,Kingdom of X,Crown Tourney,2099-05-01,40.1,-75.2,"Hall, PA",,why',
+                     'event,,https://x.org/e/1,,41.0,-80.0,,https://own.site/,'])
+        a, b = clean._load_overrides()
+        self.assertEqual((a["match_source"], a["match_title"], a["match_date"], a["new_location"]),
+                         ("Kingdom of X", "Crown Tourney", "2099-05-01", "Hall, PA"))
+        self.assertEqual((b["match_event_url"], b["match_title"], b["new_event_url"]),
+                         ("https://x.org/e/1", "", "https://own.site/"))
+
+    def test_keyword_rows_pin_matching_events(self):
+        self._write(['keyword,Barony of Y,practice,,39.5,-76.5,"Park, MD",,'])
+        df = pd.DataFrame([_row(source="Barony of Y", title="Archery Practice"),
+                           _row(source="Barony of Y", title="Feast")])
+        df["location_specificity"] = ""
+        out = clean.apply_location_corrections(df)
+        self.assertEqual((out.iloc[0]["lat"], out.iloc[0]["clean_location"], out.iloc[0]["geocode_status"]),
+                         ("39.5", "Park, MD", "override"))
+        self.assertEqual(out.iloc[1]["lat"], "1.0")                       # untouched
+
+    def test_calendar_only_event_row_is_refused(self):
+        self._write(['event,Kingdom of X,,,40.1,-75.2,,,'])
+        self.assertEqual(clean._load_overrides(), [])
+
+
+class TestCommittedCorrectionsFile(unittest.TestCase):
+    """Guards on the real, committed corrections.csv so it can't drift from
+    the code or ship an accidentally-live correction."""
 
     def test_header_matches_code_columns(self):
         import csv as _csv
-        with open(clean.OVERRIDES_FILE, encoding="utf-8", newline="") as f:
+        with open(clean.SCRIPT_DIR / "corrections.csv", encoding="utf-8", newline="") as f:
             header = next(_csv.reader(f))
-        self.assertEqual(header, clean.OVERRIDE_COLUMNS)
+        self.assertEqual(header, clean.CORRECTION_COLUMNS)
+
+    def test_every_row_is_a_known_kind_with_a_valid_pin(self):
+        import csv as _csv
+        with open(clean.SCRIPT_DIR / "corrections.csv", encoding="utf-8", newline="") as f:
+            for r in _csv.DictReader(f):
+                self.assertIn(r["applies_to"], ("event", "keyword"), r)
+                if r["lat"] or r["lng"]:
+                    self.assertIsNotNone(clean._valid_override_coords(r["lat"], r["lng"]), r)
+                if r["applies_to"] == "keyword":
+                    self.assertTrue(r["calendar"] and r["match"], r)
 
     def test_committed_overrides_are_well_formed(self):
         # A committed override must have a way to MATCH an event (a URL, or

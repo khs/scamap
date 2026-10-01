@@ -9,7 +9,7 @@ refreshes itself on a schedule.
 
 If an event is in the wrong place or has a vague location, **don't edit
 `sca_events_clean.csv`** — it's regenerated every run. Add a row to
-**`event_overrides.csv`** instead. Full guide:
+**`corrections.csv`** instead. Full guide:
 
 ➡️ **[EDITING_EVENTS.md](EDITING_EVENTS.md)**
 
@@ -28,7 +28,7 @@ run on its own):
 | Step | Script | What it does |
 | --- | --- | --- |
 | 1 | `ImportMaps.py` | Fetch every calendar in `calendars.csv` (kingdoms) and `locals.csv` (local groups) — direct ICS feeds + the scraper adapters in `scrapers.py` — expand recurring events, write `sca_events.csv`. Records any feeds that failed to fetch in `fetch_failures.json`. |
-| 2 | `clean_sca_events.py` | Clean text, de-duplicate, merge recurring series, carry forward last-good events for failed feeds, **apply `event_overrides.csv`**, backfill per-event URLs → `sca_events_clean.csv`. |
+| 2 | `clean_sca_events.py` | Clean text, de-duplicate, merge recurring series, carry forward last-good events for failed feeds, **apply `corrections.csv`**, backfill per-event URLs → `sca_events_clean.csv`. |
 | 3 | `enrich_descriptions.py` | Replace placeholder feed descriptions (Atlantia, East, Artemisia PDFs) with the real write-up from the linked event page. |
 | 4 | `geocode_sca_events.py` | Geocode addresses via Nominatim (+ Photon fallback), caching results in `geocode_cache.json`. Skips events a human pinned (`geocode_status = override`). |
 
@@ -55,7 +55,7 @@ annotations in the Actions run summary.
 | --- | --- |
 | `calendars.csv` | Kingdom feed list — one row per kingdom (`id,source,type`). |
 | `locals.csv` | Local-group registry — one row per known local group: its calendar feed (or `No Calendar Listed`/`No Calendar Available`; `No location` on a secondary feed = import its events but show no pin), plus type/website/social/`date_last_checked` and the placeholder-pin `location`/`lat`/`lng`. Add a group here, no code change needed. |
-| `event_overrides.csv` | Hand-maintained event corrections (see EDITING_EVENTS.md). |
+| `corrections.csv` | Hand-maintained corrections: one event (`event`) or every match of a keyword on a calendar (`keyword`); see EDITING_EVENTS.md. |
 | `find_calendars.py` | Finds and verifies an importable calendar behind a group's website; `--sweep` checks every group with no calendar (see MAINTAINING.md). |
 | `private_addresses.csv` | Fingerprinted blocklist of addresses owners asked us to remove; scrubbed from events and caches every run (see EDITING_EVENTS.md). |
 | `wars.csv` | Big wars with their own site + website (Gulf Wars, Pennsic, Lilies): merges their kingdom listings into one event (see EDITING_EVENTS.md). |
