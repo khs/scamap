@@ -5,12 +5,15 @@ things are done or decided.
 
 ## Next up (suggested order)
 
-1. **FAQ page replacing About** — small; answers the questions people
-   currently email about (why is an event wrong/missing, how locations work,
-   how to get a group added, privacy). Deflects reports before they arrive.
+1. **Apply the maintainer's rewrites in UI_TEXT.md** (section A filled in
+   2026-10-01) to index.html / clean_sca_events.py / wars.csv /
+   private_addresses.py; maintainer tests locally, then push. Re-check section
+   B with the maintainer (they believe it's all theirs).
+   Also: Massachusetts group pins (Bergental "Western MA", Smoking Rocks
+   "Southeast MA", Canton of the Towers "Northeast MA") all sit at the state
+   centre — maintainer to supply real locations.
+   FAQ: maintainer is considering new questions + topic subheadings.
 2. **Quick wins**
-   - Health check: warn when antir.ics is about to run out of events (it
-     expires silently; An Tir has to be downloaded by hand).
    - "Data last updated" date shown on the map.
    - Dormant status for groups in locals.csv (keeps the row, hides the pin,
      stops find_calendars re-adding it; easy to reactivate).
@@ -56,6 +59,11 @@ things are done or decided.
    - NOT doing: changing one date inside a recurring series.
 
 ## Done recently
+- FAQ page (maintainer's text) replaces About + How to Help (copies in archive/).
+- Failed geocodes: try an address in the description, then pin at the hosting
+  group (37 of 46 rescued).
+- "📅 Maintenance reminder" issue when antir.ics is >30 days old or about to
+  run out of events.
 - corrections.csv replaces event_overrides.csv + location_corrections.csv
   (verified byte-identical output).
 - In-person / Online checkboxes; search note with "Show all matches"; Near me

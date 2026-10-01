@@ -98,6 +98,65 @@ def _write_alert_file(total: int, failed: int, geocodable: int) -> None:
         ALERT_FILE.unlink(missing_ok=True)
 
 
+# Reminders: things the maintainer has to do by hand, on a schedule (e.g. re-
+# download An Tir's calendar file). Written to health_reminder.md; the refresh
+# workflow keeps one "Maintenance reminder" issue open while it exists and
+# closes it when it's gone.
+REMINDER_FILE = SCRIPT_DIR / "health_reminder.md"
+MANUAL_FEED_MAX_AGE_DAYS = 30     # re-download a hand-maintained file monthly
+MANUAL_FEED_RUNWAY_DAYS = 30      # ...or sooner if its events are about to run out
+
+
+def manual_feed_files() -> list:
+    """(kingdom, path) for each hand-maintained `file:` feed in calendars.csv."""
+    if not CALENDARS_FILE.exists():
+        return []
+    with open(CALENDARS_FILE, encoding="utf-8") as f:
+        return [(r["source"], SCRIPT_DIR / r["id"][len("file:"):].strip())
+                for r in csv.DictReader(f)
+                if r.get("type") == "kingdom" and (r.get("id") or "").startswith("file:")]
+
+
+def manual_feed_reminders(today=None) -> list:
+    """Reminder lines for hand-maintained feeds that are getting old: the file
+    was exported more than MANUAL_FEED_MAX_AGE_DAYS ago (from the newest
+    DTSTAMP inside it, i.e. when it was downloaded), or its last event is
+    within MANUAL_FEED_RUNWAY_DAYS."""
+    import re
+    from datetime import date, timedelta
+    today = today or date.today()
+    out = []
+    for kingdom, path in manual_feed_files():
+        if not path.exists():
+            out.append(f"{kingdom}: `{path.name}` is missing — download it (see MAINTAINING.md).")
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        def days(tag):
+            found = re.findall(rf"^{tag}[^:\r\n]*:(\d{{8}})", text, re.M)
+            return sorted(date(int(d[:4]), int(d[4:6]), int(d[6:8])) for d in found)
+        stamps, starts = days("DTSTAMP"), days("DTSTART")
+        if stamps and (today - stamps[-1]).days > MANUAL_FEED_MAX_AGE_DAYS:
+            out.append(f"{kingdom}: `{path.name}` was downloaded {(today - stamps[-1]).days} days ago "
+                       f"({stamps[-1].isoformat()}). Time to download a fresh copy.")
+        if not starts or starts[-1] <= today + timedelta(days=MANUAL_FEED_RUNWAY_DAYS):
+            last = starts[-1].isoformat() if starts else "none"
+            out.append(f"{kingdom}: `{path.name}` runs out of events soon (last event: {last}). "
+                       f"Download a fresh copy so its events stay on the map.")
+    return out
+
+
+def _write_reminder_file(reminders: list) -> None:
+    if reminders:
+        REMINDER_FILE.write_text("\n".join([
+            "Hand-maintained calendar files need refreshing:", "",
+            *[f"- {r}" for r in reminders], "",
+            "How: see **MAINTAINING.md → \"Updating An Tir\"**. This issue closes itself "
+            "on the next refresh after a fresh file is pushed.",
+        ]) + "\n", encoding="utf-8")
+    else:
+        REMINDER_FILE.unlink(missing_ok=True)
+
+
 def configured_kingdoms() -> list:
     if not CALENDARS_FILE.exists():
         return []
@@ -217,6 +276,13 @@ def main(strict: bool = False) -> int:
         if failed_srcs:
             emit("notice", f"{len(failed_srcs)} feed(s) failed to fetch this run "
                            f"(last-good carried forward): {', '.join(sorted(failed_srcs))}")
+
+    # 7. Hand-maintained feeds (An Tir) that are getting stale: a reminder,
+    #    tracked in its own issue so it never looks like a broken feed.
+    reminders = manual_feed_reminders()
+    for r in reminders:
+        emit("notice", f"reminder: {r}")
+    _write_reminder_file(reminders)
 
     # Update the baseline for next time.
     STATE_FILE.write_text(json.dumps({

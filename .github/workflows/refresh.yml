@@ -138,3 +138,29 @@ jobs:
           else
             echo "Feeds healthy, no open alert issue. Nothing to do."
           fi
+
+      - name: Open/close maintenance-reminder issue
+        # health_check.py drops health_reminder.md when a hand-maintained feed
+        # (An Tir's antir.ics) is over a month old or about to run out of events.
+        # One issue: opened once (one email), its text kept current without new
+        # comments (no email every run), and closed when the file is refreshed.
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          gh label create maintenance-reminder --color FBCA04 \
+            --description "Automated: something needs updating by hand" 2>/dev/null || true
+          existing=$(gh issue list --label maintenance-reminder --state open \
+            --json number --jq '.[0].number // empty' 2>/dev/null || true)
+          if [ -f health_reminder.md ]; then
+            if [ -n "$existing" ]; then
+              gh issue edit "$existing" --body-file health_reminder.md || true
+            else
+              gh issue create --label maintenance-reminder \
+                --title "📅 Maintenance reminder" --body-file health_reminder.md || true
+            fi
+          elif [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "✅ Up to date again. Closing automatically." || true
+            gh issue close "$existing" || true
+          fi

@@ -83,7 +83,9 @@ it into the repo. It needs no scripts and no code — the pipeline reads it like
 any other feed.
 
 **To update An Tir (takes about a minute, do it whenever you like — monthly is
-plenty):**
+plenty):** a GitHub issue labelled `maintenance-reminder` ("📅 Maintenance
+reminder") opens by itself when the file is more than 30 days old or about to
+run out of events, and closes itself after you've refreshed it.
 
 1. In your browser, go to **https://antir.org/events.ics** . Wait for the
    "Just a moment…" Cloudflare screen to pass. The browser will download a file

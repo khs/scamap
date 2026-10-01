@@ -30,6 +30,7 @@ fetch_failures.json
 # Run-local signal: written by health_check.py when a feed breaks, turned into
 # a GitHub issue by the refresh workflow. Never committed.
 health_alert.md
+health_reminder.md
 
 # Single-instance lock held by a running refresh.py (owner PID inside).
 refresh.lock
