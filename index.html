@@ -582,14 +582,25 @@
     }
     .legend-clear:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
     .legend-readout { font-style: italic; color: #555; }
+    /* Row under the key: major-events toggle, "Near me", distance filter. */
+    .map-tools {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;
+      margin: 0.1rem 0 0.4rem; font-size: 0.78rem; color: var(--blue);
+    }
+    .map-tools[hidden], .near-me-radius[hidden] { display: none; }
     .big-toggle {
       font: inherit; font-size: 0.78rem; cursor: pointer;
-      margin: 0.1rem 0 0.4rem; padding: 2px 10px;
+      padding: 2px 10px;
       border: 1px solid var(--sky-blue); border-radius: 10px;
       background: #fff; color: var(--blue);
     }
     .big-toggle:hover { border-color: var(--blue); }
     .big-toggle[aria-pressed="true"] { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .near-me-radius select {
+      font: inherit; font-size: 0.78rem; color: var(--blue);
+      border: 1px solid var(--sky-blue); border-radius: 10px; padding: 1px 6px; background: #fff;
+    }
+    .near-me-status { font-style: italic; color: #555; }
     /* Full-screen toggle sits at the right end of the colour-key row. */
     .fullscreen-btn {
       margin-left: auto; font: inherit; font-size: 0.74rem; cursor: pointer;
@@ -736,7 +747,24 @@
     <button type="button" id="fullscreen-btn" class="fullscreen-btn" title="Expand the map and event list to fill your screen">⛶ Full screen</button>
   </div>
   <!-- Major-events toggle: overrides the Kingdom/Baronial checkboxes while on. -->
-  <button type="button" id="big-toggle" class="big-toggle" aria-pressed="false">Click to filter for only major events &amp; wars (displayed with a larger pin)</button>
+  <div class="map-tools">
+    <button type="button" id="big-toggle" class="big-toggle" aria-pressed="false">Click to filter for only major events &amp; wars (displayed with a larger pin)</button>
+    <!-- Near me: the BROWSER supplies the position (with the visitor's
+         permission); nothing is sent to any service, and it isn't stored. -->
+    <button type="button" id="near-me" class="big-toggle" aria-pressed="false">📍 Near me</button>
+    <label class="near-me-radius" id="near-me-radius-wrap" hidden>Show events
+      <select id="near-me-radius">
+        <option value="">at any distance</option>
+        <option value="50">within 50 miles</option>
+        <option value="100">within 100 miles</option>
+        <option value="200">within 200 miles</option>
+        <option value="300">within 300 miles</option>
+        <option value="400">within 400 miles</option>
+        <option value="500">within 500 miles</option>
+      </select>
+    </label>
+    <span class="near-me-status" id="near-me-status" aria-live="polite"></span>
+  </div>
 
   <section class="prose-section">
     <h2>About This Map</h2>
@@ -1850,6 +1878,88 @@ function crossListedGroups(events) {
 }
 let bigOnlyActive = false;   // the "major events & wars" toggle under the key
 
+// ── Near me ───────────────────────────────────────────────────────
+// The visitor's position comes from the browser (navigator.geolocation, with
+// their permission): no geocoding service, nothing stored. An optional radius
+// then limits events (and "?" group pins) to that distance.
+let userPos = null;        // [lat, lng] once shared
+let radiusMiles = null;    // null = any distance
+let userMarker = null, radiusCircle = null;
+
+function milesBetween(lat1, lng1, lat2, lng2) {
+  const R = 3958.8, rad = Math.PI / 180;
+  const dLat = (lat2 - lat1) * rad, dLng = (lng2 - lng1) * rad;
+  const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+// Is this event inside the chosen radius? An online meeting counts at its local
+// group's spot; a kingdom-wide online event belongs to no place, so it stays.
+function withinRadius(ev) {
+  if (!userPos || !radiusMiles) return true;
+  let lat, lng;
+  if (ev.is_virtual === 'True') {
+    if (ev.calendar_type !== 'baronial') return true;
+    if (ev._parentLat == null) return false;
+    lat = ev._parentLat; lng = ev._parentLng;
+  } else {
+    lat = parseFloat(ev.lat); lng = parseFloat(ev.lng);
+    if (isNaN(lat) || isNaN(lng)) return false;
+  }
+  return milesBetween(userPos[0], userPos[1], lat, lng) <= radiusMiles;
+}
+
+function drawNearMe() {
+  if (userMarker) map.removeLayer(userMarker);
+  if (radiusCircle) map.removeLayer(radiusCircle);
+  userMarker = radiusCircle = null;
+  if (!userPos) return;
+  userMarker = L.circleMarker(userPos, { radius: 7, color: '#fff', weight: 2,
+    fillColor: '#2563eb', fillOpacity: 1, interactive: false }).addTo(map);
+  if (radiusMiles) {
+    radiusCircle = L.circle(userPos, { radius: radiusMiles * 1609.34, color: '#2563eb',
+      weight: 1.5, dashArray: '6 6', fill: false, interactive: false }).addTo(map);
+  }
+}
+
+function setNearMeStatus(msg) { document.getElementById('near-me-status').textContent = msg; }
+
+function locateUser() {
+  if (!('geolocation' in navigator)) {
+    setNearMeStatus("Your browser can't share its location.");
+    return;
+  }
+  setNearMeStatus('Finding you…');
+  navigator.geolocation.getCurrentPosition(pos => {
+    userPos = [pos.coords.latitude, pos.coords.longitude];
+    setNearMeStatus('');
+    document.getElementById('near-me').setAttribute('aria-pressed', 'true');
+    document.getElementById('near-me-radius-wrap').hidden = false;
+    drawNearMe();
+    if (radiusCircle) map.fitBounds(radiusCircle.getBounds());
+    else map.setView(userPos, 8);
+    applyFilters();
+  }, err => {
+    setNearMeStatus(err.code === err.PERMISSION_DENIED
+      ? "Location sharing is turned off for this site. You can allow it in your browser's site settings."
+      : "Couldn't find your location just now. Please try again.");
+  }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 10 * 60 * 1000 });
+}
+
+// Search-box state: whether the visitor chose "Show all matches" (filters set
+// aside), and which matching events the filters hid on the last pass.
+let searchShowAll = false;
+let lastSearchHidden = { count: 0, reasons: {} };
+
+function searchText(ev) {
+  return [ev.title, ev.location, ev.clean_location, ev.source, ev.description]
+    .join(' ').toLowerCase();
+}
+function currentSearch() {
+  return document.getElementById('search-input').value.toLowerCase().trim();
+}
+
 function applyFilters() {
   const query       = document.getElementById('search-input').value.toLowerCase().trim();
   const bigOnly     = bigOnlyActive;
@@ -1859,6 +1969,7 @@ function applyFilters() {
   const fromDate    = document.getElementById('date-from').value;   // 'YYYY-MM-DD' or ''
   const toDate      = document.getElementById('date-to').value;
   const onlineOnly  = (sidebarMode === "online");
+  if (userPos && radiusMiles) ensureVirtualParents();   // online meetings' group spots
 
   // Is an event inside the active date window? Hardcoded practices carry no date
   // and are always "in". Used both by the display filter below AND — crucially —
@@ -1876,40 +1987,44 @@ function applyFilters() {
   };
 
   // Filter
+  // Every display filter, as a list of the reasons it would hide this event
+  // (empty = shown). One function both filters and explains, so the search
+  // box's "N more events were filtered out by…" note can't disagree with it.
+  const legendColors = legendActiveColors();
+  const filterBlockers = ev => {
+    const why = [];
+    if (!withinRadius(ev)) why.push('distance');             // "Near me"
+    // Hardcoded practices have no date and always pass (see inDateWindow).
+    if (!inDateWindow(ev)) why.push('date');
+    if (legendColors.size && !legendColors.has(eventColor(ev).toLowerCase())) why.push('colour');
+    if (bigOnly && !isBigEvent(ev)) why.push('major');
+    // Online-only tab lists virtual events; the map tab lists them only when
+    // "Include virtual events" is ticked.
+    if (onlineOnly) { if (ev.is_virtual !== 'True') why.push('inperson'); }
+    else if (ev.is_virtual === 'True' && !showVirtual) why.push('virtual');
+    // The major-events toggle is its own selection: it overrides these.
+    if (!bigOnly && ev.calendar_type === 'kingdom'  && !showKingdom)  why.push('kingdom');
+    if (!bigOnly && ev.calendar_type === 'baronial' && !showBaronial) why.push('baronial');
+    return why;
+  };
+
+  // Search results normally still respect the filters (someone searching
+  // "practice" within 100 miles wants exactly that). "Show all matches" in the
+  // note under the search box sets searchShowAll to set the filters aside.
+  const hiddenReasons = {};      // reason -> how many matching events it hides
+  let hiddenCount = 0;
   const filtered = allEvents.filter((ev, i) => {
     ev._idx = i;
-    // Date-range filter — applied universally (map AND online). Hardcoded
-    // practices have no date and always pass (see inDateWindow above).
-    if (!inDateWindow(ev)) return false;
-    // Colour-key filter (hover preview or clicked swatches). Empty = show all.
-    const legendColors = legendActiveColors();
-    if (legendColors.size && !legendColors.has(eventColor(ev).toLowerCase())) return false;
-    if (bigOnly && !isBigEvent(ev)) return false;
-    if (onlineOnly) {
-      // Online-only view: virtual events, still honouring the Kingdom/Baronial
-      // checkboxes (unchecking Baronial hides baronial business meetings here
-      // too, not just on the map). The search box also applies further down.
-      if (ev.is_virtual !== 'True') return false;
-      // The major-events toggle is its own selection: it overrides these.
-      if (!bigOnly && ev.calendar_type === 'kingdom'  && !showKingdom)  return false;
-      if (!bigOnly && ev.calendar_type === 'baronial' && !showBaronial) return false;
-      if (query) {
-        const hay = [ev.title, ev.location, ev.clean_location, ev.source, ev.description]
-          .join(' ').toLowerCase();
-        if (!hay.includes(query)) return false;
-      }
-      return true;
+    if (query && !searchText(ev).includes(query)) return false;
+    if (query && searchShowAll) return true;
+    const why = filterBlockers(ev);
+    if (why.length && query) {
+      hiddenCount++;
+      why.forEach(w => { hiddenReasons[w] = (hiddenReasons[w] || 0) + 1; });
     }
-    if (ev.is_virtual === 'True' && !showVirtual) return false;
-    if (!bigOnly && ev.calendar_type === 'kingdom'  && !showKingdom)  return false;
-    if (!bigOnly && ev.calendar_type === 'baronial' && !showBaronial) return false;
-    if (query) {
-      const hay = [ev.title, ev.location, ev.clean_location, ev.source, ev.description]
-        .join(' ').toLowerCase();
-      if (!hay.includes(query)) return false;
-    }
-    return true;
+    return why.length === 0;
   });
+  lastSearchHidden = { count: hiddenCount, reasons: hiddenReasons };
 
   // Sort by relevance: future events first (soonest at top), past events
   // last (most-recent-past first). On the *same* date, non-virtual events
@@ -2111,6 +2226,8 @@ function applyFilters() {
       if ((pin.location || '').trim().toLowerCase() === 'no location') return;
       const lat = parseFloat(pin.lat), lng = parseFloat(pin.lng);
       if (isNaN(lat) || isNaN(lng)) return;
+      if (!(query && searchShowAll) && userPos && radiusMiles &&
+          milesBetween(userPos[0], userPos[1], lat, lng) > radiusMiles) return;   // "Near me"
       const online = onlineEventsForGroup(pin.group);
       // Show the pin if we have a website OR online meetings to surface.
       if (!pin.website && !online.length) return;
@@ -2182,7 +2299,11 @@ function renderSidebarList() {
         [rawBounds.getSouth(), rawBounds.getWest() - copyShift],
         [rawBounds.getNorth(), rawBounds.getEast() - copyShift])
     : rawBounds;
-  const shown = inMapMode
+  // After "Show all matches", list every match, wherever it is (and even if it
+  // has no pin, like an online meeting): the filters are set aside.
+  const query = currentSearch();
+  const showAll = !!query && searchShowAll;
+  const shown = showAll ? lastFiltered : inMapMode
     ? lastFiltered.filter(ev => {
         const marker = markerMap[ev._idx];
         return marker && bounds.contains(marker.getLatLng());
@@ -2197,15 +2318,20 @@ function renderSidebarList() {
         if (map.getZoom() < LOCAL_ONLINE_MIN_ZOOM) return false;
         return bounds.contains([ev._parentLat, ev._parentLng]);
       });
-  const hiddenLocalOnline = !inMapMode && map.getZoom() < LOCAL_ONLINE_MIN_ZOOM
+  const hiddenLocalOnline = !showAll && !inMapMode && map.getZoom() < LOCAL_ONLINE_MIN_ZOOM
     && lastFiltered.some(ev => ev.calendar_type === 'baronial' && ev._parentLat != null);
 
-  // On the Online tab, say that local groups' meetings appear once zoomed in.
-  const zoomHint = hiddenLocalOnline
+  // On the Online tab, say that local groups' meetings appear once zoomed in;
+  // after "Show all matches", say that the filters are set aside.
+  const zoomHint = showAll
+    ? `<div class="online-zoom-hint">Showing every event matching “${escapeHtml(query)}”, at any date or place: your filters are set aside.</div>`
+    : hiddenLocalOnline
     ? `<div class="online-zoom-hint">Zoom in on an area to also see local groups' online meetings there.</div>`
     : '';
   if (shown.length === 0) {
-    const msg = inMapMode
+    const msg = showAll
+      ? 'No events match your search.'
+      : inMapMode
       ? 'No events in this part of the map — zoom out or pan.'
       : (lastFiltered.length
           ? 'No online events for groups in this map view — zoom out or pan.'
@@ -2237,7 +2363,8 @@ function renderSidebarList() {
       // reveal the meeting's date/TIME + link INLINE — not jump straight to
       // Zoom. Attach a collapsible detail block we toggle on click; the link
       // is a button inside it (stopPropagation so it doesn't re-toggle).
-      const expandable = !inMapMode;
+      // (Also any search result with no pin to fly to, e.g. an online meeting.)
+      const expandable = !inMapMode || !markerMap[ev._idx];
       let detailHtml = '';
       if (expandable) {
         const descHtml = ev.description
@@ -2297,7 +2424,9 @@ function renderSidebarList() {
   const mapCount = Object.keys(markerMap).length;
   const placeholderCount = placeholderLayer.getLayers().length / WORLD_COPIES.length;   // 3 copies per group
   const placeholderSuffix = placeholderCount ? ` · ${placeholderCount} barony pins` : '';
-  document.getElementById('sidebar-count').textContent = inMapMode
+  document.getElementById('sidebar-count').textContent = showAll
+    ? `${shown.length} match${shown.length === 1 ? '' : 'es'}`
+    : inMapMode
     ? `${shown.length} in view · ${mapCount} mapped${placeholderSuffix}`
     : (shown.length === lastFiltered.length
         ? `${shown.length} virtual events`
@@ -2548,6 +2677,13 @@ document.getElementById('date-reset').addEventListener('click', () => {
 
 document.getElementById('chk-kingdom').addEventListener('change', applyFilters);
 document.getElementById('chk-baronial').addEventListener('change', applyFilters);
+document.getElementById('near-me').addEventListener('click', locateUser);
+document.getElementById('near-me-radius').addEventListener('change', e => {
+  radiusMiles = parseInt(e.target.value, 10) || null;
+  drawNearMe();
+  if (radiusCircle) map.fitBounds(radiusCircle.getBounds());
+  applyFilters();
+});
 document.getElementById('big-toggle').addEventListener('click', e => {
   bigOnlyActive = !bigOnlyActive;
   e.currentTarget.setAttribute('aria-pressed', String(bigOnlyActive));
