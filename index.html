@@ -121,6 +121,19 @@
       border-color: var(--blue);
     }
     .search-input::placeholder { color: #94a3b8; font-style: italic; }
+    /* Under the search box: "N more events match but your filters hide them". */
+    .search-note {
+      margin: -0.4rem 0 0.8rem; padding: 0.45rem 0.8rem;
+      background: #eaf2f7; border: 1px solid #c3dbe8; border-left: 3px solid var(--sky-blue);
+      border-radius: 4px; font-size: 0.82rem; line-height: 1.4; color: var(--ink-lt);
+    }
+    .search-note[hidden] { display: none; }
+    .search-note button {
+      font: inherit; font-size: 0.8rem; cursor: pointer; margin-left: 0.4rem;
+      padding: 1px 10px; border: 1px solid var(--sky-blue); border-radius: 10px;
+      background: #fff; color: var(--blue);
+    }
+    .search-note button:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
 
     /* ── Planning-tool notice (dismissible; remembered per browser) ── */
     .site-notice {
@@ -679,6 +692,8 @@
     <input id="search-input" class="search-input" type="search"
            placeholder="Search by title, location, or kingdom…" aria-label="Search events" />
   </div>
+  <!-- Explains search matches hidden by the filters (filled by JS). -->
+  <div class="search-note" id="search-note" role="status" aria-live="polite" hidden></div>
 
   <div class="filter-checks">
     <label class="check-label">
@@ -1950,7 +1965,53 @@ function locateUser() {
 // Search-box state: whether the visitor chose "Show all matches" (filters set
 // aside), and which matching events the filters hid on the last pass.
 let searchShowAll = false;
+let searchShowAllFor = '';     // the query "Show all" was chosen for
 let lastSearchHidden = { count: 0, reasons: {} };
+
+// How each filter reason reads in the note under the search box.
+const HIDDEN_REASON_TEXT = {
+  date:     n => `${n} by your date range`,
+  distance: n => `${n} by your “Near me” distance`,
+  view:     n => `${n} outside the current map view`,
+  zoom:     n => `${n} local online meeting${n === 1 ? '' : 's'} that show when you zoom in near the group`,
+  major:    n => `${n} by “major events only”`,
+  kingdom:  n => `${n} because Kingdom events are unticked`,
+  baronial: n => `${n} because Baronial practices are unticked`,
+  virtual:  n => `${n} online event${n === 1 ? '' : 's'} (see the Online Only tab, or tick “Include virtual events”)`,
+  inperson: n => `${n} in-person event${n === 1 ? '' : 's'} (this tab only lists online events)`,
+  colour:   n => `${n} by the colours picked in the key`,
+};
+
+// The note under the search box. Shown only when a search turns up 0-2 results
+// but more matches are hidden, so a deliberate filtered search ("practice"
+// within 100 miles) isn't nagged, while a confused one gets the why + a way out.
+function updateSearchNote(query, showAll, nShown, nViewHidden, inMapMode) {
+  const box = document.getElementById('search-note');
+  if (!query) { box.hidden = true; return; }
+  const typed = document.getElementById('search-input').value.trim();   // as the visitor typed it
+  if (showAll) {
+    box.innerHTML = `Showing every event matching “${escapeHtml(typed)}”, with your filters set aside.`
+      + `<button type="button" id="search-note-btn">Use my filters again</button>`;
+  } else {
+    const reasons = { ...lastSearchHidden.reasons };
+    let total = lastSearchHidden.count;
+    if (nViewHidden > 0) { reasons[inMapMode ? 'view' : 'zoom'] = nViewHidden; total += nViewHidden; }
+    if (nShown > 2 || total === 0) { box.hidden = true; return; }
+    const parts = Object.entries(reasons).filter(([, n]) => n)
+      .map(([k, n]) => (HIDDEN_REASON_TEXT[k] || (m => `${m} by a filter`))(n));
+    box.innerHTML = (total === 1
+        ? `1 more event matches “${escapeHtml(typed)}” but is filtered out: `
+        : `${total} more events match “${escapeHtml(typed)}” but are filtered out: `)
+      + `${escapeHtml(parts.join('; '))}.`
+      + `<button type="button" id="search-note-btn">Show all matches</button>`;
+  }
+  box.hidden = false;
+  document.getElementById('search-note-btn').addEventListener('click', () => {
+    searchShowAll = !showAll;
+    searchShowAllFor = query;
+    applyFilters();
+  });
+}
 
 function searchText(ev) {
   return [ev.title, ev.location, ev.clean_location, ev.source, ev.description]
@@ -2011,6 +2072,7 @@ function applyFilters() {
   // Search results normally still respect the filters (someone searching
   // "practice" within 100 miles wants exactly that). "Show all matches" in the
   // note under the search box sets searchShowAll to set the filters aside.
+  if (query !== searchShowAllFor) searchShowAll = false;   // a new search starts filtered
   const hiddenReasons = {};      // reason -> how many matching events it hides
   let hiddenCount = 0;
   const filtered = allEvents.filter((ev, i) => {
@@ -2324,7 +2386,7 @@ function renderSidebarList() {
   // On the Online tab, say that local groups' meetings appear once zoomed in;
   // after "Show all matches", say that the filters are set aside.
   const zoomHint = showAll
-    ? `<div class="online-zoom-hint">Showing every event matching “${escapeHtml(query)}”, at any date or place: your filters are set aside.</div>`
+    ? `<div class="online-zoom-hint">Showing every match, at any date or place: your filters are set aside.</div>`
     : hiddenLocalOnline
     ? `<div class="online-zoom-hint">Zoom in on an area to also see local groups' online meetings there.</div>`
     : '';
@@ -2424,6 +2486,7 @@ function renderSidebarList() {
   const mapCount = Object.keys(markerMap).length;
   const placeholderCount = placeholderLayer.getLayers().length / WORLD_COPIES.length;   // 3 copies per group
   const placeholderSuffix = placeholderCount ? ` · ${placeholderCount} barony pins` : '';
+  updateSearchNote(query, showAll, shown.length, lastFiltered.length - shown.length, inMapMode);
   document.getElementById('sidebar-count').textContent = showAll
     ? `${shown.length} match${shown.length === 1 ? '' : 'es'}`
     : inMapMode
