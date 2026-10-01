@@ -202,10 +202,10 @@ coordinates in `locals.csv`, the event can't be placed and doesn't show.
 ### Local groups' online events
 
 A local group's online meetings (Zoom, Google Meet, "virtual", …) are imported
-too. They never get a map pin; they're listed on the **Online Only** tab, but
-only when the map is zoomed in (zoom 8+, `LOCAL_ONLINE_MIN_ZOOM` in
-`index.html`) with that group's `locals.csv` pin in view, since they matter to
-people nearby. Kingdom-level online events show on that tab at any zoom.
+too. They never get a map pin; with **Online** ticked above the event list
+they're listed only when the map is zoomed in (zoom 8+, `LOCAL_ONLINE_MIN_ZOOM`
+in `index.html`) with that group's `locals.csv` pin in view, since they matter
+to people nearby. Kingdom-level online events are listed at any zoom.
 
 ---
 

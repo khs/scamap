@@ -295,50 +295,31 @@
       opacity: 0.85;
     }
 
-    .virtual-toggle {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      padding: 0.45rem 0.9rem;
-      border-bottom: 1px solid var(--border-grey);
-      font-family: 'Cormorant Unicase', serif;
-      font-size: 0.67rem;
-      letter-spacing: 0.08em;
-      color: var(--ink-lt);
-      background: #eff6ff;
-      flex-shrink: 0;
-      cursor: pointer;
-    }
-    .virtual-toggle input { accent-color: var(--blue); cursor: pointer; }
 
-    /* Sidebar mode tabs: "Map Events" (default) vs "Online Only" */
-    .sidebar-tabs {
+    /* "In-person" / "Online" checkboxes: tick either or both. */
+    .sidebar-kinds {
       display: flex;
       border-bottom: 1px solid var(--border-grey);
       background: #eff6ff;
       flex-shrink: 0;
     }
-    .sidebar-tab {
+    .kind-toggle {
       flex: 1;
-      background: transparent;
-      border: none;
+      display: flex; align-items: center; justify-content: center; gap: 0.4rem;
       border-right: 1px solid var(--border-grey);
-      padding: 0.55rem 0.4rem;
+      padding: 0.5rem 0.4rem;
       font-family: 'Cormorant Unicase', serif;
-      font-size: 0.68rem;
+      font-size: 0.72rem;
       letter-spacing: 0.10em;
       color: var(--ink-lt);
       cursor: pointer;
+      user-select: none;
       transition: background 0.15s, color 0.15s;
     }
-    .sidebar-tab:last-child { border-right: none; }
-    .sidebar-tab:hover { background: rgba(59,130,246,0.10); }
-    .sidebar-tab.active {
-      background: var(--blue);
-      color: var(--light-blue);
-    }
-    /* The virtual-show toggle only makes sense in "map" mode */
-    .sidebar.mode-online .virtual-toggle { display: none; }
+    .kind-toggle:last-child { border-right: none; }
+    .kind-toggle:hover { background: rgba(59,130,246,0.10); }
+    .kind-toggle:has(input:checked) { background: var(--blue); color: var(--light-blue); }
+    .kind-toggle input { accent-color: var(--light-blue); cursor: pointer; margin: 0; }
 
     .sidebar-list {
       overflow-y: auto;
@@ -738,16 +719,11 @@
         <span>Events</span>
         <span class="sidebar-count" id="sidebar-count">—</span>
       </div>
-      <div class="sidebar-tabs" role="tablist">
-        <button class="sidebar-tab active" data-mode="map" role="tab"
-                aria-selected="true">Map Events</button>
-        <button class="sidebar-tab" data-mode="online" role="tab"
-                aria-selected="false">Online Only</button>
+      <!-- Which kinds of event to list: tick either or both. -->
+      <div class="sidebar-kinds" role="group" aria-label="Show events">
+        <label class="kind-toggle"><input type="checkbox" id="chk-inperson" checked /> In-person</label>
+        <label class="kind-toggle"><input type="checkbox" id="chk-online" /> Online</label>
       </div>
-      <label class="virtual-toggle">
-        <input type="checkbox" id="chk-virtual" />
-        Include virtual events
-      </label>
       <div class="sidebar-list" id="sidebar-list">
         <div style="padding:1rem;color:#888;font-style:italic;font-size:0.85rem;">Loading…</div>
       </div>
@@ -1820,7 +1796,9 @@ function buildPlaceholderPopup(pin, onlineEvents) {
 }
 
 // ── Render ────────────────────────────────────────────────────────
-let sidebarMode = "map";  // "map" or "online"
+// The "In-person" / "Online" checkboxes above the list.
+function showInPerson() { return document.getElementById('chk-inperson').checked; }
+function showOnline()   { return document.getElementById('chk-online').checked; }
 // A local group's online meetings are listed on the Online tab only from this
 // zoom in (≈ a region a few hundred km across), with the group's pin in view.
 const LOCAL_ONLINE_MIN_ZOOM = 8;
@@ -1977,15 +1955,15 @@ const HIDDEN_REASON_TEXT = {
   major:    n => `${n} by “major events only”`,
   kingdom:  n => `${n} because Kingdom events are unticked`,
   baronial: n => `${n} because Baronial practices are unticked`,
-  virtual:  n => `${n} online event${n === 1 ? '' : 's'} (see the Online Only tab, or tick “Include virtual events”)`,
-  inperson: n => `${n} in-person event${n === 1 ? '' : 's'} (this tab only lists online events)`,
+  virtual:  n => `${n} online event${n === 1 ? '' : 's'} (tick “Online” to include them)`,
+  inperson: n => `${n} in-person event${n === 1 ? '' : 's'} (tick “In-person” to include them)`,
   colour:   n => `${n} by the colours picked in the key`,
 };
 
 // The note under the search box. Shown only when a search turns up 0-2 results
 // but more matches are hidden, so a deliberate filtered search ("practice"
 // within 100 miles) isn't nagged, while a confused one gets the why + a way out.
-function updateSearchNote(query, showAll, nShown, nViewHidden, inMapMode) {
+function updateSearchNote(query, showAll, nShown, viewHidden) {
   const box = document.getElementById('search-note');
   if (!query) { box.hidden = true; return; }
   const typed = document.getElementById('search-input').value.trim();   // as the visitor typed it
@@ -1995,7 +1973,9 @@ function updateSearchNote(query, showAll, nShown, nViewHidden, inMapMode) {
   } else {
     const reasons = { ...lastSearchHidden.reasons };
     let total = lastSearchHidden.count;
-    if (nViewHidden > 0) { reasons[inMapMode ? 'view' : 'zoom'] = nViewHidden; total += nViewHidden; }
+    for (const [k, n] of Object.entries(viewHidden)) {     // { view: n, zoom: n }
+      if (n > 0) { reasons[k] = n; total += n; }
+    }
     if (nShown > 2 || total === 0) { box.hidden = true; return; }
     const parts = Object.entries(reasons).filter(([, n]) => n)
       .map(([k, n]) => (HIDDEN_REASON_TEXT[k] || (m => `${m} by a filter`))(n));
@@ -2026,10 +2006,9 @@ function applyFilters() {
   const bigOnly     = bigOnlyActive;
   const showKingdom = document.getElementById('chk-kingdom').checked;
   const showBaronial= document.getElementById('chk-baronial').checked;
-  const showVirtual = document.getElementById('chk-virtual').checked;
+  const wantInPerson = showInPerson(), wantOnline = showOnline();
   const fromDate    = document.getElementById('date-from').value;   // 'YYYY-MM-DD' or ''
   const toDate      = document.getElementById('date-to').value;
-  const onlineOnly  = (sidebarMode === "online");
   if (userPos && radiusMiles) ensureVirtualParents();   // online meetings' group spots
 
   // Is an event inside the active date window? Hardcoded practices carry no date
@@ -2059,10 +2038,9 @@ function applyFilters() {
     if (!inDateWindow(ev)) why.push('date');
     if (legendColors.size && !legendColors.has(eventColor(ev).toLowerCase())) why.push('colour');
     if (bigOnly && !isBigEvent(ev)) why.push('major');
-    // Online-only tab lists virtual events; the map tab lists them only when
-    // "Include virtual events" is ticked.
-    if (onlineOnly) { if (ev.is_virtual !== 'True') why.push('inperson'); }
-    else if (ev.is_virtual === 'True' && !showVirtual) why.push('virtual');
+    // The "In-person" / "Online" checkboxes.
+    if (ev.is_virtual === 'True') { if (!wantOnline) why.push('virtual'); }
+    else if (!wantInPerson) why.push('inperson');
     // The major-events toggle is its own selection: it overrides these.
     if (!bigOnly && ev.calendar_type === 'kingdom'  && !showKingdom)  why.push('kingdom');
     if (!bigOnly && ev.calendar_type === 'baronial' && !showBaronial) why.push('baronial');
@@ -2275,8 +2253,9 @@ function applyFilters() {
   // calendars" checkbox, independent of the Baronial (Practices) filter — so you
   // can show group seats with the baronial event markers hidden, or vice versa.
   // (Off by default to keep the initial render light.) Still skipped on the
-  // Online Only tab, where empty seats just clutter the online-event hunt.
-  if (document.getElementById('chk-placeholders').checked && !onlineOnly) {
+  // list is showing online events only ("In-person" unticked), where empty
+  // seats just clutter the online-event hunt.
+  if (document.getElementById('chk-placeholders').checked && wantInPerson) {
     const query = document.getElementById('search-input').value.toLowerCase().trim();
     const sortedPins = [...groupPins].sort(
       (a, b) => pinTypePriority(a.group) - pinTypePriority(b.group)
@@ -2350,7 +2329,7 @@ function renderSidebarList() {
   list.innerHTML = '';
 
   ensureVirtualParents();
-  const inMapMode = (sidebarMode === 'map');
+  const wantInPerson = showInPerson(), wantOnline = showOnline();
   // Markers + group coords live on the CENTRE copy, but the view may be panned to
   // a side copy (±360°). Shift the view bounds back by whole copies so "in view"
   // is judged against the canonical centre-copy coordinates.
@@ -2365,25 +2344,29 @@ function renderSidebarList() {
   // has no pin, like an online meeting): the filters are set aside.
   const query = currentSearch();
   const showAll = !!query && searchShowAll;
-  const shown = showAll ? lastFiltered : inMapMode
-    ? lastFiltered.filter(ev => {
-        const marker = markerMap[ev._idx];
-        return marker && bounds.contains(marker.getLatLng());
-      })
-    : lastFiltered.filter(ev => {
-        // Online tab: kingdom-level online events always show. A local group's
-        // online event only matters to people near that group, so it shows only
-        // when you're zoomed in (LOCAL_ONLINE_MIN_ZOOM) with the group's pin in
-        // view — and not at all if we can't place the group.
-        if (ev.calendar_type !== 'baronial') return true;
-        if (ev._parentLat == null) return false;
-        if (map.getZoom() < LOCAL_ONLINE_MIN_ZOOM) return false;
-        return bounds.contains([ev._parentLat, ev._parentLng]);
-      });
-  const hiddenLocalOnline = !showAll && !inMapMode && map.getZoom() < LOCAL_ONLINE_MIN_ZOOM
-    && lastFiltered.some(ev => ev.calendar_type === 'baronial' && ev._parentLat != null);
+  // In-person events: those whose pin is in view. Online events: kingdom-level
+  // ones always; a local group's only when you're zoomed in
+  // (LOCAL_ONLINE_MIN_ZOOM) with the group's pin in view, since it only
+  // matters to people near that group (not at all if we can't place the group).
+  const viewHidden = { view: 0, zoom: 0 };
+  const shown = showAll ? lastFiltered : lastFiltered.filter(ev => {
+    if (ev.is_virtual === 'True') {
+      if (ev.calendar_type !== 'baronial') return true;
+      const ok = ev._parentLat != null && map.getZoom() >= LOCAL_ONLINE_MIN_ZOOM
+        && bounds.contains([ev._parentLat, ev._parentLng]);
+      if (!ok) viewHidden.zoom++;
+      return ok;
+    }
+    const marker = markerMap[ev._idx];
+    const ok = !!marker && bounds.contains(marker.getLatLng());
+    if (!ok) viewHidden.view++;
+    return ok;
+  });
+  const hiddenLocalOnline = !showAll && wantOnline && map.getZoom() < LOCAL_ONLINE_MIN_ZOOM
+    && lastFiltered.some(ev => ev.is_virtual === 'True' && ev.calendar_type === 'baronial'
+                               && ev._parentLat != null);
 
-  // On the Online tab, say that local groups' meetings appear once zoomed in;
+  // With "Online" ticked, say that local groups' meetings appear once zoomed in;
   // after "Show all matches", say that the filters are set aside.
   const zoomHint = showAll
     ? `<div class="online-zoom-hint">Showing every match, at any date or place: your filters are set aside.</div>`
@@ -2393,11 +2376,9 @@ function renderSidebarList() {
   if (shown.length === 0) {
     const msg = showAll
       ? 'No events match your search.'
-      : inMapMode
-      ? 'No events in this part of the map — zoom out or pan.'
-      : (lastFiltered.length
-          ? 'No online events for groups in this map view — zoom out or pan.'
-          : 'No online events match your search.');
+      : (!wantInPerson && !wantOnline)
+      ? 'Tick “In-person” or “Online” above to see events.'
+      : 'No events in this part of the map — zoom out or pan.';
     list.innerHTML = zoomHint + `<div style="padding:1rem;color:#888;font-style:italic;font-size:0.85rem;">${msg}</div>`;
   } else {
     if (zoomHint) list.insertAdjacentHTML('beforeend', zoomHint);
@@ -2426,7 +2407,7 @@ function renderSidebarList() {
       // Zoom. Attach a collapsible detail block we toggle on click; the link
       // is a button inside it (stopPropagation so it doesn't re-toggle).
       // (Also any search result with no pin to fly to, e.g. an online meeting.)
-      const expandable = !inMapMode || !markerMap[ev._idx];
+      const expandable = !markerMap[ev._idx];
       let detailHtml = '';
       if (expandable) {
         const descHtml = ev.description
@@ -2486,14 +2467,14 @@ function renderSidebarList() {
   const mapCount = Object.keys(markerMap).length;
   const placeholderCount = placeholderLayer.getLayers().length / WORLD_COPIES.length;   // 3 copies per group
   const placeholderSuffix = placeholderCount ? ` · ${placeholderCount} barony pins` : '';
-  updateSearchNote(query, showAll, shown.length, lastFiltered.length - shown.length, inMapMode);
+  updateSearchNote(query, showAll, shown.length, viewHidden);
   document.getElementById('sidebar-count').textContent = showAll
     ? `${shown.length} match${shown.length === 1 ? '' : 'es'}`
-    : inMapMode
+    : wantInPerson
     ? `${shown.length} in view · ${mapCount} mapped${placeholderSuffix}`
-    : (shown.length === lastFiltered.length
-        ? `${shown.length} virtual events`
-        : `${shown.length} of ${lastFiltered.length} virtual events in view`);
+    : wantOnline
+    ? `${shown.length} online event${shown.length === 1 ? '' : 's'}`
+    : '—';
 }
 
 // Auto-sync the sidebar to the visible area as the user pans/zooms. Both modes
@@ -2754,7 +2735,6 @@ document.getElementById('big-toggle').addEventListener('click', e => {
 });
 document.getElementById('chk-placeholders').addEventListener('change', applyFilters);
 document.getElementById('chk-aggregate').addEventListener('change', applyFilters);
-document.getElementById('chk-virtual').addEventListener('change', applyFilters);
 
 // Full-screen: expand the map + sidebar to fill the whole screen (native
 // Fullscreen API on the .map-area box). Leaflet needs invalidateSize() once the
@@ -2774,30 +2754,9 @@ document.getElementById('chk-virtual').addEventListener('change', applyFilters);
   });
 })();
 
-// Sidebar mode tabs: clicking "Online Only" filters to virtual events only,
-// date-sorted; clicking "Map Events" returns to the geographic event view.
-document.querySelectorAll('.sidebar-tab').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const mode = btn.dataset.mode;
-    if (mode === sidebarMode) {
-      // Re-clicking the already-active "Map Events" tab resets the map to the
-      // default home view — a quick "show me everything again" after zooming
-      // into a region, since the sidebar list is scoped to the visible area.
-      // (fit-to-all-markers would jump to a whole-world view, since events
-      // span Lochac/Drachenwald; the home view is the familiar starting point.)
-      if (mode === 'map') map.fitBounds(HOME_BOUNDS);
-      return;
-    }
-    sidebarMode = mode;
-    document.querySelectorAll('.sidebar-tab').forEach(b => {
-      const active = (b.dataset.mode === mode);
-      b.classList.toggle('active', active);
-      b.setAttribute('aria-selected', active);
-    });
-    document.getElementById('sidebar').classList.toggle('mode-online', mode === 'online');
-    applyFilters();
-  });
-});
+// "In-person" / "Online" checkboxes above the list.
+document.getElementById('chk-inperson').addEventListener('change', applyFilters);
+document.getElementById('chk-online').addEventListener('change', applyFilters);
 
 document.getElementById('chk-overlay').addEventListener('change', async (e) => {
   if (e.target.checked) {
