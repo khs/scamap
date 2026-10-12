@@ -63,7 +63,10 @@ things are done or decided.
    - NOT doing: changing one date inside a recurring series.
 
 ## Accessibility options (right end of the menu bar)
-- Done: larger text slider + "Force plain font" (accessibility.js).
+- Done: larger text slider + "Force plain font" (accessibility.js). Desktop
+  only for now (hidden at 820px wide and under: it doesn't fit the menu bar).
+  **Later:** find a better, more convenient spot for the icon on phones (e.g. a
+  burger menu), maybe make a blue version, then bring it back on mobile.
 - To do, one at a time: **dark mode**; **keyboard shortcuts** overlay for
   zooming / panning / selecting events.
 
