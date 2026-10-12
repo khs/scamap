@@ -38,11 +38,13 @@
     '.a11y-panel input[type=range] { width: 100%; margin: 0.4rem 0 0.7rem; }' +
     '.a11y-panel .a11y-check { display: flex; gap: 0.5rem; align-items: center; }' +
     // Desktop only for now: the slider doesn't work on phones.
-    '@media (max-width: 700px) { .a11y-btn, .a11y-panel { display: none !important; } }' +
+    '@media (max-width: 820px) { .a11y-btn, .a11y-panel { display: none !important; } }' +
     'html.embed .a11y-btn, html.embed .a11y-panel { display: none; }';
   document.head.appendChild(css);
 
   function build() {
+    // Desktop only for now: it doesn't fit in the menu bar on phones.
+    if (window.matchMedia('(max-width: 820px)').matches) return;
     var nav = document.querySelector('nav');
     if (!nav) return;
     var btn = document.createElement('button');
