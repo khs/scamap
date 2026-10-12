@@ -131,13 +131,20 @@ article a:hover { color: var(--sky-blue); }
 
 /* FAQ: each question is a click-to-expand <details>, its answer indented
    under a rule. Scoped to .faq so the other pages are untouched. */
-.faq .faq-controls { margin-bottom: 0.6rem; }
-.faq .faq-controls button {
-  font: inherit; font-size: 0.9rem; cursor: pointer;
-  padding: 2px 12px; border: 1px solid var(--sky-blue); border-radius: 10px;
-  background: #fff; color: var(--blue);
+/* Thin strip of buttons under the title: expand/collapse + jump to a section.
+   Same blue as the menu bar, cream text. */
+.faq .faq-jump { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 1rem; }
+.faq .faq-jump button, .faq .faq-jump a {
+  font-family: 'Cormorant Unicase', serif; font-size: 0.85rem; letter-spacing: 0.08em;
+  cursor: pointer; text-decoration: none; line-height: 1.6;
+  padding: 0.1rem 0.8rem; border: 0; border-radius: 0;
+  background: var(--blue); color: var(--parchment);
 }
-.faq .faq-controls button:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
+.faq .faq-jump button:hover, .faq .faq-jump a:hover { background: var(--sky-blue); color: #fff; }
+.faq .faq-jump button:focus-visible, .faq .faq-jump a:focus-visible { outline: 2px solid var(--sky-blue); outline-offset: 2px; }
+.faq .faq-jump-divider { width: 1px; align-self: stretch; margin: 0.15rem 0.3rem; background: var(--blue); opacity: 0.45; }
+.faq > h1 { margin-bottom: 0.6rem; }
+.faq .faq-section { scroll-margin-top: 4rem; }
 details.faq-item { border-top: 1px solid rgba(96,156,185,0.45); padding: 0.2rem 0; }
 details.faq-item:last-of-type { border-bottom: 1px solid rgba(96,156,185,0.45); }
 details.faq-item > summary {
@@ -151,7 +158,9 @@ details.faq-item > summary::before {
   color: var(--sky-blue); font-size: 0.9em; flex-shrink: 0;
 }
 details.faq-item[open] > summary::before { content: '\25BE'; }   /* ▾ when open */
-details.faq-item > summary > h2 { display: inline; margin: 0; font-size: 1.25rem; }
+/* Questions use the body font (EB Garamond, semi-bold) at a modest size; the
+   fancy Cormorant Unicase stays on the section headings above them. */
+details.faq-item > summary > h2 { display: inline; margin: 0; font-family: 'EB Garamond', Georgia, serif; font-weight: 600; font-size: 1.1rem; letter-spacing: 0; }
 details.faq-item > summary:hover > h2 { color: var(--sky-blue); }
 details.faq-item > :not(summary) { margin-left: 1.4em; }
 details.faq-item[open] { padding-bottom: 0.6rem; }

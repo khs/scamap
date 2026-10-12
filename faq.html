@@ -29,7 +29,17 @@
 <main>
   <article class="faq">
     <h1>Frequently Asked Questions</h1>
-    <p class="faq-controls"><button type="button" id="faq-toggle-all">Expand all</button></p>
+    <div class="faq-jump" role="navigation" aria-label="FAQ sections">
+      <button type="button" id="faq-expand-all">Expand all</button>
+      <button type="button" id="faq-collapse-all">Collapse all</button>
+      <span class="faq-jump-divider" aria-hidden="true"></span>
+      <a href="#newcomers">Newcomers</a>
+      <a href="#officers">Officers</a>
+      <a href="#missing-or-wrong">Corrections</a>
+      <a href="#reading-the-map">Help</a>
+      <a href="#about-eventscout">About</a>
+      <a href="#about-the-team">Team</a>
+    </div>
 
     <section class="faq-section" id="newcomers">
       <h2 class="faq-section-title">For newcomers</h2>
@@ -42,12 +52,6 @@
     <details class="faq-item" id="just-show-up">
       <summary><h2>Can I really just show up at an SCA event?</h2></summary>
       <p>The SCA tries to be as welcoming and inclusive as possible; it’s possible to just show up at most events, pay at the door (bring cash), borrow some medieval-looking clothes to wear over your mundane outfit, and join in with activities. There is no entrance exam or application, and no test of whether you know enough or have done enough. However, some events do require you to buy a ticket in advance, and some events might not have loaner kit; check with locals. If you can do one thing to prepare yourself for the event, make sure that you have an outfit which makes an attempt to look like it is from before the year 1600 (even if it's a bedsheet folded in half, with a neckhole cut in it and a rope tied around it for a belt) and that you have any supplies you'll need for your own health and safety (eg. ID, important medications, a tent and sleeping bag if you'll be camping, sunscreen and insect repellent).</p>
-    </details>
-
-    <details class="faq-item" id="best-way">
-      <summary><h2>What’s the best way to use EventScout?</h2></summary>
-      <p>Use our map and our date-range filters to make a shortlist of events that you might want to attend. Then click through to the event’s website or the hosting group’s social media to finalise concrete plans like travel, planning specific activities, arranging who to hang out with, and (if necessary) booking tickets or making reservations.</p>
-      <p>EventScout automatically imports information from a big collection of local group calendars – but some groups don’t have calendars, some have incorrect or out of date information on their calendars, and some use formats that we might read incorrectly. For reliable and up-to-date information, always check the website and/or social media of the group hosting the event.</p>
     </details>
 
     <details class="faq-item" id="accurate-info">
@@ -172,6 +176,12 @@
     <section class="faq-section" id="about-eventscout">
       <h2 class="faq-section-title">About EventScout</h2>
 
+    <details class="faq-item" id="best-way">
+      <summary><h2>What’s the best way to use EventScout?</h2></summary>
+      <p>Use our map and our date-range filters to make a shortlist of events that you might want to attend. Then click through to the event’s website or the hosting group’s social media to finalise concrete plans like travel, planning specific activities, arranging who to hang out with, and (if necessary) booking tickets or making reservations.</p>
+      <p>EventScout automatically imports information from a big collection of local group calendars – but some groups don’t have calendars, some have incorrect or out of date information on their calendars, and some use formats that we might read incorrectly. For reliable and up-to-date information, always check the website and/or social media of the group hosting the event.</p>
+    </details>
+
     <details class="faq-item" id="how-it-works">
       <summary><h2>How does EventScout work?</h2></summary>
       <p><strong>The simple answer:</strong> We automatically combine the data from different SCA groups' publicly-available calendars so that we can show you all of the events, practices, demonstrations and other activities in one place. Click on any individual map marker to see details about the event and a link to the host group's site. The tool isn't perfect, and relies on the accuracy of the information we can import from local groups' websites. Before attending an event, please check the hosting group's website or social media to find accurate and up-to-date information.</p>
@@ -225,11 +235,19 @@
     <section class="faq-section" id="about-the-team">
       <h2 class="faq-section-title">About the team</h2>
 
-    <details class="faq-item" id="who">
-      <summary><h2>Who maintains EventScout?</h2></summary>
-      <p><a href="https://forannanglorach.wordpress.com/" target="_blank" rel="noopener noreferrer">Lord Forannán Glórach</a>, mka Fabian Scholl, and Ricardo Pesci, mka Keller Scholl. We are former residents of Atlantia, now found in the West. You can <a href="https://forms.gle/gcdRyUnVv8FbLqG3A" target="_blank" rel="noopener noreferrer">contact us</a> with issues or questions, <a href="https://forms.gle/5CZkWRa14NBPQmQ79" target="_blank" rel="noopener noreferrer">submit a calendar</a> if we are missing your Barony or Kingdom, or <a href="https://ko-fi.com/fabianscholl" target="_blank" rel="noopener noreferrer">buy us a coffee</a> to help us maintain this site. We're also interested in recruiting one volunteer from each kingdom to serve as a liaison and make sure that we get event locations correct; <a href="https://forms.gle/gcdRyUnVv8FbLqG3A" target="_blank" rel="noopener noreferrer">let us know</a> if you're interested!</p>
+    <details class="faq-item" id="who-built">
+      <summary><h2>Who built EventScout?</h2></summary>
+      <p><a href="https://forannanglorach.wordpress.com/" target="_blank" rel="noopener noreferrer">Lord Forannán Glórach</a>, mka Fabian Scholl, and Ricardo Pesci, mka Keller Scholl. We are former residents of Atlantia, now found in the West.</p>
       <p>The header image was sourced from <a href="https://en.wikipedia.org/wiki/File:Co%C3%ABtivy_Master_-_Leaf_from_a_Book_of_Hours-_Angel_Chasing_a_Devil_(recto)_-_2005.206.a_-_Cleveland_Museum_of_Art.tif" target="_blank" rel="noopener noreferrer">Wikipedia</a>.</p>
       <p>Full disclosure: Claude AI was used in the creation of this website. We only used Claude to assist with writing code - never with writing text like this, and never to generate "AI art". The data on the map is pulled from human-written Google calendars, and not AI-generated, but we don't have control over whether individual baronies or kingdoms use AI in creating Google Calendar events. We are concerned about the potential harms of AI upon society and support regulation preventing ever-more-powerful AIs from being built.</p>
+    </details>
+
+    <details class="faq-item" id="who-maintains">
+      <summary><h2>Who maintains EventScout?</h2></summary>
+      <p>Primarily Forannán. Thanks are also due to Nicaise d'Ambray of Drachenwald.</p>
+      <p>You can <a href="https://forms.gle/gcdRyUnVv8FbLqG3A" target="_blank" rel="noopener noreferrer">contact us</a> with issues or questions, <a href="https://forms.gle/5CZkWRa14NBPQmQ79" target="_blank" rel="noopener noreferrer">submit a calendar</a> if we are missing your Barony or Kingdom, or <a href="https://ko-fi.com/fabianscholl" target="_blank" rel="noopener noreferrer">buy us a coffee</a> to help us maintain this site.</p>
+      <p>We're also interested in recruiting one volunteer from each kingdom to serve as a liaison and make sure that we get event locations correct; <a href="https://forms.gle/gcdRyUnVv8FbLqG3A" target="_blank" rel="noopener noreferrer">let us know</a> if you're interested!</p>
+      <p>We created EventScout to help people join the SCA, but we aren't officially endorsed by the SCA, and non-SCA groups or unofficial SCA groups are welcome to ask us to add their events to our map if their events would be of interest to SCA members (see "<a href="#non-sca-events">Can you add my non-SCA event?</a>")</p>
     </details>
 
     <details class="faq-item" id="official">
@@ -237,11 +255,12 @@
       <p>We created EventScout to help people join the SCA, but we aren't officially endorsed by the SCA, and non-SCA groups or unofficial SCA groups are welcome to ask us to add their events to our map if their events would be of interest to SCA members (see our policy below).</p>
     </details>
 
-    <details class="faq-item" id="knight">
-      <summary><h2>Who's your knight?</h2></summary>
-      <p>Forannán is squired to Sir Marcus de Rath.</p>
-      <p>(If you've never had a red belt then you might not think this is a Frequently Asked Question, but trust me, it is a very frequently asked question. Sometimes five times at the same campfire.)</p>
-      <p>(Ricardo doesn't have his AoA yet.)</p>
+    <details class="faq-item" id="about-us">
+      <summary><h2>About Ricardo &amp; Forannán</h2></summary>
+      <p>Ricardo and Forannán started in the Barony of Ponte Alto, Atlantia, where Ricardo served as SMO and Forannán served as herald and bardic champion. They recently moved to the West.</p>
+      <p>Ricardo's persona hails from late-period Venice. He is interested in the academic side of the SCA, and teaches classes about the early history of international relations and statecraft, but also enjoys hobbies like woodworking and dance.</p>
+      <p>Forannán is a bard, a herald and a squire. He has a problematic addiction to acquiring new hobbies. You can find some of his other projects at his WordPress, <a href="https://forannanglorach.wordpress.com/" target="_blank" rel="noopener noreferrer">here</a> and his YouTube, <a href="https://www.youtube.com/@Forann%C3%A1nGl%C3%B3rach/" target="_blank" rel="noopener noreferrer">here</a>.</p>
+      <p>Forannán is squired to Sir Marcus de Rath. (If you've never had a red belt then you might not think this is a Frequently Asked Question, but trust me, it is a very frequently asked question. Sometimes five times at the same campfire.)</p>
     </details>
     </section>
   </article>
@@ -249,7 +268,7 @@
 
 <script>
   // Open the question named in the address (faq.html#embedding), so a link can
-  // point straight at one answer; and an "Expand all / Collapse all" toggle.
+  // point straight at one answer; and the Expand all / Collapse all buttons.
   (function () {
     const items = [...document.querySelectorAll('details.faq-item')];
     const openFromHash = () => {
@@ -258,14 +277,9 @@
     };
     openFromHash();
     window.addEventListener('hashchange', openFromHash);
-    const btn = document.getElementById('faq-toggle-all');
-    const sync = () => { btn.textContent = items.every(d => d.open) ? 'Collapse all' : 'Expand all'; };
-    btn.addEventListener('click', () => {
-      const open = !items.every(d => d.open);
-      items.forEach(d => { d.open = open; });
-      sync();
-    });
-    items.forEach(d => d.addEventListener('toggle', sync));
+    const setAll = open => items.forEach(d => { d.open = open; });
+    document.getElementById('faq-expand-all').addEventListener('click', () => setAll(true));
+    document.getElementById('faq-collapse-all').addEventListener('click', () => setAll(false));
   })();
 </script>
 
