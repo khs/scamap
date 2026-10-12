@@ -57,7 +57,7 @@ CSV_FILE = SCRIPT_DIR / "private_addresses.csv"
 LOCAL_FILE = SCRIPT_DIR / "private_addresses.local.csv"   # gitignored plaintext
 FIELDS = ["fingerprint", "words", "scope", "replace_with", "lat", "lng", "note"]
 TEXT_COLUMNS = ("title", "location", "clean_location", "description")
-PRIVATE_LOCATION = "Private location"
+PRIVATE_LOCATION = "Location not disclosed; contact locals"
 _WORD_RE = re.compile(r"[A-Za-z]+|\d+")
 _JOINER_RE = re.compile(r"^[\s,.]*$")   # allowed between words of one address
 
@@ -93,13 +93,13 @@ def load(path: Path | None = None) -> list[dict]:
                 coords = None
             row = {"fingerprint": fp, "words": n, "coords": coords,
                    "scope": (r.get("scope") or "").strip(),
-                   "replace_with": (r.get("replace_with") or "").strip() or "[private location]",
+                   "replace_with": (r.get("replace_with") or "").strip() or "[undisclosed location]",
                    "note": (r.get("note") or "").strip()}
             if _find(row["replace_with"], row):
                 # It would match again every run and grow without end.
                 print(f"  WARNING: private_addresses.csv row {fp[:8]}…: replace_with "
-                      f"contains the address itself — using '[private location]'")
-                row["replace_with"] = "[private location]"
+                      f"contains the address itself — using '[undisclosed location]'")
+                row["replace_with"] = "[undisclosed location]"
             rows.append(row)
     return rows
 
@@ -265,7 +265,7 @@ def scrub_files(rows: list[dict] | None = None, directory: Path = SCRIPT_DIR) ->
 
 
 def add(text: str, scope: str, lat: str, lng: str, note: str = "",
-        replace_with: str = "[private location]",
+        replace_with: str = "[undisclosed location]",
         path: Path | None = None, local_path: Path | None = None) -> None:
     """Append a fingerprinted row to the committed blocklist, and the readable
     address to the maintainer's own (gitignored) local list."""

@@ -54,7 +54,7 @@ annotations in the Actions run summary.
 | File | Role |
 | --- | --- |
 | `calendars.csv` | Kingdom feed list — one row per kingdom (`id,source,type`). |
-| `locals.csv` | Local-group registry — one row per known local group: its calendar feed (or `No Calendar Listed`/`No Calendar Available`; `No location` on a secondary feed = import its events but show no pin), plus type/website/social/`date_last_checked` and the placeholder-pin `location`/`lat`/`lng`. Add a group here, no code change needed. |
+| `locals.csv` | Local-group registry — one row per known local group: its calendar feed (or `No Calendar Listed`/`No Calendar Available`; `No location` on a secondary feed = import its events but show no pin), plus type/website/`social_1`-`social_3`/`date_last_checked` and the placeholder-pin `location`/`lat`/`lng`. Add a group here, no code change needed. |
 | `corrections.csv` | Hand-maintained corrections: one event (`event`) or every match of a keyword on a calendar (`keyword`); see EDITING_EVENTS.md. |
 | `find_calendars.py` | Finds and verifies an importable calendar behind a group's website; `--sweep` checks every group with no calendar (see MAINTAINING.md). |
 | `private_addresses.csv` | Fingerprinted blocklist of addresses owners asked us to remove; scrubbed from events and caches every run (see EDITING_EVENTS.md). |

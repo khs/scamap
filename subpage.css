@@ -186,3 +186,6 @@ details.fe-section > p > strong:first-child::before {
   margin-right: 0.4em;
   font-size: 0.9em;
 }
+
+.faq .faq-section { margin-top: 1.6rem; }
+.faq .faq-section-title { margin: 0 0 0.4rem; font-size: 1.6rem; }

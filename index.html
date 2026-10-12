@@ -631,6 +631,7 @@
     if (new URLSearchParams(location.search).has('embed'))
       document.documentElement.classList.add('embed');
   </script>
+  <script src="accessibility.js"></script>
   <script defer src="header-bg.js"></script>
 </head>
 <body>
@@ -733,7 +734,7 @@
   <div class="map-legend" aria-label="Map colour key">
     <span class="legend-title">Key</span>
     <span class="legend-swatches" id="legend-swatches"></span>
-    <span class="legend-readout" id="legend-readout" aria-live="polite">hover or tap a square to see what each colour means</span>
+    <span class="legend-readout" id="legend-readout" aria-live="polite">Hover for meanings. Click to filter.</span>
     <button type="button" id="fullscreen-btn" class="fullscreen-btn" title="Expand the map and event list to fill your screen">⛶ Full screen</button>
   </div>
   <!-- Major-events toggle: overrides the Kingdom/Baronial checkboxes while on. -->
@@ -741,10 +742,10 @@
     <button type="button" id="big-toggle" class="big-toggle" aria-pressed="false">Click to filter for only major events &amp; wars (displayed with a larger pin)</button>
     <!-- Near me: the BROWSER supplies the position (with the visitor's
          permission); nothing is sent to any service, and it isn't stored. -->
-    <button type="button" id="near-me" class="big-toggle" aria-pressed="false">📍 Near me</button>
+    <button type="button" id="near-me" class="big-toggle" aria-pressed="false">Find my location</button>
     <label class="near-me-radius" id="near-me-radius-wrap" hidden>Show events
       <select id="near-me-radius">
-        <option value="">at any distance</option>
+        <option value="">anywhere</option>
         <option value="50">within 50 miles</option>
         <option value="100">within 100 miles</option>
         <option value="200">within 200 miles</option>
@@ -1298,16 +1299,34 @@ function nextScheduleDate(sched, from, horizonDays = 400) {
 // The sidebar/popup source line for a hand-coded event: flag that it has no
 // auto-updating calendar, linkifying the group name, "website" and "socials" only
 // where we actually have a URL (schedule_url + the locals.csv website/social).
+// A social link's label comes from its domain: facebook.com → "Facebook",
+// discord.gg → "Discord", … anything unfamiliar shows its site name.
+function socialLabel(url) {
+  let host = '';
+  try { host = new URL(url).hostname.toLowerCase().replace(/^www\./, ''); } catch (e) { return 'social media'; }
+  const known = [
+    [/(^|\.)(facebook|fb)\.(com|me)$/, 'Facebook'], [/(^|\.)discord\.(com|gg)$/, 'Discord'],
+    [/(^|\.)instagram\.com$/, 'Instagram'], [/(^|\.)(twitter|x)\.com$/, 'X'],
+    [/(^|\.)youtube\.com$|^youtu\.be$/, 'YouTube'], [/(^|\.)tiktok\.com$/, 'TikTok'],
+    [/(^|\.)bsky\.app$/, 'Bluesky'], [/(^|\.)reddit\.com$/, 'Reddit'],
+    [/(^|\.)meetup\.com$/, 'Meetup'], [/(^|\.)groups\.google\.com$/, 'Email list'],
+  ];
+  for (const [re, label] of known) if (re.test(host)) return label;
+  const parts = host.split('.');
+  const name = parts.length > 1 ? parts[parts.length - 2] : host;
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
 function hardcodedSourceNote(ev) {
   const canon = canonicalSource(ev.source);
   const webUrl = safeUrl(ev.schedule_url || sourceWebsite[ev.source] || sourceWebsite[canon]);
-  const socialUrl = safeUrl(sourceSocial[ev.source] || sourceSocial[canon]);
+  const socialUrls = sourceSocials[ev.source] || sourceSocials[canon] || [];
   const link = (url, text) => url
     ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${escapeHtml(text)}</a>`
     : escapeHtml(text);
   const checks = [];
   if (webUrl) checks.push(link(webUrl, 'website'));
-  if (socialUrl) checks.push(link(socialUrl, 'socials'));
+  socialUrls.map(safeUrl).filter(Boolean).forEach(u => checks.push(link(u, socialLabel(u))));
   const tail = checks.length ? ` — please check the ${checks.join(' or ')}` : '';
   return `The ${link(webUrl, ev.source)} does not have an automatically updating calendar${tail}.`;
 }
@@ -1387,6 +1406,7 @@ function ingestHardcodedEvents(text) {
       schedule_url: row.schedule_url || row['schedule url'] || '',
       location_specificity: (row.location_specificity || row['location specificity'] || '').trim(),
       start: '', end: '', description: '',
+      notes: (row.notes || '').trim(),       // optional extra warning shown in the popup
     };
     // Turn the free-text recurring `day` into the next concrete occurrence so the
     // event sorts into the date-ordered sidebar; "some"/"most" days are tagged
@@ -1419,11 +1439,14 @@ function buildHardcodedPopup(ev) {
   const vague = /^vague$/i.test(ev.location_specificity || '')
     ? `<p style="margin:0 0 0.5rem;"><strong>This pin is placed in an approximately correct town or city, but we do not know the correct address. Check the correct location before trying to attend the practice.</strong></p>`
     : '';
+  const notes = ev.notes
+    ? `<p style="margin:0 0 0.5rem;"><strong>${escapeHtml(ev.notes)}</strong></p>`
+    : '';
   return `<div class="event-popup">
     <h3>${ev._maybe ? 'MAYBE: ' : ''}${escapeHtml(ev.title)}</h3>
     <span class="source-pill">${escapeHtml(ev.source)}</span>
     <div class="desc" style="margin-top:0.45rem;">
-      ${vague}EventScout is unable to import this calendar, but we believe this practice is${where}${when}.
+      ${vague}${notes}EventScout is unable to import this calendar, but we believe this practice is${where}${when}.
       Please check the website: ${site}.<br>
       Please <a href="https://forms.gle/gcdRyUnVv8FbLqG3A" target="_blank" rel="noopener">let us know</a> if this event information is out of date.
     </div>
@@ -1453,7 +1476,7 @@ function buildPopup(ev) {
   // A wars.csv placeholder: no kingdom calendar lists this war yet, so the dates
   // are the usual time of year, not this year's real dates.
   const approxDates = ev.dates_approximate === 'True'
-    ? `<p class="vague-warn" style="margin:0 0 0.5rem;"><strong>EventScout is unable to import the dates for ${escapeHtml(ev.title)} because no Kingdom calendar lists it yet. The dates shown are approximate; check the event website.</strong></p>`
+    ? `<p class="vague-warn" style="margin:0 0 0.5rem;"><strong>The dates shown are approximate; check the event website for details. EventScout can only import dates once the event shows up on a public calendar we track.</strong></p>`
     : '';
 
   // Build clickable links: prefer event-specific URL, then social, then the
@@ -1473,7 +1496,7 @@ function buildPopup(ev) {
 
   // A war's own site (wars.csv) is a bare domain like gulfwars.org — the event's
   // real home, not a generic host listing.
-  if (ev.war_host && ev.event_url && !evUrlSpecific) pushLink(ev.event_url, 'Event website →');
+  if (ev.war_host && ev.event_url && !evUrlSpecific) pushLink(ev.event_url, 'Event webpage');
 
   // Primary link: the most event-specific destination we have.
   if (evUrlSpecific)      pushLink(ev.event_url, 'Event page →');
@@ -1529,7 +1552,7 @@ function buildPopup(ev) {
 let allEvents   = [];
 let groupPins   = [];   // placeholder pins from locals.csv (set after load)
 let sourceWebsite = {}; // { "Barony of Carolingia": "https://carolingia.eastkingdom.org" }
-let sourceSocial  = {}; // { group -> social URL } — for the hand-coded "socials" link
+let sourceSocials = {}; // { group -> [social URLs] } (locals.csv social_1..3) — for the hand-coded practice links
 let CANTON_SITES = [];  // cantons whose events ride on a parent barony's calendar
 let markerMap   = {};   // index → Leaflet marker
 // Cluster markers ONLY when they're at essentially the same location — the
@@ -1914,10 +1937,10 @@ function setNearMeStatus(msg) { document.getElementById('near-me-status').textCo
 
 function locateUser() {
   if (!('geolocation' in navigator)) {
-    setNearMeStatus("Your browser can't share its location.");
+    setNearMeStatus("Error: Your browser can't share its location. Try zooming in and panning to find the place where you live; events in the sidebar should filter automatically.");
     return;
   }
-  setNearMeStatus('Finding you…');
+  setNearMeStatus('');
   navigator.geolocation.getCurrentPosition(pos => {
     userPos = [pos.coords.latitude, pos.coords.longitude];
     setNearMeStatus('');
@@ -1929,8 +1952,8 @@ function locateUser() {
     applyFilters();
   }, err => {
     setNearMeStatus(err.code === err.PERMISSION_DENIED
-      ? "Location sharing is turned off for this site. You can allow it in your browser's site settings."
-      : "Couldn't find your location just now. Please try again.");
+      ? "Allow location sharing (in your browser settings for this site) to see events near you. We don't save or share your location; it's all done in your browser. Alternately, try zooming and panning to find your location, and events in the sidebar should filter automatically."
+      : "Unknown error finding your location. Try a hard refresh.");
   }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 10 * 60 * 1000 });
 }
 
@@ -1942,16 +1965,16 @@ let lastSearchHidden = { count: 0, reasons: {} };
 
 // How each filter reason reads in the note under the search box.
 const HIDDEN_REASON_TEXT = {
-  date:     n => `${n} by your date range`,
-  distance: n => `${n} by your “Near me” distance`,
-  view:     n => `${n} outside the current map view`,
-  zoom:     n => `${n} local online meeting${n === 1 ? '' : 's'} that show when you zoom in near the group`,
-  major:    n => `${n} by “major events only”`,
-  kingdom:  n => `${n} because Kingdom events are unticked`,
-  baronial: n => `${n} because Baronial practices are unticked`,
-  virtual:  n => `${n} online event${n === 1 ? '' : 's'} (tick “Online” to include them)`,
-  inperson: n => `${n} in-person event${n === 1 ? '' : 's'} (tick “In-person” to include them)`,
-  colour:   n => `${n} by the colours picked in the key`,
+  date:     () => `they're outside your selected date range`,
+  distance: () => `you filtered for events near your location`,
+  view:     () => `the map only displays events in the locations you can see (try zooming out or panning)`,
+  zoom:     () => `local online meetings don't show while zoomed-out`,
+  major:    () => `you are filtering for bigger events`,
+  kingdom:  () => `you are filtering out events from kingdom calendars`,
+  baronial: () => `you are filtering out events from local-group calendars`,
+  virtual:  () => `you are filtering out online/virtual events`,
+  inperson: () => `you are filtering out in-person events`,
+  colour:   () => `you picked a colour square in the key, which filters for events matching that colour`,
 };
 
 // The note under the search box. Shown only when a search turns up 0-2 results
@@ -1962,8 +1985,8 @@ function updateSearchNote(query, showAll, nShown, viewHidden) {
   if (!query) { box.hidden = true; return; }
   const typed = document.getElementById('search-input').value.trim();   // as the visitor typed it
   if (showAll) {
-    box.innerHTML = `Showing every event matching “${escapeHtml(typed)}”, with your filters set aside.`
-      + `<button type="button" id="search-note-btn">Use my filters again</button>`;
+    box.innerHTML = `Overriding filters to find search results`
+      + `<button type="button" id="search-note-btn">Turn filters back on</button>`;
   } else {
     const reasons = { ...lastSearchHidden.reasons };
     let total = lastSearchHidden.count;
@@ -1974,10 +1997,10 @@ function updateSearchNote(query, showAll, nShown, viewHidden) {
     const parts = Object.entries(reasons).filter(([, n]) => n)
       .map(([k, n]) => (HIDDEN_REASON_TEXT[k] || (m => `${m} by a filter`))(n));
     box.innerHTML = (total === 1
-        ? `1 more event matches “${escapeHtml(typed)}” but is filtered out: `
-        : `${total} more events match “${escapeHtml(typed)}” but are filtered out: `)
+        ? `1 more event matches your search, but is filtered because `
+        : `${total} more events match your search, but are filtered because `)
       + `${escapeHtml(parts.join('; '))}.`
-      + `<button type="button" id="search-note-btn">Show all matches</button>`;
+      + `<button type="button" id="search-note-btn">Override filters and show events</button>`;
   }
   box.hidden = false;
   document.getElementById('search-note-btn').addEventListener('click', () => {
@@ -2363,15 +2386,15 @@ function renderSidebarList() {
   // With "Online" ticked, say that local groups' meetings appear once zoomed in;
   // after "Show all matches", say that the filters are set aside.
   const zoomHint = showAll
-    ? `<div class="online-zoom-hint">Showing every match, at any date or place: your filters are set aside.</div>`
+    ? ''
     : hiddenLocalOnline
-    ? `<div class="online-zoom-hint">Zoom in on an area to also see local groups' online meetings there.</div>`
+    ? `<div class="online-zoom-hint">To keep what you see relevant, local groups' online meetings are hidden unless you zoom in on their location.</div>`
     : '';
   if (shown.length === 0) {
     const msg = showAll
-      ? 'No events match your search.'
+      ? 'No results in EventScout; try your local group’s website.'
       : (!wantInPerson && !wantOnline)
-      ? 'Tick “In-person” or “Online” above to see events.'
+      ? 'Select "in-person" or "online" above.'
       : 'No events in this part of the map — zoom out or pan.';
     list.innerHTML = zoomHint + `<div style="padding:1rem;color:#888;font-style:italic;font-size:0.85rem;">${msg}</div>`;
   } else {
@@ -2408,7 +2431,7 @@ function renderSidebarList() {
           ? `<div class="ei-desc">${escapeHtml(ev.description.substring(0, 240))}${ev.description.length > 240 ? '…' : ''}</div>`
           : '';
         const linkBtn = eventLink
-          ? `<a class="ei-link" href="${escapeHtml(eventLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Open link / join →</a>`
+          ? `<a class="ei-link" href="${escapeHtml(eventLink)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Open link</a>`
           : '';
         detailHtml = `<div class="event-item-detail">
             <div class="ei-when">🕒 ${escapeHtml(whenString(ev))}</div>
@@ -2463,11 +2486,11 @@ function renderSidebarList() {
   const placeholderSuffix = placeholderCount ? ` · ${placeholderCount} barony pins` : '';
   updateSearchNote(query, showAll, shown.length, viewHidden);
   document.getElementById('sidebar-count').textContent = showAll
-    ? `${shown.length} match${shown.length === 1 ? '' : 'es'}`
+    ? `${shown.length} result${shown.length === 1 ? '' : 's'}`
     : wantInPerson
     ? `${shown.length} in view · ${mapCount} mapped${placeholderSuffix}`
     : wantOnline
-    ? `${shown.length} online event${shown.length === 1 ? '' : 's'}`
+    ? `${shown.length} virtual event${shown.length === 1 ? '' : 's'}`
     : '—';
 }
 
@@ -2543,12 +2566,15 @@ Promise.all([
     // whose source is "Barony of X" can fall back to that barony's official site
     // and be coloured as a muted version of its kingdom's colour.
     sourceWebsite = {};
-    sourceSocial = {};
+    sourceSocials = {};
     groupKingdom = {};
     CANTON_SITES = [];
     groupPins.forEach(p => {
       if (p.group && p.website && !sourceWebsite[p.group]) sourceWebsite[p.group] = p.website;
-      if (p.group && p.social && !sourceSocial[p.group]) sourceSocial[p.group] = p.social;
+      if (p.group && !sourceSocials[p.group]) {
+        const socials = [p.social_1, p.social_2, p.social_3].map(s => (s || '').trim()).filter(Boolean);
+        if (socials.length) sourceSocials[p.group] = socials;
+      }
       if (p.group && p.kingdom && !groupKingdom[p.group]) groupKingdom[p.group] = p.kingdom;
       // Cantons usually have no calendar of their own — their events ride on the
       // parent barony's calendar — so register the canton's own site to link when
@@ -2580,9 +2606,7 @@ Promise.all([
     document.getElementById('sidebar-list').innerHTML =
       `<div style="padding:1rem;color:#a00;font-size:0.85rem;">
          Could not load map data: ${err.message}<br>
-         Make sure the data files (sca_events_clean.csv, colourschemes.csv) are
-         in the same folder and you're serving the page via a local web server
-         (not file://).
+         Please report this error using our contact form if possible.
        </div>`;
     document.getElementById('sidebar-count').textContent = 'Error';
   });
@@ -2644,7 +2668,7 @@ function buildLegend() {
 
   // The legend doubles as a filter: hovering a swatch previews only that colour's
   // events; clicking toggles it into a sticky multi-select; "Show all" clears it.
-  const baseReadout = 'hover or tap a square to see what each colour means';
+  const baseReadout = 'Hover for meanings. Click to filter.';
   let clearChip;
   const syncActive = () => {
     wrap.querySelectorAll('.legend-swatch').forEach(el =>

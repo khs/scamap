@@ -1958,10 +1958,12 @@ def apply_wars(df: pd.DataFrame, today=None) -> pd.DataFrame:
                 continue
             ev = {c: "" for c in df.columns}
             ev.update(title=war["name"], start=s.isoformat(), end=e.isoformat(),
-                      description=(f"{war['name']} is usually held between "
-                                   f"{s:%B} {s.day} and {e:%B} {e.day}. Check "
+                      description=(f"{war['name']} is usually held sometime between "
+                                   f"{s:%B} {s.day} and {e:%B} {e.day}, but "
+                                   f"EventScout could not find a date for this "
+                                   f"year's event yet. Check "
                                    f"{war['website'] or 'the event website'} for "
-                                   f"this year's dates."))
+                                   f"details."))
             ev = _war_event(ev, war)
             ev["dates_approximate"] = "True"
             new_rows.append(ev)

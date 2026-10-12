@@ -133,7 +133,7 @@ Google-Calendar or ICS feed:
   `kingdom`). Add or delete a row.
 - **Local groups → `locals.csv`** — a registry of every local group we know of
   (baronies, shires, cantons, colleges, …), columns
-  `kingdom,group,type,calendar_id,website,social,date_last_checked,location,lat,lng`.
+  `kingdom,group,type,calendar_id,website,social_1,social_2,social_3,date_last_checked,location,lat,lng`.
   One row per group; `calendar_id` is its feed, or one of the recognised "no
   feed" notes — `No Calendar Listed` (we haven't looked), `No Calendar Available`
   (checked, it has none), or `Practices Added Manually` (no feed, but you've
@@ -143,7 +143,7 @@ Google-Calendar or ICS feed:
   `calendar_id` on a *secondary* feed for a group to import its events without a
   second pin. `location`/`lat`/`lng` place that "?" pin (the map reads them
   directly — no geocoding). Only `group` + a real `calendar_id` drive the
-  import; `type`/`website`/`social` are reference info. Bump `date_last_checked`
+  import; `type`/`website`/`social_1`-`social_3` (links labelled by their domain, e.g. Facebook, Discord) are reference info. Bump `date_last_checked`
   (YYYY-MM-DD) whenever you re-verify a row. This is the one place to manage
   local groups.
 

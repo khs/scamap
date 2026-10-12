@@ -144,7 +144,7 @@ class TestLocals(unittest.TestCase):
         with open(LOCALS, encoding="utf-8", newline="") as f:
             header = set(next(csv.reader(f)))
         required = {"kingdom", "group", "type", "calendar_id", "website",
-                    "social", "date_last_checked", "location", "lat", "lng"}
+                    "social_1", "social_2", "social_3", "date_last_checked", "location", "lat", "lng"}
         self.assertTrue(required <= header, f"missing columns: {required - header}")
 
     def test_no_duplicate_group_calendars(self):

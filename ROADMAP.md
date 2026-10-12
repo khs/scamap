@@ -5,14 +5,14 @@ things are done or decided.
 
 ## Next up (suggested order)
 
-1. **Apply the maintainer's rewrites in UI_TEXT.md** (section A filled in
-   2026-10-01) to index.html / clean_sca_events.py / wars.csv /
-   private_addresses.py; maintainer tests locally, then push. Re-check section
-   B with the maintainer (they believe it's all theirs).
-   Also: Massachusetts group pins (Bergental "Western MA", Smoking Rocks
-   "Southeast MA", Canton of the Towers "Northeast MA") all sit at the state
-   centre — maintainer to supply real locations.
-   FAQ: maintainer is considering new questions + topic subheadings.
+1. **Maintainer to test locally, then push** (applied 2026-10-12, NOT yet
+   pushed): the UI_TEXT.md rewrites (index.html, clean_sca_events.py,
+   wars.csv, private_addresses.py), the reorganised FAQ (new questions, six
+   topic headings), hardcoded practices + real pins for Bergental, Smoking
+   Rocks and Canton of the Towers (hardcoded_events.csv gained a `notes`
+   column, shown as a bold warning in the popup).
+   Next refresh will regenerate sca_events_clean.csv with the new
+   private-location / war-placeholder wording.
 2. **Quick wins**
    - "Data last updated" date shown on the map.
    - Dormant status for groups in locals.csv (keeps the row, hides the pin,
@@ -31,7 +31,11 @@ things are done or decided.
 4. **Import practices for "?" groups into hardcoded_events.csv** from barony
    websites (semi-automated: extract → maintainer reviews → add). Hardcoded
    rows don't auto-update, so record the source page and a last-checked date
-   and make re-checking easy.
+   and make re-checking easy. (Done so far: Bergental, Smoking Rocks, Towers.)
+   **Follow-on:** as hardcoded practices replace "?" pins, those pins get rare.
+   Then replace the "show markers for groups without calendars" checkbox with
+   a **"Group view" / "Event view"** toggle. Group view: events hidden, every
+   barony/shire shown, each as a **polygon** (territory), not a pin.
 5. **Corrections & submissions forms** (largest; needs maintainer's
    Cloudflare + GitHub-token setup). Form pages on EventScout → Cloudflare
    Worker → GitHub pull request per submission → maintainer reviews and clicks
@@ -57,6 +61,22 @@ things are done or decided.
      - group has gone dormant → Dormant status
      - **a group we don't know about yet** → new locals.csv row
    - NOT doing: changing one date inside a recurring series.
+
+## Accessibility options (right end of the menu bar)
+- Done: larger text slider + "Force plain font" (accessibility.js).
+- To do, one at a time: **dark mode**; **keyboard shortcuts** overlay for
+  zooming / panning / selecting events.
+
+## Group view: collecting source maps
+Map images of group territories are saved in `group-maps/` (first one:
+Massachusetts, East Kingdom). Maintainer keeps sending more; once there are
+enough, trace them into polygons (a hidden prototype page, e.g.
+`groupmapprototype.html`, kept off the menu until ready).
+
+## Further down the road (not scheduled — remember to reconsider)
+- **Subscribe / notifications** for events near a visitor. (The FAQ currently
+  says this isn't available.)
+- **Login system** so trusted users can submit corrections directly.
 
 ## Done recently
 - FAQ page (maintainer's text) replaces About + How to Help (copies in archive/).

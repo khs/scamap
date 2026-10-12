@@ -119,10 +119,10 @@ class TestPrivateAddresses(unittest.TestCase):
         for col in ("location", "clean_location", "description"):
             self.assertNotIn("3456", r[col])
             self.assertNotIn("nest", r[col].lower())
-        self.assertEqual((r["location"], r["clean_location"]), ("Private location",) * 2)
+        self.assertEqual((r["location"], r["clean_location"]), ("Location not disclosed; contact locals",) * 2)
         self.assertEqual(r["location_specificity"], "private")
         self.assertEqual((r["lat"], r["lng"], r["geocode_status"]), ("42.5", "-88.5", "override"))
-        self.assertEqual(r["description"].count("[private location]"), 1)   # collapsed
+        self.assertEqual(r["description"].count("[undisclosed location]"), 1)   # collapsed
 
     def test_scoped_entry_leaves_other_kingdoms_alone(self):
         # "The Nest" is blocked only in Northshield; a same-named venue in
@@ -150,7 +150,7 @@ class TestPrivateAddresses(unittest.TestCase):
         bad = self.tmp / "bad.csv"
         pa.add("The Nest", "", "1", "2", replace_with="The Nest (private)",
                path=bad, local_path=self.tmp / "bad.local.csv")
-        self.assertEqual(pa.load(bad)[0]["replace_with"], "[private location]")
+        self.assertEqual(pa.load(bad)[0]["replace_with"], "[undisclosed location]")
 
     def test_caches_skip_scoped_entries(self):
         # Caches carry no calendar, so a scoped venue name is left in them (it

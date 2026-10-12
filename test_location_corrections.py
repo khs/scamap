@@ -217,7 +217,7 @@ class TestBaronialCoords(_TmpDirMixin):
     def _locals(self, rows):
         self._write_csv("locals.csv",
                         ["kingdom", "group", "type", "calendar_id", "website",
-                         "social", "date_last_checked", "location", "lat", "lng"], rows)
+                         "social_1", "social_2", "social_3", "date_last_checked", "location", "lat", "lng"], rows)
 
     def test_vague_event_pinned_at_barony_coords(self):
         self._locals([{"group": "Province of the Mists", "location": "Oakland, California",

@@ -121,7 +121,7 @@ The arguments are: the address, the **scope**, a deliberately coarse public pin
   unique anyway and may be cross-listed by other kingdoms.
 - On the map, affected events show **"The location of this event is private.
   Please inquire with the local group."** instead of an address, at your
-  coarse pin. In descriptions the address becomes `[private location]`.
+  coarse pin. In descriptions the address becomes `[undisclosed location]`.
 - **Where the list lives:** the committed `private_addresses.csv` stores only
   a **fingerprint** (one-way hash) of each address, so the public repo doesn't
   publish what it hides. The readable list is `private_addresses.local.csv`,
