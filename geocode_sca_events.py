@@ -366,7 +366,7 @@ def in_source_regions(lat: float, lng: float, source: str) -> bool:
                for name, box in SCA_REGION_BBOXES.items() if name in regions)
 
 
-def _validate(lat, lng, expected_state, source_acceptable_states, source=""):
+def _validate(lat, lng, expected_state, source_acceptable_states, source="", defer=None):
     """
     Decide whether to accept a geocoded (lat, lng).
 
@@ -390,6 +390,12 @@ def _validate(lat, lng, expected_state, source_acceptable_states, source=""):
         accept results outside the kingdom's state set. Kingdoms
         legitimately list cross-kingdom events (Pennsic, Gulf Wars,
         Tir Mara events in Atlantic Canada, Known World events).
+        If `defer` (a list) is passed, such a soft-accepted result is NOT
+        accepted: it is appended to `defer` and False is returned, so the
+        caller can keep looking for a spot inside the kingdom and fall back to
+        the deferred one only if nothing better turns up. (A Meridies "Big
+        Ridge State Park Group Camp" with no town or state matched a Wisconsin
+        park via Photon and was accepted as a "likely cross-kingdom event".)
     """
     if lat is None or lng is None:
         return False
@@ -413,7 +419,11 @@ def _validate(lat, lng, expected_state, source_acceptable_states, source=""):
             if source.lower().startswith("kingdom of"):
                 print(f"           ⚠ out-of-region: ({lat:.3f}, {lng:.3f}) in "
                       f"{actual or 'no US state'}, expected one of {allowed} "
-                      f"— accepting (likely cross-kingdom event)")
+                      f"— {'deferring' if defer is not None else 'accepting'} "
+                      f"(likely cross-kingdom event)")
+                if defer is not None:
+                    defer.append((lat, lng))
+                    return False
             else:
                 print(f"           ✗ rejected: ({lat:.3f}, {lng:.3f}) in "
                       f"{actual or 'no US state'}, not in {source}'s region "
@@ -695,10 +705,14 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
     cleaned = re.sub(r"\s+https?://\S+.*$", "", cleaned)
     cleaned = re.sub(r"\s*\([^)]*\)\s*$", "", cleaned).strip().rstrip(",.;")
 
+    # Out-of-kingdom results for kingdom events are held back here (see _validate)
+    # while the later steps look for a match inside the kingdom.
+    deferred: list = []
+
     # 1. Original address via Nominatim
     address = cleaned  # use cleaned for all subsequent attempts
     lat, lng = nominatim_geocode(address, session)
-    if _validate(lat, lng, expected_state, source_states, source):
+    if _validate(lat, lng, expected_state, source_states, source, deferred):
         return (lat, lng, "ok")
 
     # 1b. Canadian postal code. A rural civic address ("17317 Larch Rd, Telkwa,
@@ -711,9 +725,9 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
     if ca_postal:
         print(f"           → CA postal: {ca_postal}")
         lat, lng = geocoder.nominatim(f"{ca_postal}, Canada", session, countrycodes="ca")
-        if not _validate(lat, lng, expected_state, source_states, source):
+        if not _validate(lat, lng, expected_state, source_states, source, deferred):
             lat, lng = geocoder.nominatim(f"{ca_postal[:3]}, Canada", session, countrycodes="ca")
-        if _validate(lat, lng, expected_state, source_states, source):
+        if _validate(lat, lng, expected_state, source_states, source, deferred):
             return (lat, lng, "ok_retry")
         # 1c. Rural CA postal codes (V0x/V9x…) have no OSM geometry — Nominatim
         #     answers them with junk points. The city name is the reliable token,
@@ -726,7 +740,7 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
             city_tail = ", ".join(bits[-3:])
             print(f"           → CA city tail: {city_tail[:70]}")
             lat, lng = geocoder.nominatim(city_tail, session, countrycodes="ca")
-            if _validate(lat, lng, expected_state, source_states, source):
+            if _validate(lat, lng, expected_state, source_states, source, deferred):
                 return (lat, lng, "ok_retry")
 
     # 2. Strip embedded venue prefix from the street part
@@ -734,7 +748,7 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
     if stripped != address:
         print(f"           → retrying without venue: {stripped[:70]}")
         lat, lng = nominatim_geocode(stripped, session)
-        if _validate(lat, lng, expected_state, source_states, source):
+        if _validate(lat, lng, expected_state, source_states, source, deferred):
             return (lat, lng, "ok_retry")
 
     # 3. Last 3 comma parts (street, city, state OR city, state, country)
@@ -744,7 +758,7 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
         if simplified not in (address, stripped):
             print(f"           → retrying tail: {simplified[:70]}")
             lat, lng = nominatim_geocode(simplified, session)
-            if _validate(lat, lng, expected_state, source_states, source):
+            if _validate(lat, lng, expected_state, source_states, source, deferred):
                 return (lat, lng, "ok_retry")
 
     # 4. Last 2 comma parts (city, state)
@@ -752,13 +766,13 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
         city_state = ", ".join(parts[-2:])
         print(f"           → retrying city/state: {city_state[:70]}")
         lat, lng = nominatim_geocode(city_state, session)
-        if _validate(lat, lng, expected_state, source_states, source):
+        if _validate(lat, lng, expected_state, source_states, source, deferred):
             return (lat, lng, "ok_retry")
 
     # 5. Photon fallback — uses original address (handles venue names better)
     print(f"           → trying Photon: {address[:70]}")
     lat, lng = photon_geocode(address, session)
-    if _validate(lat, lng, expected_state, source_states, source):
+    if _validate(lat, lng, expected_state, source_states, source, deferred):
         return (lat, lng, "ok_photon")
 
     # 5b. If we have an expected kingdom/state list, try appending each one to
@@ -775,7 +789,7 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
             query = f"{address}, {state}, USA"
             print(f"           → retrying with state hint: {query[:70]}")
             lat, lng = nominatim_geocode(query, session)
-            if _validate(lat, lng, expected_state, source_states, source):
+            if _validate(lat, lng, expected_state, source_states, source, deferred):
                 return (lat, lng, "ok_retry")
 
     # 6. Last-ditch: try just the US ZIP code as "ZIP, USA" — places a marker
@@ -787,7 +801,7 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
         zip_code = zip_match.group(0)
         print(f"           → retrying ZIP only: {zip_code}")
         lat, lng = nominatim_geocode(f"{zip_code}, USA", session)
-        if _validate(lat, lng, expected_state, source_states, source):
+        if _validate(lat, lng, expected_state, source_states, source, deferred):
             return (lat, lng, "ok_retry")
 
     # 7. Vague-text simplification: SCA idioms ("the city mundanely known as
@@ -819,8 +833,15 @@ def try_geocode_with_fallbacks(address: str, session: requests.Session,
                 if (coord_state(lat, lng) in home_states
                         and in_source_regions(lat, lng, source)):
                     return (lat, lng, "ok_retry")
-            elif _validate(lat, lng, expected_state, source_states, source):
+            elif _validate(lat, lng, expected_state, source_states, source, deferred):
                 return (lat, lng, "ok_retry")
+
+    # 8. Nothing landed inside the kingdom's own region. If an earlier step found
+    #    a spot outside it for a KINGDOM event (a war or other cross-kingdom
+    #    gathering), that's still better than no pin: use the first one.
+    if deferred:
+        lat, lng = deferred[0]
+        return (lat, lng, "ok_retry")
 
     return (None, None, "failed")
 

@@ -156,6 +156,43 @@ class TestValidate(unittest.TestCase):
         self.assertTrue(gse._validate(38.30, -77.46, "", va_barony, "Barony of Stierbach"))
 
 
+class TestOutOfKingdomDeferred(unittest.TestCase):
+    """Silver Hammer regression: a Meridies kingdom event whose location is just
+    a park name (no town/state) matched a Wisconsin park via Photon and was
+    accepted as a "cross-kingdom event". It should keep looking inside the
+    kingdom and only fall back to the out-of-kingdom match if nothing is found."""
+    MERIDIES = {"MO", "FL", "OH", "SC", "GA", "AR", "WV", "MS", "TN", "IN", "KY", "IL", "NC", "AL", "VA"}
+    WISCONSIN = (46.788, -90.669)
+    TENNESSEE = (36.249, -83.799)
+
+    def test_validate_defers_instead_of_accepting(self):
+        d = []
+        self.assertFalse(gse._validate(*self.WISCONSIN, "", self.MERIDIES, "Kingdom of Meridies", d))
+        self.assertEqual(d, [self.WISCONSIN])
+        # A match inside the kingdom is still accepted outright.
+        self.assertTrue(gse._validate(*self.TENNESSEE, "", self.MERIDIES, "Kingdom of Meridies", d))
+        self.assertEqual(len(d), 1)
+
+    def _run(self, nominatim, photon):
+        from unittest import mock
+        with mock.patch.object(gse, "acceptable_states_for_source", return_value=self.MERIDIES), \
+             mock.patch.object(gse, "nominatim_geocode", side_effect=nominatim), \
+             mock.patch.object(gse, "photon_geocode", side_effect=photon):
+            return gse.try_geocode_with_fallbacks("Big Ridge State Park Group Camp", None,
+                                                  "Kingdom of Meridies")
+
+    def test_prefers_in_kingdom_match_found_later(self):
+        def nominatim(q, s):
+            return self.TENNESSEE if ", TN, USA" in q else (None, None)
+        lat, lng, status = self._run(nominatim, lambda q, s: self.WISCONSIN)
+        self.assertEqual((lat, lng), self.TENNESSEE)
+
+    def test_falls_back_to_out_of_kingdom_match(self):
+        lat, lng, status = self._run(lambda q, s: (None, None), lambda q, s: self.WISCONSIN)
+        self.assertEqual((lat, lng), self.WISCONSIN)
+        self.assertNotEqual(status, "failed")
+
+
 class TestAcceptableStatesInheritance(unittest.TestCase):
     """A barony with no explicit BARONY_HOME_STATES entry inherits its kingdom's
     member states (via the locals.csv source->kingdom map), so it stays
