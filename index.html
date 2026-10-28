@@ -1385,6 +1385,66 @@ function safeUrl(u) {
   } catch (e) { return ''; }
 }
 
+// ── Recurring practices stay current between refreshes ───────────
+// The pipeline collapses a weekly/monthly practice into ONE row dated to its next
+// occurrence, with the following dates listed in the description ("[RECURRING —
+// also on: 28 Oct 2026, 4 Nov 2026, … 12 more through 3 Feb 2027]"). If a refresh
+// is late or fails, that one date goes into the past and the practice would vanish
+// even though it is still happening. So when the row's date has passed, move it to
+// the next listed date (or, past the listed ones, keep stepping by the last gap up
+// to the series' final date). The time of day and length stay the same.
+const _MON = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+
+function _parseLocalDateTime(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/.exec(String(s || '').trim());
+  if (!m) return null;
+  return { d: new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0)),
+           hasTime: m[4] !== undefined };
+}
+function _fmtLocalDateTime(d, hasTime) {
+  const p = n => String(n).padStart(2, '0');
+  const day = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  return hasTime ? `${day} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}` : day;
+}
+
+function rollRecurringForward(events, now) {
+  const today = new Date((now || new Date()).getFullYear(), (now || new Date()).getMonth(), (now || new Date()).getDate());
+  events.forEach(ev => {
+    if (!/\(RECURRING\)\s*$/.test(ev.title || '')) return;
+    const m = /\[RECURRING — also on: ([^\]]*)\]/.exec(ev.description || '');
+    const s = _parseLocalDateTime(ev.start);
+    if (!m || !s) return;
+    const e = _parseLocalDateTime(ev.end);
+    const lastDay = new Date((e || s).d.getFullYear(), (e || s).d.getMonth(), (e || s).d.getDate());
+    if (lastDay >= today) return;                        // still current
+
+    const days = [];
+    m[1].replace(/(\d{1,2}) ([A-Za-z]{3})[a-z]* (\d{4})/g,
+      (_, dd, mon, yy) => { days.push(new Date(+yy, _MON[mon.toLowerCase()], +dd)); return ''; });
+    const hasMore = /more through/.test(m[1]);
+    const seriesEnd = days.length ? days[days.length - 1] : null;
+    const listed = hasMore ? days.slice(0, -1) : days;   // the "through X" date is the series' end
+
+    let next = listed.find(d => d >= today) || null;
+    if (!next && hasMore && listed.length >= 2) {
+      const gap = Math.round((listed[listed.length - 1] - listed[listed.length - 2]) / 86400000);
+      if (gap >= 1) {
+        let d = new Date(listed[listed.length - 1]);
+        while (d < today) d.setDate(d.getDate() + gap);
+        if (d <= seriesEnd) next = d;
+      }
+    }
+    if (!next) return;                                   // series really is over
+
+    const newStart = new Date(next.getFullYear(), next.getMonth(), next.getDate(),
+                              s.d.getHours(), s.d.getMinutes(), s.d.getSeconds());
+    const duration = e ? e.d - s.d : 0;
+    ev.start = _fmtLocalDateTime(newStart, s.hasTime);
+    if (e) ev.end = _fmtLocalDateTime(new Date(newStart.getTime() + duration), e.hasTime);
+    ev._rolledForward = true;
+  });
+}
+
 // ── Hardcoded practices (hardcoded_events.csv) ───────────────────
 // Some groups publish their practices only as a static webpage, not an
 // importable calendar. hardcoded_events.csv lets us place those by hand: each
@@ -2555,6 +2615,7 @@ Promise.all([
 ])
   .then(([text]) => {
     allEvents = parseCSV(text);
+    rollRecurringForward(allEvents);   // keep weekly/monthly practices showing if a refresh is late
     buildLegend();   // KINGDOM_COLORS / BARONY_COLORS are populated now
     // Placeholder "?" pins + source→website come from locals.csv; hand-kept
     // practices for groups whose schedule is only a static webpage come from
