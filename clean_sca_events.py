@@ -75,6 +75,10 @@ NON_EVENT_PATTERNS = [
     r"^cancelled\b",
     # A calendar shared as free/busy only shows every entry as just "Busy".
     r"^busy$",
+    # Personal entries on a group's calendar ("Sara's appointment", "dentist
+    # appointment"). Kept narrow so "Appointment of Officers" still shows.
+    r"^[\w.-]+['’]s\s+(?:\w+\s+)?appointments?\b",
+    r"\b(?:doctor|dentist|dental|vet|therapy)\s+appointments?\b",
 ]
 
 # "cancelled" / "canceled" as a whole word — a real cancellation marker. Matched

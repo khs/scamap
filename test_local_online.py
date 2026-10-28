@@ -194,6 +194,12 @@ class TestNonEvents(unittest.TestCase):
         self.assertTrue(clean.is_non_event("  busy "))
         self.assertFalse(clean.is_non_event("Busy Bees Craft Night"))
 
+    def test_personal_appointments(self):
+        self.assertTrue(clean.is_non_event("Sara's appointment"))
+        self.assertTrue(clean.is_non_event("Dentist appointment"))
+        self.assertFalse(clean.is_non_event("Baronial Changeover & Appointment of Officers"))
+        self.assertFalse(clean.is_non_event("Heraldry consultations by appointment"))
+
     def test_officer_deadlines(self):
         self.assertTrue(clean.is_non_event("Anst. Webmin Quarterly Report Due on the 15th"))
 
