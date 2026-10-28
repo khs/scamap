@@ -24,7 +24,9 @@ permissions:
 
 jobs:
   refresh:
-    runs-on: ubuntu-latest
+    # Pinned: refreshes started failing right as GitHub moved ubuntu-latest to
+    # Ubuntu 26 (2026-10). Unpin once the pipeline is confirmed to work there.
+    runs-on: ubuntu-24.04
     # At REQUEST_DELAY=15s, a cold or many-retry run can take 2+ hours.
     # Cache-warm refreshes are still under 10 min.
     timeout-minutes: 180
