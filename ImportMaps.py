@@ -431,7 +431,15 @@ def fetch_all_events(calendars: list[dict]) -> list[dict]:
 
         print(f"Fetching [{calendar['type']:8s}] {calendar['source']}")
 
-        cal = fetch_ics(calendar)
+        # One calendar's bug must never stop the whole refresh (a missing import in
+        # one scraper left the map's data a week stale): treat a crash like any
+        # other failed fetch, so its last-good events are kept.
+        try:
+            cal = fetch_ics(calendar)
+        except Exception as exc:
+            print(f"  ERROR: fetching {calendar['source']} crashed "
+                  f"({type(exc).__name__}: {exc}) — treating as a failed fetch")
+            cal = None
         if cal is None:
             # A None here means the fetch itself failed (network refused,
             # timeout, 403, non-ICS body) — NOT that the source is legitimately
